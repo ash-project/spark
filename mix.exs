@@ -41,6 +41,16 @@ defmodule Spark.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      # Dev/Test dependencies
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:ex_check, "~> 0.12.0", only: :dev},
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
+      {:sobelow, ">= 0.0.0", only: :dev, runtime: false},
+      {:git_ops, "~> 2.4.4", only: :dev},
+      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:parse_trans, "3.3.0", only: [:dev, :test], override: true},
+      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test, :docs]}
     ]
   end
 end
