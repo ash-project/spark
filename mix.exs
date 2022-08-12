@@ -1,13 +1,21 @@
 defmodule Spark.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
+  @description "Generic tooling for building DSLs"
+
   def project do
     [
       app: :spark,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package(),
+      description: @description,
+      source_url: "https://github.com/ash-project/spark",
+      homepage_url: "https://github.com/ash-project/spark"
     ]
   end
 
@@ -15,6 +23,16 @@ defmodule Spark.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      name: :spark,
+      licenses: ["MIT"],
+      links: %{
+        GitHub: "https://github.com/ash-project/spark"
+      }
     ]
   end
 
