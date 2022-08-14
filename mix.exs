@@ -14,10 +14,18 @@ defmodule Spark.MixProject do
       deps: deps(),
       package: package(),
       description: @description,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       source_url: "https://github.com/ash-project/spark",
       homepage_url: "https://github.com/ash-project/spark"
     ]
   end
+
+  defp elixirc_paths(:test) do
+    elixirc_paths(:prod) ++ ["test/support"]
+  end
+
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -39,6 +47,7 @@ defmodule Spark.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:nimble_options, "~> 0.4.0"},
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       # Dev/Test dependencies
@@ -51,6 +60,13 @@ defmodule Spark.MixProject do
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:parse_trans, "3.3.0", only: [:dev, :test], override: true},
       {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test, :docs]}
+    ]
+  end
+
+  defp aliases do
+    [
+      sobelow: "sobelow --skip",
+      credo: "credo --strict"
     ]
   end
 end
