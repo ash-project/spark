@@ -1,6 +1,6 @@
 # Spark
 
-Spark is a generic tool for building well documented and powerful DSLs that come with useful tooling out of the box. DSLs are declared using simple structs, and every DSL has the ability to be extended by the end user. Spark powers all of the DSLs in Ash Framework.
+Spark helps you build powerful and well documented DSLs that come with useful tooling out of the box. DSLs are declared using simple structs, and every DSL has the ability to be extended by the end user. Spark powers all of the DSLs in Ash Framework.
 
 What you get for your DSL when you implement it with Spark:
 
