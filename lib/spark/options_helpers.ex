@@ -80,8 +80,11 @@ defmodule Spark.OptionsHelpers do
       {:mfa_or_fun, arity} ->
         {:custom, __MODULE__, :mfa_or_fun, [arity]}
 
-      {:spark, _type} ->
-        :atom
+      {:spark_type, _, _} ->
+        :any
+
+      {:spark_type, _, _, _} ->
+        :any
 
       :literal ->
         :any
