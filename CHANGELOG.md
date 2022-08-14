@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.5](https://github.com/ash-project/spark/compare/v0.1.4...v0.1.5) (2022-08-14)
+
+
+
+
+### Bug Fixes:
+
+* properly use spark dsl error
+
 ## [v0.1.4](https://github.com/ash-project/spark/compare/v0.1.3...v0.1.4) (2022-08-14)
 
 
