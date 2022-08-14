@@ -22,4 +22,5 @@
   "parse_trans": {:hex, :parse_trans, "3.3.0", "09765507a3c7590a784615cfd421d101aec25098d50b89d7aa1d66646bc571c1", [:rebar3], [], "hexpm", "17ef63abde837ad30680ea7f857dd9e7ced9476cdd7b0394432af4bfc241b960"},
   "providers": {:hex, :providers, "1.8.1", "70b4197869514344a8a60e2b2a4ef41ca03def43cfb1712ecf076a0f3c62f083", [:rebar3], [{:getopt, "1.0.1", [hex: :getopt, repo: "hexpm", optional: false]}], "hexpm", "e45745ade9c476a9a469ea0840e418ab19360dc44f01a233304e118a44486ba0"},
   "sobelow": {:hex, :sobelow, "0.11.1", "23438964486f8112b41e743bbfd402da3e5b296fdc9eacab29914b79c48916dd", [:mix], [{:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "9897363a7eff96f4809304a90aad819e2ad5e5d24db547af502885146746a53c"},
+  "sourceror": {:hex, :sourceror, "0.11.1", "1b80efe84330beefb6b3da95b75c1e1cdefe9dc785bf4c5064fae251a8af615c", [:mix], [], "hexpm", "22b6828ee5572f6cec75cc6357f3ca6c730a02954cef0302c428b3dba31e5e74"},
 }

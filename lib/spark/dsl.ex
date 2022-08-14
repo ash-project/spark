@@ -100,6 +100,8 @@ defmodule Spark.Dsl do
 
       def init(opts), do: {:ok, opts}
 
+      def default_extensions, do: @spark_default_extensions
+
       def handle_opts(opts) do
         quote do
         end
