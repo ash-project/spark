@@ -77,6 +77,9 @@ defmodule Spark.OptionsHelpers do
       {:behaviour, _behaviour} ->
         :atom
 
+      {:spark, _} ->
+        :atom
+
       {:mfa_or_fun, arity} ->
         {:custom, __MODULE__, :mfa_or_fun, [arity]}
 
