@@ -1,3 +1,19 @@
 # Spark
 
-This is a placeholder library for now. Eventually the DSL builder and introspection tools will be moved here.
+Spark is a generic tool for building well documented and powerful DSLs that come with useful tooling out of the box. DSLs are declared using simple structs, and every DSL has the ability to be extended by the end user. Spark powers all of the DSLs in Ash Framework.
+
+What you get for your DSL when you implement it with Spark:
+
+- Extensibility. Anyone can write extensions for your DSL.
+- Autocomplete and in-line documentation: An elixir_sense plugin that "Just Works" for any DSL implemented with Spark.
+- Tools to generate documentation for your DSL automatically.
+
+## Dependency
+
+```elixir
+def deps do
+  [
+    {:spark, "~> 0.1.1"}
+  ]
+end
+```
