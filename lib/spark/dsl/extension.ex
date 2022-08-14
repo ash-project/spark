@@ -702,7 +702,7 @@ defmodule Spark.Dsl.Extension do
                     opts
 
                   {:error, error} ->
-                    raise Spark.Error.Dsl.DslError,
+                    raise Spark.Error.DslError,
                       module: __MODULE__,
                       message: error,
                       path: unquote(section_path)
@@ -1185,7 +1185,7 @@ defmodule Spark.Dsl.Extension do
                               inspect(error)
                           end
 
-                        raise Spark.Error.Dsl.DslError,
+                        raise Spark.Error.DslError,
                           module: __MODULE__,
                           message: message,
                           path: section_path ++ additional_path
