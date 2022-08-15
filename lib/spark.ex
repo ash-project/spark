@@ -16,4 +16,9 @@ defmodule Spark do
     _ ->
       false
   end
+
+  @doc "Returns the extensions a given DSL uses"
+  def extensions(module) do
+    Spark.Dsl.Extension.get_persisted(module, :extensions, [])
+  end
 end

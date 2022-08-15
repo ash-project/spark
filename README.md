@@ -8,6 +8,8 @@ What you get for your DSL when you implement it with Spark:
 - Autocomplete and in-line documentation: An elixir_sense plugin that "Just Works" for any DSL implemented with Spark.
 - Tools to generate documentation for your DSL automatically.
 - Tools to create rich library documentation. [AshHq](https://ash-hq.com)'s documentation is all derived from `Spark.DocIndex`.
+- A mix task to add every part of the DSL to the `locals_without_parens` of your library
+  automatically.
 
 ## Dependency
 
