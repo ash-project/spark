@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.7](https://github.com/ash-project/spark/compare/v0.1.6...v0.1.7) (2022-08-15)
+
+
+
+
+### Improvements:
+
+* add `spark.formatter.exs` (from ash)
+
 ## [v0.1.6](https://github.com/ash-project/spark/compare/v0.1.5...v0.1.6) (2022-08-14)
 
 
