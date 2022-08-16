@@ -461,8 +461,6 @@ defmodule Spark.Dsl.Extension do
           &Map.merge(&1, persist)
         )
 
-      @spark_dsl_config spark_dsl_config
-
       for {key, _value} <- Process.get() do
         if is_tuple(key) and elem(key, 0) == __MODULE__ do
           Process.delete(key)
@@ -475,27 +473,29 @@ defmodule Spark.Dsl.Extension do
         |> Transformer.sort()
         |> Enum.reject(& &1.after_compile?())
 
-      __MODULE__
-      |> Spark.Dsl.Extension.run_transformers(
-        transformers_to_run,
-        spark_dsl_config,
-        true,
-        __ENV__
-      )
+      @spark_dsl_config __MODULE__
+                        |> Spark.Dsl.Extension.run_transformers(
+                          transformers_to_run,
+                          spark_dsl_config,
+                          __ENV__
+                        )
     end
   end
 
-  def run_transformers(mod, transformers, spark_dsl_config, store?, env) do
+  def run_transformers(mod, transformers, spark_dsl_config, env) do
     Enum.reduce_while(transformers, spark_dsl_config, fn transformer, dsl ->
       result =
         try do
-          transformer.transform(mod, dsl)
+          transformer.transform(dsl)
         rescue
+          e in Spark.Error.DslError ->
+            reraise %{e | module: mod}, __STACKTRACE__
+
           e ->
             if Exception.exception?(e) do
               reraise e, __STACKTRACE__
             else
-              reraise "Exception in transformer #{inspect(transformer)}: \n\n#{Exception.message(e)}",
+              reraise "Exception in transformer #{inspect(transformer)} on #{inspect(mod)}: \n\n#{Exception.message(e)}",
                       __STACKTRACE__
             end
         end
@@ -512,18 +512,13 @@ defmodule Spark.Dsl.Extension do
           |> List.wrap()
           |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(env)))
 
-          if store? do
-            Module.put_attribute(mod, :spark_dsl_config, new_dsl)
-          end
-
           {:cont, new_dsl}
 
         {:ok, new_dsl} ->
-          if store? do
-            Module.put_attribute(mod, :spark_dsl_config, new_dsl)
-          end
-
           {:cont, new_dsl}
+
+        {:error, %Spark.Error.DslError{} = e} ->
+          raise_transformer_error(transformer, %{e | module: mod})
 
         {:error, error} ->
           raise_transformer_error(transformer, error)

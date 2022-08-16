@@ -26,7 +26,7 @@ defmodule Spark.Dsl.Section do
     schema: [],
     describe: "",
     snippet: "",
-    links: [],
+    links: nil,
     examples: [],
     modules: [],
     no_depend_modules: [],

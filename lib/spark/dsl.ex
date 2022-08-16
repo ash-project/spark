@@ -170,8 +170,7 @@ defmodule Spark.Dsl do
                 __MODULE__
                 |> Spark.Dsl.Extension.run_transformers(
                   transformers_to_run,
-                  Module.get_attribute(__MODULE__, :spark_dsl_config),
-                  false,
+                  @spark_dsl_config,
                   __ENV__
                 )
               end
@@ -186,6 +185,8 @@ defmodule Spark.Dsl do
             if opts[:otp_app] do
               @persist {:otp_app, opts[:otp_app]}
             end
+
+            @persist {:module, __MODULE__}
 
             for single_extension_kind <- parent_opts[:single_extension_kinds] do
               @persist {single_extension_kind, opts[single_extension_kind]}

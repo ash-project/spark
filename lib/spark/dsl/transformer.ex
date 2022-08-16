@@ -14,7 +14,7 @@ defmodule Spark.Dsl.Transformer do
   point in returning a new dsl structure from `transform/2` if `after_compile/0` is defined. Instead,
   simply return `:ok` or `{:error, error}`
   """
-  @callback transform(module, map) ::
+  @callback transform(map) ::
               :ok
               | {:ok, map}
               | {:error, term}

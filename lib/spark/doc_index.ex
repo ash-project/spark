@@ -91,23 +91,35 @@ defmodule Spark.DocIndex do
   end
 
   defp find_undocumented_in_section(section, path) do
-    find_undocumented_in_schema(section.schema(), [section.name() | path])
-    Enum.each(section.sections(), &find_undocumented_in_section(&1, [section.name() | path]))
-    Enum.each(section.entities(), &find_undocumented_in_entity(&1, [section.name() | path]))
+    if !section.links do
+      IO.warn("No links for #{Enum.reverse(path) |> Enum.join(".")}.#{section.name}")
+    end
+
+    find_undocumented_in_schema(section.schema, [section.name | path])
+    Enum.each(section.sections, &find_undocumented_in_section(&1, [section.name | path]))
+    Enum.each(section.entities, &find_undocumented_in_entity(&1, [section.name | path]))
   end
 
   defp find_undocumented_in_entity(entity, path) do
-    find_undocumented_in_schema(entity.schema(), [entity.name() | path])
+    if !entity.links do
+      IO.warn("No links for #{Enum.reverse(path) |> Enum.join(".")}.#{entity.name}")
+    end
 
-    Enum.each(entity.entities(), fn {_key, entities} ->
-      Enum.each(entities, &find_undocumented_in_entity(&1, [entity.name() | path]))
+    find_undocumented_in_schema(entity.schema, [entity.name | path])
+
+    Enum.each(entity.entities, fn {_key, entities} ->
+      Enum.each(entities, &find_undocumented_in_entity(&1, [entity.name | path]))
     end)
   end
 
   defp find_undocumented_in_schema(schema, path) do
     Enum.each(schema, fn {key, opts} ->
       if !opts[:links] do
-        raise "Undocumented item #{Enum.reverse(path) |> Enum.join(".")}.#{key}"
+        IO.warn("No links for #{Enum.reverse(path) |> Enum.join(".")}.#{key}")
+      end
+
+      if !opts[:doc] do
+        IO.warn("No doc for #{Enum.reverse(path) |> Enum.join(".")}.#{key}")
       end
     end)
   end

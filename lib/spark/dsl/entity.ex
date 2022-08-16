@@ -43,7 +43,7 @@ defmodule Spark.Dsl.Entity do
     describe: "",
     snippet: "",
     args: [],
-    links: [],
+    links: nil,
     hide: [],
     modules: [],
     no_depend_modules: [],
