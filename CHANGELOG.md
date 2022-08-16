@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.8](https://github.com/ash-project/spark/compare/v0.1.7...v0.1.8) (2022-08-16)
+
+
+
+
+### Improvements:
+
+* don't provide the module to transformers
+
+* update sourceror depednency
+
 ## [v0.1.7](https://github.com/ash-project/spark/compare/v0.1.6...v0.1.7) (2022-08-15)
 
 
