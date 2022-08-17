@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.9](https://github.com/ash-project/spark/compare/v0.1.8...v0.1.9) (2022-08-17)
+
+
+
+
+### Bug Fixes:
+
+* properly ignore built in alias types
+
+### Improvements:
+
+* use libgraph to sort transformers
+
 ## [v0.1.8](https://github.com/ash-project/spark/compare/v0.1.7...v0.1.8) (2022-08-16)
 
 
