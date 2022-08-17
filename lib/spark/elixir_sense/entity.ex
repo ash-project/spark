@@ -66,10 +66,12 @@ if Code.ensure_loaded?(ElixirSense.Plugin) do
             other
         end)
 
+      first = behaviour |> Module.split() |> Enum.at(0)
+
       custom =
         for module <- module_store.by_behaviour[behaviour] || [],
             mod_str = inspect(module),
-            !String.starts_with?(mod_str, "Spark."),
+            !String.starts_with?(mod_str, "#{first}."),
             Util.match_module?(mod_str, hint) do
           {doc, _} = Introspection.get_module_docs_summary(module)
 

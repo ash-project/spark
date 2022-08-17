@@ -28,6 +28,14 @@ defmodule Spark.Dsl.Transformer do
     quote do
       @behaviour Spark.Dsl.Transformer
 
+      def sort_after(transformers) do
+        Stream.filter(transformers, &after?/1)
+      end
+
+      def sort_before(transformers) do
+        Stream.filter(transformers, &before?/1)
+      end
+
       def before?(_), do: false
       def after?(_), do: false
       def after_compile?, do: false
@@ -233,68 +241,39 @@ defmodule Spark.Dsl.Transformer do
   end
 
   def sort(transformers) do
-    digraph = :digraph.new()
+    {after_compile, transformers} = Enum.split_with(transformers, & &1.after_compile?())
 
-    transformers
-    |> Enum.each(fn transformer ->
-      :digraph.add_vertex(digraph, transformer)
-    end)
-
-    transformers
-    |> Enum.each(fn left ->
+    dependencies =
       transformers
-      |> Enum.each(fn right ->
-        if left != right do
-          left_before_right? = left.before?(right) || right.after?(left)
-          left_after_right? = left.after?(right) || right.before?(left)
+      |> Stream.flat_map(fn module ->
+        transformers = List.delete(transformers, module)
 
-          cond do
-            # This is annoying, but some modules have `def after?(_), do: true`
-            # The idea being that they'd like to go after everything that isn't
-            # explicitly after it. Same with `def before?(_), do: true`
-            left_before_right? && left_after_right? ->
-              :ok
+        afters =
+          transformers
+          |> module.sort_after()
+          |> Stream.map(&{module, &1})
 
-            left_before_right? ->
-              :digraph.add_edge(digraph, left, right)
+        befores =
+          transformers
+          |> module.sort_before()
+          |> Stream.map(&{&1, module})
 
-            left_after_right? ->
-              :digraph.add_edge(digraph, right, left)
-
-            true ->
-              :ok
-          end
-        end
+        Stream.concat(afters, befores)
       end)
-    end)
+      |> Enum.into(MapSet.new())
 
-    transformers = walk_rest(digraph)
-    :digraph.delete(digraph)
+    reverse_dependencies =
+      dependencies
+      |> Stream.map(fn {l, r} -> {r, l} end)
+      |> Enum.into(MapSet.new())
 
-    transformers
-  end
+    conflicts = MapSet.intersection(dependencies, reverse_dependencies)
+    dependencies = MapSet.difference(dependencies, conflicts)
 
-  defp walk_rest(digraph, acc \\ []) do
-    case :digraph.vertices(digraph) do
-      [] ->
-        Enum.reverse(acc)
-
-      vertices ->
-        case Enum.find(vertices, &(:digraph.in_neighbours(digraph, &1) == [])) do
-          nil ->
-            case Enum.find(vertices, &(:digraph.out_neighbours(digraph, &1) == [])) do
-              nil ->
-                raise "Cycle detected in transformer order"
-
-              vertex ->
-                :digraph.del_vertex(digraph, vertex)
-                walk_rest(digraph, acc ++ [vertex])
-            end
-
-          vertex ->
-            :digraph.del_vertex(digraph, vertex)
-            walk_rest(digraph, [vertex | acc])
-        end
-    end
+    Graph.new(type: :directed)
+    |> Graph.add_vertices(transformers)
+    |> Graph.add_edges(dependencies)
+    |> Graph.topsort()
+    |> Enum.reverse(after_compile)
   end
 end
