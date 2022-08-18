@@ -35,7 +35,6 @@ defmodule Spark.MixProject do
   end
 
   defp extras() do
-    # A copy of the public version in DocIndex
     "priv/documentation/**/*.md"
     |> Path.wildcard()
     |> Enum.map(fn path ->
@@ -61,7 +60,6 @@ defmodule Spark.MixProject do
   end
 
   defp groups_for_extras() do
-    # A copy of the public version in DocIndex
     "priv/documentation/*"
     |> Path.wildcard()
     |> Enum.map(fn folder ->
