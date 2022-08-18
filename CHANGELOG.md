@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.10](https://github.com/ash-project/spark/compare/v0.1.9...v0.1.10) (2022-08-18)
+
+
+
+
+### Improvements:
+
+* WIP on fixing the way we distribute doc files
+
 ## [v0.1.9](https://github.com/ash-project/spark/compare/v0.1.8...v0.1.9) (2022-08-17)
 
 
