@@ -80,7 +80,6 @@ defmodule Spark.MixProject do
     [
       name: :spark,
       licenses: ["MIT"],
-      files: [],
       extras: extras(),
       groups_for_extras: groups_for_extras(),
       links: %{
