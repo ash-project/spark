@@ -1,10 +1,30 @@
 defmodule Spark.OptionsHelpers do
   @moduledoc """
-  Helpers for working with nimble options
+  Helpers for working with our superset of nimble options.
+
+
+  ## Additional Types
+
+  Spark provides the following additional option types for use when building DSLs or validating options.
+
+  - `{:one_of, values}` - maps to `{:in, values}` for backwards compatibility
+  - `{:tagged_tuple, tag, inner_type}` - maps to `{tag, type}`
+  - `{:spark_behaviour, behaviour}` - expects a module that implements the given behaviour, and can be specified with options, i.e `mod` or `{mod, [opt: :val]}`
+  - `{:spark_behaviour, behaviour, builtin_module}` - Same as the above, but also accepts a `builtin_module`. The builtin_module is used to provide additional options for the elixir_sense plugin.
+  - `{:behaviour, behaviour}` - expects a module that implements a given behaviour.
+  - `{:spark, dsl_module}` - expects a module that is a `Spark.Dsl`
+  - `{:mfa_or_fun, arity}` - expects a function or MFA of a corresponding arity.
+  - `{:spark_type, module, builtin_function}` - a behaviour that defines `builtin_function/0` that returns a list of atoms that map to built in variations of that thing.
+  - `{:spark_type, module, builtin_function, templates}` - same as the above, but includes additional templates for elixir_sense autocomplete
+  - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
   """
 
   @type schema :: NimbleOptions.schema()
 
+  @doc """
+  Merges two schemas, and sets the `subsection` option on all options on the right
+  side.
+  """
   def merge_schemas(left, right, section \\ nil) do
     new_right =
       Enum.map(right, fn {key, value} ->
@@ -14,14 +34,23 @@ defmodule Spark.OptionsHelpers do
     Keyword.merge(left, new_right)
   end
 
+  @doc """
+  Sanitizes the option schema and validates with NimbleOptions.
+  """
   def validate(opts, schema) do
     NimbleOptions.validate(opts, sanitize_schema(schema))
   end
 
+  @doc """
+  Sanitizes the option schema and validates with NimbleOptions.
+  """
   def validate!(opts, schema) do
     NimbleOptions.validate!(opts, sanitize_schema(schema))
   end
 
+  @doc """
+  Creates markdown documentation for a given schema.
+  """
   def docs(schema) do
     schema
     |> Enum.reject(fn {_key, opts} ->

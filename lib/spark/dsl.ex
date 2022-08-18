@@ -40,6 +40,11 @@ defmodule Spark.Dsl do
   #{Spark.OptionsHelpers.docs(@using_schema)}
 
   See the callbacks defined in this module to augment the behavior/compilation of the module getting a Dsl.
+
+  ## Schemas/Data Types
+
+  Spark DSLs use a superset of `NimbleOptions` for the `schema` that makes up sections/entities of the DSL.
+  For more information, see `Spark.OptionsHelpers`.
   """
 
   @type opts :: Keyword.t()

@@ -34,10 +34,55 @@ defmodule Spark.MixProject do
     ]
   end
 
+  defp extras() do
+    # A copy of the public version in DocIndex
+    "priv/documentation/**/*.md"
+    |> Path.wildcard()
+    |> Enum.map(fn path ->
+      title =
+        path
+        |> Path.basename(".md")
+        |> String.split(~r/[-_]/)
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+        |> case do
+          "F A Q" ->
+            "FAQ"
+
+          other ->
+            other
+        end
+
+      {String.to_atom(path),
+       [
+         title: title
+       ]}
+    end)
+  end
+
+  defp groups_for_extras() do
+    # A copy of the public version in DocIndex
+    "priv/documentation/*"
+    |> Path.wildcard()
+    |> Enum.map(fn folder ->
+      name =
+        folder
+        |> Path.basename()
+        |> String.split(~r/[-_]/)
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+
+      {name, folder |> Path.join("**") |> Path.wildcard()}
+    end)
+  end
+
   defp package do
     [
       name: :spark,
       licenses: ["MIT"],
+      files: [],
+      extras: extras(),
+      groups_for_extras: groups_for_extras(),
       links: %{
         GitHub: "https://github.com/ash-project/spark"
       }

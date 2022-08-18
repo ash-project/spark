@@ -81,6 +81,54 @@ defmodule Spark.DocIndex do
     end
   end
 
+  @doc """
+  Pulls the hex docs extras from docs in the priv directory
+  """
+  def extras() do
+    # IF YOU CHANGE THIS, CHANGE THE PRIVATE VERSION IN MIX.EXS ALSO
+    "priv/documentation/**/*.md"
+    |> Path.wildcard()
+    |> Enum.map(fn path ->
+      title =
+        path
+        |> Path.basename(".md")
+        |> String.split(~r/[-_]/)
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+        |> case do
+          "F A Q" ->
+            "FAQ"
+
+          other ->
+            other
+        end
+
+      {String.to_atom(path),
+       [
+         title: title
+       ]}
+    end)
+  end
+
+  @doc """
+  Pulls the hex docs groups_for_extras from docs in the priv directory
+  """
+  def groups_for_extras() do
+    # IF YOU CHANGE THIS, CHANGE THE PRIVATE VERSION IN MIX.EXS ALSO
+    "priv/documentation/*"
+    |> Path.wildcard()
+    |> Enum.map(fn folder ->
+      name =
+        folder
+        |> Path.basename()
+        |> String.split(~r/[-_]/)
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(" ")
+
+      {name, folder |> Path.join("**") |> Path.wildcard()}
+    end)
+  end
+
   def find_undocumented_items(doc_index) do
     Enum.each(doc_index.extensions(), fn extension ->
       Enum.each(
