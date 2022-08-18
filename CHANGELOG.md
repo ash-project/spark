@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.12](https://github.com/ash-project/spark/compare/v0.1.11...v0.1.12) (2022-08-18)
+
+
+
+
+### Improvements:
+
+* add default to get_option
+
+* fix package files
+
 ## [v0.1.11](https://github.com/ash-project/spark/compare/v0.1.10...v0.1.11) (2022-08-18)
 
 
