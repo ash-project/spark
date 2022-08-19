@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.13](https://github.com/ash-project/spark/compare/v0.1.12...v0.1.13) (2022-08-19)
+
+
+
+
+### Improvements:
+
+* try out adding extra package metadata
+
 ## [v0.1.12](https://github.com/ash-project/spark/compare/v0.1.11...v0.1.12) (2022-08-18)
 
 
