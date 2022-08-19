@@ -36,7 +36,7 @@ defmodule Spark.MixProject do
   end
 
   defp extras() do
-    "priv/documentation/**/*.md"
+    "documentation/**/*.md"
     |> Path.wildcard()
     |> Enum.map(fn path ->
       title =
@@ -61,7 +61,7 @@ defmodule Spark.MixProject do
   end
 
   defp groups_for_extras() do
-    "priv/documentation/*"
+    "documentation/*"
     |> Path.wildcard()
     |> Enum.map(fn folder ->
       name =
@@ -80,78 +80,9 @@ defmodule Spark.MixProject do
     [
       main: "quick-start",
       source_ref: "v#{@version}",
-      logo: "logos/small-logo.png",
       extra_section: "GUIDES",
       extras: extras(),
-      groups_for_extras: groups_for_extras(),
-      groups_for_modules: [
-        entrypoint: [
-          Ash,
-          Ash.Api,
-          Ash.Query,
-          Ash.Changeset,
-          Ash.Resource.Dsl,
-          Ash.Api.Dsl,
-          Ash.CodeInterface
-        ],
-        tools: [
-          Ash.Filter,
-          Ash.Sort
-        ],
-        formatting: [
-          Ash.ResourceFormatter
-        ],
-        validations: ~r/Ash.Resource.Validation/,
-        changes: ~r/Ash.Resource.Change/,
-        calculations: [
-          ~r/Ash.Resource.Calculation/,
-          Ash.Query.Calculation,
-          Ash.Calculation
-        ],
-        values: [
-          Ash.CiString
-        ],
-        type: ~r/Ash.Type/,
-        data_layer: ~r/Ash.DataLayer/,
-        authorizer: ~r/Ash.Authorizer/,
-        pagination: ~r/Ash.Page/,
-        notifications: ~r/Ash.Notifier/,
-        "resource dsl transformers": ~r/Ash.Resource.Transformers/,
-        "api dsl transformers": ~r/Ash.Api.Transformers/,
-        "filter operators": ~r/Ash.Query.Operator/,
-        "filter functions": ~r/Ash.Query.Function/,
-        "query expressions": [
-          Ash.Query.BooleanExpression,
-          Ash.Query.Not,
-          Ash.Query.Ref,
-          Ash.Query.Call
-        ],
-        filter: ~r/Ash.Filter/,
-        "resource introspection": ~r/Ash.Resource/,
-        "api introspection": ~r/Ash.Api/,
-        engine: [
-          ~r/Ash.Engine/
-        ],
-        registry: [Ash.Registry],
-        "registry introspection": ~r/Ash.Registry/,
-        errors: [
-          Ash.Error,
-          Ash.Error.Stacktrace,
-          Ash.Error.Exception
-        ],
-        flow: [
-          Ash.Flow
-        ],
-        miscellaneous: [
-          Ash.UUID,
-          Ash.Changeset.ManagedRelationshipHelpers,
-          Ash.NotLoaded,
-          Ash.Query.Aggregate,
-          Ash.Query.Type,
-          Ash.SatSolver
-        ],
-        comparable: ~r/Comparable/
-      ]
+      groups_for_extras: groups_for_extras()
     ]
   end
 

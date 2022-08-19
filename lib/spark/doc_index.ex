@@ -35,7 +35,7 @@ defmodule Spark.DocIndex do
 
   @type guide :: %{
           name: String.t(),
-          text: String.t(),
+          path: String.t(),
           category: String.t() | nil,
           route: String.t() | nil
         }
@@ -47,33 +47,33 @@ defmodule Spark.DocIndex do
   @callback default_guide() :: String.t()
 
   defmacro __using__(opts) do
-    quote bind_quoted: [otp_app: opts[:otp_app], guides_from: opts[:guides_from]] do
+    quote bind_quoted: [guides_from: opts[:guides_from]] do
       @behaviour Spark.DocIndex
+
+      @guides guides_from
+              |> Path.wildcard()
+              |> Enum.map(fn path ->
+                path
+                |> Path.split()
+                |> Enum.reverse()
+                |> Enum.take(2)
+                |> Enum.reverse()
+                |> case do
+                  [category, file] ->
+                    %{
+                      name: Spark.DocIndex.to_name(Path.rootname(file)),
+                      category: Spark.DocIndex.to_name(category),
+                      path: path,
+                      route: "#{Spark.DocIndex.to_path(category)}/#{Spark.DocIndex.to_path(file)}"
+                    }
+                end
+              end)
 
       if guides_from do
         @impl Spark.DocIndex
         # sobelow_skip ["Traversal.FileModule"]
         def guides do
-          unquote(otp_app)
-          |> :code.priv_dir()
-          |> Path.join(unquote(guides_from))
-          |> Path.wildcard()
-          |> Enum.map(fn path ->
-            path
-            |> Path.split()
-            |> Enum.reverse()
-            |> Enum.take(2)
-            |> Enum.reverse()
-            |> case do
-              [category, file] ->
-                %{
-                  name: Spark.DocIndex.to_name(Path.rootname(file)),
-                  category: Spark.DocIndex.to_name(category),
-                  text: File.read!(path),
-                  route: "#{Spark.DocIndex.to_path(category)}/#{Spark.DocIndex.to_path(file)}"
-                }
-            end
-          end)
+          @guides
         end
 
         defoverridable guides: 0
