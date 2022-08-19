@@ -16,9 +16,6 @@ defmodule Spark.MixProject do
       description: @description,
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases(),
-      extra: %{
-        meta: :data
-      },
       source_url: "https://github.com/ash-project/spark",
       homepage_url: "https://github.com/ash-project/spark"
     ]
