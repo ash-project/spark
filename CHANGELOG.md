@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.15](https://github.com/ash-project/spark/compare/v0.1.14...v0.1.15) (2022-08-19)
+
+
+
+
+### Improvements:
+
+* work on doc index
+
 ## [v0.1.14](https://github.com/ash-project/spark/compare/v0.1.13...v0.1.14) (2022-08-19)
 
 
