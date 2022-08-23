@@ -322,10 +322,6 @@ defmodule Spark.Dsl.Extension do
 
     #{table_of_contents}
 
-    Introspection Target:
-
-    `#{inspect(entity.target)}`
-
     #{examples}
 
     #{options}
