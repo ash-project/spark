@@ -14,9 +14,6 @@ defmodule Spark.SparkDocIndex do
   def for_library, do: "spark"
 
   @impl true
-  def default_guide, do: "Example"
-
-  @impl true
   def extensions, do: []
 
   @impl true
