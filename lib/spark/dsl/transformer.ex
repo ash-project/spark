@@ -2,7 +2,7 @@ defmodule Spark.Dsl.Transformer do
   @moduledoc """
   A transformer manipulates and/or validates the entire DSL state of a resource.
 
-  It's `transform/2` takes a `map`, which is just the values/configurations at each point
+  It's `transform/1` takes a `map`, which is just the values/configurations at each point
   of the DSL. Don't manipulate it directly, if possible, instead use functions like
   `get_entities/3` and `replace_entity/5` to manipulate it.
 
@@ -11,8 +11,7 @@ defmodule Spark.Dsl.Transformer do
 
   Return `true` in `after_compile/0` to have the transformer run in an `after_compile` hook,
   but keep in mind that no modifications to the dsl structure will be retained, so there is no
-  point in returning a new dsl structure from `transform/2` if `after_compile/0` is defined. Instead,
-  simply return `:ok` or `{:error, error}`
+  real point in modifying the dsl that you return.
   """
   @callback transform(map) ::
               :ok
