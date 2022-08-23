@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.16](https://github.com/ash-project/spark/compare/v0.1.15...v0.1.16) (2022-08-23)
+
+
+
+
+### Improvements:
+
+* remove `default_guide/1`
+
 ## [v0.1.15](https://github.com/ash-project/spark/compare/v0.1.14...v0.1.15) (2022-08-19)
 
 
