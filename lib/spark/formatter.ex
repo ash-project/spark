@@ -90,8 +90,8 @@ defmodule Spark.Formatter do
         patches,
         false ->
           case get_extensions(body, config) do
-            {:ok, extensions, type} ->
-              replacement = format_resource(body, extensions, config, type)
+            {:ok, extensions, type, using} ->
+              replacement = format_resource(body, extensions, config, type, using)
 
               patches =
                 body
@@ -190,7 +190,7 @@ defmodule Spark.Formatter do
     )
   end
 
-  defp format_resource(body, extensions, config, type) do
+  defp format_resource(body, extensions, config, _type, using) do
     sections =
       extensions
       |> Enum.flat_map(fn extension ->
@@ -198,7 +198,7 @@ defmodule Spark.Formatter do
           {extension, section}
         end)
       end)
-      |> sort_sections(config[type][:section_order])
+      |> sort_sections(config[using][:section_order])
 
     section_names = Enum.map(sections, fn {_, section} -> section.name end)
 
@@ -265,7 +265,7 @@ defmodule Spark.Formatter do
 
         if Keyword.has_key?(config, using) do
           type = config[using][:type] || using
-          {:ok, parse_extensions(opts, config, type), type}
+          {:ok, parse_extensions(opts, config, type), type, using}
         end
 
       _ ->
