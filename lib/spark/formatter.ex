@@ -264,7 +264,7 @@ defmodule Spark.Formatter do
           end
 
         if Keyword.has_key?(config, using) do
-          {:ok, parse_extensions(opts, config, using), using}
+          {:ok, parse_extensions(opts, config, using), config[using][:type] || using}
         end
 
       _ ->
