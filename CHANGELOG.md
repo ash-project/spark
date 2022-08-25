@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.18](https://github.com/ash-project/spark/compare/v0.1.17...v0.1.18) (2022-08-25)
+
+
+
+
+### Bug Fixes:
+
+* fix base resource pattern
+
+* using type config in more places
+
+* use configured type
+
+### Improvements:
+
+* add otp_app getter
+
 ## [v0.1.17](https://github.com/ash-project/spark/compare/v0.1.16...v0.1.17) (2022-08-23)
 
 
