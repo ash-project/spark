@@ -21,4 +21,9 @@ defmodule Spark do
   def extensions(module) do
     Spark.Dsl.Extension.get_persisted(module, :extensions, [])
   end
+
+  @doc "Returns the configured otp_app of a given DSL instance"
+  def otp_app(module) do
+    Spark.Dsl.Extension.get_persisted(module, :otp_app)
+  end
 end
