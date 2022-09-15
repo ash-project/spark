@@ -110,35 +110,31 @@ defmodule Spark.Dsl.Extension do
 
   @callback sections() :: [Spark.Dsl.section()]
   @callback transformers() :: [module]
+  @callback explain(map) :: String.t() | nil
+
+  @optional_callbacks explain: 1
 
   defp dsl!(resource) do
     resource.spark_dsl_config()
-  rescue
-    _ in [UndefinedFunctionError, ArgumentError] ->
-      try do
-        Module.get_attribute(resource, :spark_dsl_config) || %{}
-      rescue
-        ArgumentError ->
-          try do
-            resource.spark_dsl_config()
-          rescue
-            _ ->
-              reraise ArgumentError,
-                      """
-                      No such entity #{inspect(resource)} found.
-                      """,
-                      __STACKTRACE__
-          end
-      end
   end
 
   @doc "Get the entities configured for a given section"
+  def get_entities(map, path) when is_map(map) do
+    Spark.Dsl.Transformer.get_entities(map, path) || []
+  end
+
   def get_entities(resource, path) do
     dsl!(resource)[path][:entities] || []
   end
 
   @doc "Get a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
-  def get_persisted(resource, key, default \\ nil) do
+  def get_persisted(resource, key, default \\ nil)
+
+  def get_persisted(map, key, default) when is_map(map) do
+    Spark.Dsl.Transformer.get_persisted(map, key, default)
+  end
+
+  def get_persisted(resource, key, default) do
     Map.get(dsl!(resource)[:persist] || %{}, key, default)
   end
 
@@ -147,7 +143,23 @@ defmodule Spark.Dsl.Extension do
 
   Checks to see if it has been overridden via configuration.
   """
-  def get_opt(resource, path, value, default, configurable? \\ false) do
+  def get_opt(resource, path, value, default \\ nil, configurable? \\ false)
+
+  def get_opt(map, path, value, default, configurable?) when is_map(map) do
+    if configurable? do
+      case get_opt_config(Spark.Dsl.Transformer.get_persisted(map, :module), path, value) do
+        {:ok, value} ->
+          value
+
+        _ ->
+          Spark.Dsl.Transformer.get_option(map, path, value, default)
+      end
+    else
+      Spark.Dsl.Transformer.get_option(map, path, value, default)
+    end
+  end
+
+  def get_opt(resource, path, value, default, configurable?) do
     path = List.wrap(path)
 
     if configurable? do
@@ -372,7 +384,8 @@ defmodule Spark.Dsl.Extension do
             sections: opts[:sections] || [],
             transformers: opts[:transformers] || [],
             module_prefix: opts[:module_prefix]
-          ] do
+          ],
+          generated: true do
       alias Spark.Dsl.Extension
 
       @behaviour Extension
@@ -409,9 +422,24 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
+  def explain(extensions, dsl_state) do
+    extensions
+    |> Enum.filter(&function_exported?(&1, :explain, 1))
+    |> Enum.map(&{&1, &1.explain(dsl_state)})
+    |> Enum.reject(fn {_, docs} -> docs in [nil, ""] end)
+    |> Enum.map_join("\n", fn {extension, docs} ->
+      """
+      ## #{inspect(extension)}
+
+      #{docs}
+      """
+    end)
+  end
+
+  @doc false
   def prepare(extensions) do
     body =
-      quote location: :keep do
+      quote generated: true, location: :keep do
         @extensions unquote(extensions)
       end
 
@@ -419,7 +447,7 @@ defmodule Spark.Dsl.Extension do
       for extension <- extensions || [] do
         extension = Macro.expand_once(extension, __ENV__)
 
-        quote location: :keep do
+        quote generated: true, location: :keep do
           require Spark.Dsl.Extension
           import unquote(extension), only: :macros
         end
@@ -565,7 +593,8 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   defmacro build(extension, module_prefix, sections) do
-    quote bind_quoted: [sections: sections, extension: extension, module_prefix: module_prefix] do
+    quote generated: true,
+          bind_quoted: [sections: sections, extension: extension, module_prefix: module_prefix] do
       alias Spark.Dsl.Extension
 
       for section <- sections do
@@ -582,7 +611,8 @@ defmodule Spark.Dsl.Extension do
             extension: extension,
             module_prefix: module_prefix,
             unimports: Macro.escape(unimports)
-          ] do
+          ],
+          generated: true do
       alias Spark.Dsl
 
       {section_modules, entity_modules, opts_module} =
@@ -607,21 +637,21 @@ defmodule Spark.Dsl.Extension do
 
         configured_imports =
           for module <- unquote(section.imports) do
-            quote do
+            quote generated: true do
               import unquote(module)
             end
           end
 
         entity_imports =
           for module <- unquote(entity_modules) do
-            quote do
+            quote generated: true do
               import unquote(module), only: :macros
             end
           end
 
         section_imports =
           for module <- unquote(section_modules) do
-            quote do
+            quote generated: true do
               import unquote(module), only: :macros
             end
           end
@@ -631,7 +661,7 @@ defmodule Spark.Dsl.Extension do
             []
           else
             [
-              quote do
+              quote generated: true do
                 import unquote(opts_module)
               end
             ]
@@ -639,21 +669,21 @@ defmodule Spark.Dsl.Extension do
 
         configured_unimports =
           for module <- unquote(section.imports) do
-            quote do
+            quote generated: true do
               import unquote(module), only: []
             end
           end
 
         entity_unimports =
           for module <- unquote(entity_modules) do
-            quote do
+            quote generated: true do
               import unquote(module), only: []
             end
           end
 
         section_unimports =
           for module <- unquote(section_modules) do
-            quote do
+            quote generated: true do
               import unquote(module), only: []
             end
           end
@@ -663,7 +693,7 @@ defmodule Spark.Dsl.Extension do
             []
           else
             [
-              quote do
+              quote generated: true do
                 import unquote(opts_module), only: []
               end
             ]
@@ -675,7 +705,7 @@ defmodule Spark.Dsl.Extension do
           configured_imports ++
           unimports ++
           [
-            quote do
+            quote generated: true do
               unquote(body[:do])
 
               current_config =
@@ -748,7 +778,7 @@ defmodule Spark.Dsl.Extension do
 
     entity_unimports =
       for module <- entity_modules do
-        quote do
+        quote generated: true do
           import unquote(module), only: []
         end
       end
@@ -760,7 +790,7 @@ defmodule Spark.Dsl.Extension do
 
     section_unimports =
       for module <- section_modules do
-        quote do
+        quote generated: true do
           import unquote(module), only: []
         end
       end
@@ -770,7 +800,7 @@ defmodule Spark.Dsl.Extension do
         []
       else
         [
-          quote do
+          quote generated: true do
             import unquote(opts_mod_name), only: []
           end
         ]
@@ -829,7 +859,7 @@ defmodule Spark.Dsl.Extension do
         {:module, module, _, _} =
           Module.create(
             mod_name,
-            quote do
+            quote generated: true do
               @moduledoc false
               alias Spark.Dsl
 
@@ -852,7 +882,8 @@ defmodule Spark.Dsl.Extension do
     if opts_mod_name do
       Module.create(
         opts_mod_name,
-        quote bind_quoted: [
+        quote generated: true,
+              bind_quoted: [
                 section: Macro.escape(section),
                 section_path: path ++ [section.name],
                 extension: extension
@@ -884,7 +915,7 @@ defmodule Spark.Dsl.Extension do
                     value
                 end
 
-              quote do
+              quote generated: true do
                 current_sections = Process.get({__MODULE__, :spark_sections}, [])
 
                 unless {unquote(extension), unquote(section_path)} in current_sections do
@@ -956,7 +987,7 @@ defmodule Spark.Dsl.Extension do
           unimports =
             unimports ++
               Enum.map([options_mod_name | nested_entity_mod_names], fn mod_name ->
-                quote do
+                quote generated: true do
                   import unquote(mod_name), only: []
                 end
               end)
@@ -984,7 +1015,8 @@ defmodule Spark.Dsl.Extension do
 
     Module.create(
       mod_name,
-      quote bind_quoted: [
+      quote generated: true,
+            bind_quoted: [
               extension: extension,
               entity: Macro.escape(entity),
               args: Macro.escape(args),
@@ -1067,7 +1099,7 @@ defmodule Spark.Dsl.Extension do
           code =
             unimports ++
               [
-                quote do
+                quote generated: true do
                   section_path = unquote(section_path)
                   entity_name = unquote(entity_name)
                   extension = unquote(extension)
@@ -1201,7 +1233,7 @@ defmodule Spark.Dsl.Extension do
               ]
 
           # This is (for some reason I'm not really sure why) necessary to keep the imports within a lexical scope
-          quote do
+          quote generated: true do
             try do
               unquote(code)
             rescue
@@ -1219,7 +1251,7 @@ defmodule Spark.Dsl.Extension do
 
   defmacro import_mods(mods) do
     for mod <- mods do
-      quote do
+      quote generated: true do
         import unquote(mod)
       end
     end
@@ -1227,7 +1259,7 @@ defmodule Spark.Dsl.Extension do
 
   defmacro unimport_mods(mods) do
     for mod <- mods do
-      quote do
+      quote generated: true do
         import unquote(mod), only: []
       end
     end
@@ -1241,7 +1273,8 @@ defmodule Spark.Dsl.Extension do
       ) do
     Module.create(
       module_name,
-      quote bind_quoted: [
+      quote generated: true,
+            bind_quoted: [
               entity: Macro.escape(entity),
               nested_entity_path: nested_entity_path
             ] do
@@ -1276,7 +1309,7 @@ defmodule Spark.Dsl.Extension do
                   value
               end
 
-            quote do
+            quote generated: true do
               current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
               Process.put(

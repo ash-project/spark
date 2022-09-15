@@ -24,7 +24,7 @@ defmodule Spark.Dsl.Transformer do
   @callback after_compile?() :: boolean
 
   defmacro __using__(_) do
-    quote do
+    quote generated: true do
       @behaviour Spark.Dsl.Transformer
 
       def before?(_), do: false

@@ -253,8 +253,7 @@ defmodule Spark.Dsl do
   end
 
   defmacro __before_compile__(_env) do
-    quote unquote: false, generated: true do
-      @type t :: __MODULE__
+    quote generated: true, bind_quoted: [dsl: __MODULE__] do
       require Spark.Dsl.Extension
 
       Module.register_attribute(__MODULE__, :spark_is, persist: true)
@@ -275,6 +274,16 @@ defmodule Spark.Dsl do
       @opts
       |> @spark_parent.handle_before_compile()
       |> Code.eval_quoted([], __ENV__)
+
+      if @moduledoc do
+        @moduledoc """
+        #{@moduledoc}
+
+        #{Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)}
+        """
+      else
+        @moduledoc Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)
+      end
     end
   end
 

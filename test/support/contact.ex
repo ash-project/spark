@@ -30,6 +30,13 @@ defmodule Spark.Test.Contact do
     }
 
     use Spark.Dsl.Extension, sections: [@personal_details, @address]
+
+    def explain(dsl_state) do
+      """
+      first_name: #{Spark.Test.Contact.Info.first_name(dsl_state)}
+      last_name: #{Spark.Test.Contact.Info.last_name(dsl_state)}
+      """
+    end
   end
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]

@@ -11,4 +11,12 @@ defmodule Spark.DslTest do
       end
     end
   end
+
+  describe "docs_test" do
+    test "adds docs" do
+      {:docs_v1, _, _, _, %{"en" => docs}, _, _} = Code.fetch_docs(TedDansen)
+      assert docs =~ "first_name: Ted"
+      assert docs =~ "last_name: Dansen"
+    end
+  end
 end

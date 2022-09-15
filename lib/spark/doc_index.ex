@@ -46,7 +46,7 @@ defmodule Spark.DocIndex do
   @callback code_modules() :: [{String.t(), list(module())}]
 
   defmacro __using__(opts) do
-    quote bind_quoted: [guides_from: opts[:guides_from]] do
+    quote generated: true, bind_quoted: [guides_from: opts[:guides_from]] do
       @behaviour Spark.DocIndex
 
       @guides guides_from
