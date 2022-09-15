@@ -4,7 +4,7 @@ Writing extensions generally involves three main components.
 
 ## The DSL declaration
 
-The DSL is declared as a series of `Spark.Dsl.Section`, which can contain `Spark.Dsl.Entity` and further `Spark.Dsl.Section` structs. See `Spark.DSl.Section` and `Spark.Dsl.Entity` for more information.
+The DSL is declared as a series of `Spark.Dsl.Section`, which can contain `Spark.Dsl.Entity` and further `Spark.Dsl.Section` structs. See `Spark.Dsl.Section` and `Spark.Dsl.Entity` for more information.
 
 ## Transformers
 
