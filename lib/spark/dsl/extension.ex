@@ -116,6 +116,23 @@ defmodule Spark.Dsl.Extension do
 
   defp dsl!(resource) do
     resource.spark_dsl_config()
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        Module.get_attribute(resource, :spark_dsl_config) || %{}
+      rescue
+        ArgumentError ->
+          try do
+            resource.spark_dsl_config()
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      No such entity #{inspect(resource)} found.
+                      """,
+                      __STACKTRACE__
+          end
+      end
   end
 
   @doc "Get the entities configured for a given section"
