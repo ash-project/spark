@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.20](https://github.com/ash-project/spark/compare/v0.1.19...v0.1.20) (2022-09-15)
+
+
+
+
+### Improvements:
+
+* preliminary support for passing maps to introspection
+
+* allow extensions to modify the module docs of an extension
+
 ## [v0.1.19](https://github.com/ash-project/spark/compare/v0.1.18...v0.1.19) (2022-08-31)
 
 
