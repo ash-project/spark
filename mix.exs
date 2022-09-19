@@ -78,7 +78,7 @@ defmodule Spark.MixProject do
   defp docs do
     # The main page in the docs
     [
-      main: "quick-start",
+      main: "get-started-with-spark",
       source_ref: "v#{@version}",
       extra_section: "GUIDES",
       extras: extras(),
