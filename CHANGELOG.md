@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.24](https://github.com/ash-project/spark/compare/v0.1.23...v0.1.24) (2022-09-20)
+
+
+
+
+### Improvements:
+
+* properly induce export dependency and still use aliases
+
 ## [v0.1.23](https://github.com/ash-project/spark/compare/v0.1.22...v0.1.23) (2022-09-20)
 
 
