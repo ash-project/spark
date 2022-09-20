@@ -15,7 +15,7 @@ What you get for your DSL when you implement it with Spark:
 ```elixir
 def deps do
   [
-    {:spark, "~> 0.1.24"}
+    {:spark, "~> 0.1.25"}
   ]
 end
 ```
