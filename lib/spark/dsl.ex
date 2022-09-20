@@ -48,6 +48,8 @@ defmodule Spark.Dsl do
   """
 
   @type opts :: Keyword.t()
+  @type t :: map()
+
   @doc """
   Validate/add options. Those options will be passed to `handle_opts` and `handle_before_compile`
   """
