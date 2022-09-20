@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.23](https://github.com/ash-project/spark/compare/v0.1.22...v0.1.23) (2022-09-20)
+
+
+
+
+### Improvements:
+
+* no dependencies hacked into export dependencies
+
 ## [v0.1.22](https://github.com/ash-project/spark/compare/v0.1.21...v0.1.22) (2022-09-20)
 
 
