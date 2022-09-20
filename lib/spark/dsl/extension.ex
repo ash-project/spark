@@ -1362,6 +1362,7 @@ defmodule Spark.Dsl.Extension do
   def expand_alias(ast, %Macro.Env{} = env) do
     Macro.postwalk(ast, fn
       {:__aliases__, _, _} = node ->
+        # This is basically just `Macro.expand_literal/2`
         Macro.expand(node, %{env | function: {:spark_dsl_config, 0}})
 
       other ->
@@ -1372,7 +1373,11 @@ defmodule Spark.Dsl.Extension do
   def expand_alias_no_require(ast, %Macro.Env{} = env) do
     Macro.postwalk(ast, fn
       {:__aliases__, _, _} = node ->
-        Macro.expand(node, %{env | lexical_tracker: nil})
+        mod = Macro.expand(node, %{env | lexical_tracker: nil})
+
+        quote do
+          import unquote(mod), only: []
+        end
 
       other ->
         other
