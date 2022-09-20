@@ -926,7 +926,7 @@ defmodule Spark.Dsl.Extension do
                     Spark.Dsl.Extension.expand_alias(value, __CALLER__)
 
                   field in section.no_depend_modules ->
-                    Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
+                    Spark.Dsl.Extension.expand_alias_no_require(value)
 
                   true ->
                     value
@@ -1085,7 +1085,7 @@ defmodule Spark.Dsl.Extension do
                   Spark.Dsl.Extension.expand_alias(value, __CALLER__)
 
                 key in entity.no_depend_modules ->
-                  Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
+                  Spark.Dsl.Extension.expand_alias_no_require(value)
 
                 true ->
                   value
@@ -1106,7 +1106,7 @@ defmodule Spark.Dsl.Extension do
                   {key, Spark.Dsl.Extension.expand_alias(value, __CALLER__)}
 
                 key in entity.no_depend_modules ->
-                  {key, Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)}
+                  {key, Spark.Dsl.Extension.expand_alias_no_require(value)}
 
                 true ->
                   {key, value}
@@ -1320,7 +1320,7 @@ defmodule Spark.Dsl.Extension do
                   Spark.Dsl.Extension.expand_alias(value, __CALLER__)
 
                 key in no_depend_modules ->
-                  Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
+                  Spark.Dsl.Extension.expand_alias_no_require(value)
 
                 true ->
                   value
@@ -1370,13 +1370,11 @@ defmodule Spark.Dsl.Extension do
     end)
   end
 
-  def expand_alias_no_require(ast, %Macro.Env{} = env) do
+  def expand_alias_no_require(ast) do
     Macro.postwalk(ast, fn
       {:__aliases__, _, _} = node ->
-        mod = Macro.expand(node, %{env | lexical_tracker: nil})
-
         quote do
-          import unquote(mod), only: []
+          import unquote(node), only: []
         end
 
       other ->
