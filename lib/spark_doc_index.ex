@@ -17,6 +17,16 @@ defmodule Spark.SparkDocIndex do
   def extensions, do: []
 
   @impl true
+  @spec mix_tasks() :: [{String.t(), list(module)}]
+  def mix_tasks do
+    {
+      "Formatting" => [
+        Mix.Tasks.Spark.Formatter
+      ]
+    }
+  end
+
+  @impl true
   @spec code_modules :: [{String.t(), list(module)}]
   def code_modules do
     [

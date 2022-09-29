@@ -44,6 +44,9 @@ defmodule Spark.DocIndex do
   @callback for_library() :: String.t()
   @callback guides() :: list(guide())
   @callback code_modules() :: [{String.t(), list(module())}]
+  @callback mix_tasks() :: [{String.t(), list(module())}]
+
+  @optional_callbacks code_modules: 0, mix_tasks: 0
 
   defmacro __using__(opts) do
     quote generated: true, bind_quoted: [guides_from: opts[:guides_from]] do
