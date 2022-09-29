@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.26](https://github.com/ash-project/spark/compare/v0.1.25...v0.1.26) (2022-09-29)
+
+
+
+
+### Improvements:
+
+* add `mix_tasks/0` to `DocIndex`
+
 ## [v0.1.25](https://github.com/ash-project/spark/compare/v0.1.24...v0.1.25) (2022-09-20)
 
 
