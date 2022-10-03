@@ -19,12 +19,14 @@ defmodule Spark.SparkDocIndex do
   @impl true
   @spec mix_tasks() :: [{String.t(), list(module)}]
   def mix_tasks do
-    {
-      "Formatting",
-      [
-        Mix.Tasks.Spark.Formatter
-      ]
-    }
+    [
+      {
+        "Formatting",
+        [
+          Mix.Tasks.Spark.Formatter
+        ]
+      }
+    ]
   end
 
   @impl true
