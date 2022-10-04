@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.27](https://github.com/ash-project/spark/compare/v0.1.26...v0.1.27) (2022-10-04)
+
+
+
+
+### Bug Fixes:
+
+* go back to fully hiding `no_require` modules
+
 ## [v0.1.26](https://github.com/ash-project/spark/compare/v0.1.25...v0.1.26) (2022-09-29)
 
 
