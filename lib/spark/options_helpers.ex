@@ -19,7 +19,64 @@ defmodule Spark.OptionsHelpers do
   - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
   """
 
-  @type schema :: NimbleOptions.schema()
+  @typedoc """
+  Spark provides additional types on top of those provided by [NimbleOptions](https://hex.pm/packages/nimble_options).
+  """
+  @type type ::
+          nimble_types
+          | {:one_of, [type]}
+          | {:tagged_tuple, tag :: type, inner_type :: type}
+          | {:spark_behaviour, module}
+          | {:spark_behaviour, module, module}
+          | {:behavior, module}
+          | {:spark, module}
+          | {:mfa_or_fun, non_neg_integer()}
+          | {:spark_type, module, builtin_function :: atom}
+          | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
+          | :literal
+
+  @typedoc """
+  The types as specified by the [NimbleOptions docs](https://hexdocs.pm/nimble_options/NimbleOptions.html#module-types).
+  """
+  @type nimble_types ::
+          :any
+          | :keyword_list
+          | :non_empty_keyword_list
+          | :map
+          | {:map, key_type :: type, value_type :: type}
+          | :atom
+          | :string
+          | :boolean
+          | :integer
+          | :non_neg_integer
+          | :pos_integer
+          | :float
+          | :timeout
+          | :pid
+          | :reference
+          | :mfa
+          | :mod_arg
+          | {:fun, arity :: non_neg_integer}
+          | {:in, [type] | Range.t()}
+          | {:custom, module, function :: atom, args :: [any]}
+          | {:or, [type]}
+          | {:list, type | {:keyword_list, type} | {:non_empty_keyword_list, type}}
+          | {:tuple, [type | {:keyword_list, type} | {:non_empty_keyword_list, type}]}
+
+  @typedoc """
+  The schema type, as defined by the [NimbleOptions docs](https://hexdocs.pm/nimble_options/NimbleOptions.html#module-schema-options).
+  """
+  @type schema :: [
+          {:type, type | :any}
+          | {:required, boolean}
+          | {:default, :any}
+          | {:keys, [{atom, [type: type]}]}
+          | {:deprecated, String.t()}
+          | {:doc, String.t()}
+          | {:subsection, String.t()}
+          | {:type_doc, false | String.t()}
+          | {:rename_to, atom}
+        ]
 
   @doc """
   Merges two schemas, and sets the `subsection` option on all options on the right
