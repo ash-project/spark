@@ -254,39 +254,42 @@ defmodule Spark.Dsl do
     end)
   end
 
-  defmacro __before_compile__(_env) do
-    quote generated: true, bind_quoted: [dsl: __MODULE__] do
-      require Spark.Dsl.Extension
+  defmacro __before_compile__(env) do
+    parent = Module.get_attribute(env.module, :spark_parent)
+    opts = Module.get_attribute(env.module, :opts)
+    parent_code = parent.handle_before_compile(opts)
 
-      Module.register_attribute(__MODULE__, :spark_is, persist: true)
-      Module.put_attribute(__MODULE__, :spark_is, @spark_is)
+    code =
+      quote generated: true, bind_quoted: [dsl: __MODULE__] do
+        require Spark.Dsl.Extension
 
-      Spark.Dsl.Extension.set_state(@persist)
+        Module.register_attribute(__MODULE__, :spark_is, persist: true)
+        Module.put_attribute(__MODULE__, :spark_is, @spark_is)
 
-      for {block, bindings} <- @spark_dsl_config[:eval] || [] do
-        Code.eval_quoted(block, bindings, __ENV__)
+        Spark.Dsl.Extension.set_state(@persist)
+
+        for {block, bindings} <- @spark_dsl_config[:eval] || [] do
+          Code.eval_quoted(block, bindings, __ENV__)
+        end
+
+        def __spark_placeholder__, do: nil
+
+        def spark_dsl_config do
+          @spark_dsl_config
+        end
+
+        if @moduledoc do
+          @moduledoc """
+          #{@moduledoc}
+
+          #{Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)}
+          """
+        else
+          @moduledoc Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)
+        end
       end
 
-      def __spark_placeholder__, do: nil
-
-      def spark_dsl_config do
-        @spark_dsl_config
-      end
-
-      @opts
-      |> @spark_parent.handle_before_compile()
-      |> Code.eval_quoted([], __ENV__)
-
-      if @moduledoc do
-        @moduledoc """
-        #{@moduledoc}
-
-        #{Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)}
-        """
-      else
-        @moduledoc Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)
-      end
-    end
+    [code, parent_code]
   end
 
   def is?(module, type) when is_atom(module) do
