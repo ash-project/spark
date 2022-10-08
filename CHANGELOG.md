@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.28](https://github.com/ash-project/spark/compare/v0.1.27...v0.1.28) (2022-10-08)
+
+
+
+
+### Bug Fixes:
+
+* resolve issue w/ Code.eval_quoted
+
+### Improvements:
+
+* OptionsHelpers: Add typespecs for options helpers. (#3)
+
 ## [v0.1.27](https://github.com/ash-project/spark/compare/v0.1.26...v0.1.27) (2022-10-04)
 
 
