@@ -2,6 +2,13 @@ defmodule Spark.Error.DslError do
   @moduledoc "Used when a DSL is incorrectly configured."
   defexception [:module, :message, :path]
 
+  @type t :: %__MODULE__{
+          __exception__: true,
+          module: nil | module,
+          message: String.t() | any,
+          path: [:atom]
+        }
+
   def message(%{module: module, message: message, path: nil}) do
     "[#{normalize_module_name(module)}]\n #{get_message(message)}"
   end
