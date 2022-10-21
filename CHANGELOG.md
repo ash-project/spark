@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.1.29](https://github.com/ash-project/spark/compare/v0.1.28...v0.1.29) (2022-10-21)
+
+
+
+
+### Improvements:
+
+* add `{:struct, Struct}` option type
+
+* DslError: Add type for `DslError` struct. (#4)
+
 ## [v0.1.28](https://github.com/ash-project/spark/compare/v0.1.27...v0.1.28) (2022-10-08)
 
 
