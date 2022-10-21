@@ -33,6 +33,7 @@ defmodule Spark.OptionsHelpers do
           | {:mfa_or_fun, non_neg_integer()}
           | {:spark_type, module, builtin_function :: atom}
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
+          | {:struct, module}
           | :literal
 
   @typedoc """
@@ -151,6 +152,9 @@ defmodule Spark.OptionsHelpers do
       {:tagged_tuple, tag, type} ->
         {:custom, __MODULE__, :tagged_tuple, [key, type, tag]}
 
+      {:struct, struct} ->
+        {:custom, __MODULE__, :struct, [struct]}
+
       {:list, values} ->
         {:list, sanitize_type(values, key)}
 
@@ -226,6 +230,9 @@ defmodule Spark.OptionsHelpers do
 
   def map(value) when is_map(value), do: {:ok, value}
   def map(_), do: {:error, "must be a map"}
+
+  def struct(value, struct) when is_struct(value, struct), do: {:ok, value}
+  def struct(_, struct), do: {:error, "must be a struct instance of #{inspect(struct)}"}
 
   @deprecated "Use {:list, :atom} instead"
   def list_of_atoms(value) do
