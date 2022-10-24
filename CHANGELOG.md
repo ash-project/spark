@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.0](https://github.com/ash-project/spark/compare/v0.1.29...v0.2.0) (2022-10-24)
+
+
+
+
+### Features:
+
+* add `Spark.Dsl.Builder`
+
 ## [v0.1.29](https://github.com/ash-project/spark/compare/v0.1.28...v0.1.29) (2022-10-21)
 
 
