@@ -39,7 +39,8 @@ defmodule Spark.SparkDocIndex do
          Spark.Dsl.Entity,
          Spark.Dsl.Extension,
          Spark.Dsl.Section,
-         Spark.Dsl.Transformer
+         Spark.Dsl.Transformer,
+         Spark.Dsl.Builder
        ]},
       {"Documentation",
        [
