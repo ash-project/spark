@@ -45,6 +45,9 @@ defmodule Spark.Dsl.Builder do
 
           {:error, error} ->
             {:error, error}
+
+          body ->
+            {:ok, body}
         end
       end
 
@@ -66,6 +69,9 @@ defmodule Spark.Dsl.Builder do
 
           {:error, error} ->
             {:error, error}
+
+          body ->
+            {:ok, body}
         end
       end
     end
