@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.1](https://github.com/ash-project/spark/compare/v0.2.0...v0.2.1) (2022-10-27)
+
+
+
+
+### Bug Fixes:
+
+* handle non tuple return in builder
+
 ## [v0.2.0](https://github.com/ash-project/spark/compare/v0.1.29...v0.2.0) (2022-10-24)
 
 
