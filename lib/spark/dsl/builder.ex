@@ -10,6 +10,7 @@ defmodule Spark.Dsl.Builder do
   end
 
   @type result :: {:ok, Spark.Dsl.t()} | {:error, term()}
+  @type input :: {:ok, Spark.Dsl.t()} | {:error, term()} | Spark.Dsl.t()
 
   defmacro defbuilder({func, _, [dsl_state | rest_args]}, do: body) do
     def_head? = Enum.any?(rest_args, &match?({:\\, _, _}, &1))
