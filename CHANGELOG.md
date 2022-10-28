@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.2](https://github.com/ash-project/spark/compare/v0.2.1...v0.2.2) (2022-10-28)
+
+
+
+
+### Improvements:
+
+* add `handle_nested_builders/2`
+
 ## [v0.2.1](https://github.com/ash-project/spark/compare/v0.2.0...v0.2.1) (2022-10-27)
 
 
