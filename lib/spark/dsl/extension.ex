@@ -761,6 +761,38 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
+  defmacro replace_funs(schema, opts) do
+    quote bind_quoted: [schema: schema, opts: opts] do
+      schema
+      |> Enum.filter(fn {_field, config} ->
+        is_tuple(config[:type]) &&
+          elem(config[:type], 0) == :spark_function_behaviour
+      end)
+      |> Enum.reduce(opts, fn {field, config}, opts ->
+        case Keyword.get(opts, field) do
+          {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+            {mod, arity} =
+              case config[:type] do
+                {_, _, {mod, arity}} -> {mod, arity}
+                {_, _, _, {mod, arity}} -> {mod, arity}
+              end
+
+            fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{field}"
+
+            @doc false
+            def unquote(fun_name)(unquote_splicing(args)) do
+              unquote(body)
+            end
+
+            Keyword.put(opts, field, {mod, fun: {__MODULE__, fun_name, []}})
+
+          other ->
+            opts
+        end
+      end)
+    end
+  end
+
   defp entity_mod_name(mod, nested_entity_path, section_path, entity) do
     nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
@@ -906,11 +938,12 @@ defmodule Spark.Dsl.Extension do
                 extension: extension
               ] do
           @moduledoc false
-          for {field, _opts} <- section.schema do
+          for {field, config} <- section.schema do
             defmacro unquote(field)(value) do
               section_path = unquote(Macro.escape(section_path))
               field = unquote(Macro.escape(field))
               extension = unquote(extension)
+              config = unquote(Macro.escape(config))
               section = unquote(Macro.escape(section))
 
               Spark.Dsl.Extension.maybe_deprecated(
@@ -932,27 +965,34 @@ defmodule Spark.Dsl.Extension do
                     value
                 end
 
-              quote generated: true do
-                current_sections = Process.get({__MODULE__, :spark_sections}, [])
+              value =
+                case value do
+                  {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
+                    value
 
-                unless {unquote(extension), unquote(section_path)} in current_sections do
-                  Process.put({__MODULE__, :spark_sections}, [
-                    {unquote(extension), unquote(section_path)} | current_sections
-                  ])
+                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} ->
+                    {:&, context1,
+                     [
+                       {:/, context2,
+                        [
+                          {{:., [], [{:__aliases__, [alias: false], [__CALLER__.module]}, name]},
+                           [no_parens: true], []},
+                          arity
+                        ]}
+                     ]}
+
+                  value ->
+                    value
                 end
 
-                current_config =
-                  Process.get(
-                    {__MODULE__, :spark, unquote(section_path)},
-                    %{entities: [], opts: []}
-                  )
-
-                Process.put(
-                  {__MODULE__, :spark, unquote(section_path)},
-                  %{
-                    current_config
-                    | opts: Keyword.put(current_config.opts, unquote(field), unquote(value))
-                  }
+              quote generated: true do
+                Spark.Dsl.Extension.set_section_opt(
+                  unquote(value),
+                  unquote(Macro.escape(value)),
+                  unquote(Macro.escape(config[:type])),
+                  unquote(section_path),
+                  unquote(extension),
+                  unquote(field)
                 )
               end
             end
@@ -965,7 +1005,82 @@ defmodule Spark.Dsl.Extension do
     {section_modules, entity_modules, opts_mod_name}
   end
 
+  defmacro set_section_opt(
+             value,
+             escaped_value,
+             type,
+             section_path,
+             extension,
+             field
+           ) do
+    quote generated: true,
+          bind_quoted: [
+            value: value,
+            escaped_value: escaped_value,
+            type: type,
+            section_path: section_path,
+            extension: extension,
+            field: field
+          ] do
+      value =
+        if is_tuple(type) &&
+             elem(type, 0) == :spark_function_behaviour &&
+             is_function(value) do
+          {mod, arity} =
+            case type do
+              {_, _, {mod, arity}} -> {mod, arity}
+              {_, _, _, {mod, arity}} -> {mod, arity}
+            end
+
+          case escaped_value do
+            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+              fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{field}"
+
+              @doc false
+              def unquote(fun_name)(unquote_splicing(args)) do
+                unquote(body)
+              end
+
+              {mod, fun: {__MODULE__, fun_name, []}}
+
+            _ ->
+              value
+          end
+        else
+          value
+        end
+
+      current_sections = Process.get({__MODULE__, :spark_sections}, [])
+
+      unless {extension, section_path} in current_sections do
+        Process.put({__MODULE__, :spark_sections}, [
+          {extension, section_path} | current_sections
+        ])
+      end
+
+      current_config =
+        Process.get(
+          {__MODULE__, :spark, section_path},
+          %{entities: [], opts: []}
+        )
+
+      Process.put(
+        {__MODULE__, :spark, section_path},
+        %{
+          current_config
+          | opts:
+              Keyword.put(
+                current_config.opts,
+                field,
+                value
+              )
+        }
+      )
+    end
+  end
+
   @doc false
+  # sobelow_skip ["DOS.BinToAtom"]
   def build_entity(
         mod,
         extension,
@@ -1062,6 +1177,8 @@ defmodule Spark.Dsl.Extension do
           unimports = unquote(Macro.escape(unimports))
           nested_key = unquote(nested_key)
 
+          require Spark.Dsl.Extension
+
           Spark.Dsl.Extension.maybe_deprecated(
             entity.name,
             deprecations,
@@ -1113,8 +1230,62 @@ defmodule Spark.Dsl.Extension do
               end
             end)
 
+          {arg_values, funs} =
+            entity_args
+            |> Enum.zip(unquote(args))
+            |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
+              type = entity_schema[key][:type]
+
+              if is_tuple(type) && elem(type, 0) == :spark_function_behaviour do
+                {mod, arity} =
+                  case type do
+                    {_, _, {mod, arity}} -> {mod, arity}
+                    {_, _, _, {mod, arity}} -> {mod, arity}
+                  end
+
+                case arg_value do
+                  {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
+                    {[value | args], funs}
+
+                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} ->
+                    {:&, context1,
+                     [
+                       {:/, context2,
+                        [
+                          {{:., [], [{:__aliases__, [alias: false], [__CALLER__.module]}, name]},
+                           [no_parens: true], []},
+                          arity
+                        ]}
+                     ]}
+
+                  {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
+                    fun_name =
+                      :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+
+                    {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
+                     [
+                       quote generated: true do
+                         @doc false
+                         def unquote(fun_name)(unquote_splicing(fn_args)) do
+                           unquote(body)
+                         end
+                       end
+                       | funs
+                     ]}
+
+                  value ->
+                    {[value | args], funs}
+                end
+              else
+                {[arg_value | args], funs}
+              end
+            end)
+
+          arg_values = Enum.reverse(arg_values)
+
           code =
             unimports ++
+              funs ++
               [
                 quote generated: true do
                   section_path = unquote(section_path)
@@ -1296,7 +1467,7 @@ defmodule Spark.Dsl.Extension do
               nested_entity_path: nested_entity_path
             ] do
         @moduledoc false
-        for {key, _value} <- entity.schema do
+        for {key, config} <- entity.schema do
           defmacro unquote(key)(value) do
             key = unquote(key)
             modules = unquote(entity.modules)
@@ -1304,8 +1475,8 @@ defmodule Spark.Dsl.Extension do
             deprecations = unquote(entity.deprecations)
             entity_name = unquote(entity.name)
             recursive_as = unquote(entity.recursive_as)
-
-            nested_entity_path = Process.get(:recursive_builder_path)
+            nested_entity_path = unquote(nested_entity_path)
+            config = unquote(Macro.escape(config))
 
             Spark.Dsl.Extension.maybe_deprecated(
               key,
@@ -1326,12 +1497,33 @@ defmodule Spark.Dsl.Extension do
                   value
               end
 
+            {value, only_escaped?} =
+              case value do
+                {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
+                  {value, false}
+
+                {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value ->
+                  args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+
+                  {quote do
+                     fn unquote_splicing(args) ->
+                       unquote(value).(unquote_splicing(args))
+                     end
+                   end, true}
+
+                value ->
+                  {value, false}
+              end
+
             quote generated: true do
               current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
-              Process.put(
-                {:builder_opts, nested_entity_path},
-                Keyword.put(current_opts, unquote(key), unquote(value))
+              Spark.Dsl.Extension.set_entity_opt(
+                unquote(if only_escaped?, do: nil, else: value),
+                unquote(Macro.escape(value)),
+                unquote(Macro.escape(config[:type])),
+                unquote(nested_entity_path),
+                unquote(key)
               )
             end
           end
@@ -1341,6 +1533,99 @@ defmodule Spark.Dsl.Extension do
     )
 
     module_name
+  end
+
+  defmacro entity_arg(
+             value,
+             escaped_value,
+             type,
+             key
+           ) do
+    quote generated: true,
+          bind_quoted: [
+            value: value,
+            escaped_value: escaped_value,
+            type: type,
+            key: key
+          ] do
+      if is_tuple(type) &&
+           elem(type, 0) == :spark_function_behaviour &&
+           is_function(value) do
+        {mod, arity} =
+          case type do
+            {_, _, {mod, arity}} -> {mod, arity}
+            {_, _, _, {mod, arity}} -> {mod, arity}
+          end
+
+        case escaped_value do
+          {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+            fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+
+            @doc false
+            def unquote(fun_name)(unquote_splicing(args)) do
+              unquote(body)
+            end
+
+            {mod, fun: {__MODULE__, fun_name, []}}
+
+          _ ->
+            value
+        end
+      else
+        value
+      end
+    end
+  end
+
+  defmacro set_entity_opt(
+             value,
+             escaped_value,
+             type,
+             nested_entity_path,
+             key
+           ) do
+    quote generated: true,
+          bind_quoted: [
+            value: value,
+            escaped_value: escaped_value,
+            type: type,
+            nested_entity_path: nested_entity_path,
+            key: key
+          ] do
+      value =
+        if is_tuple(type) &&
+             elem(type, 0) == :spark_function_behaviour do
+          {mod, arity} =
+            case type do
+              {_, _, {mod, arity}} -> {mod, arity}
+              {_, _, _, {mod, arity}} -> {mod, arity}
+            end
+
+          case escaped_value do
+            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+              fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+
+              @doc false
+              def unquote(fun_name)(unquote_splicing(args)) do
+                unquote(body)
+              end
+
+              {mod, fun: {__MODULE__, fun_name, []}}
+
+            other ->
+              value
+          end
+        else
+          value
+        end
+
+      current_opts = Process.get({:builder_opts, nested_entity_path}, [])
+
+      Process.put(
+        {:builder_opts, nested_entity_path},
+        Keyword.put(current_opts, key, value)
+      )
+    end
   end
 
   @doc false

@@ -11,6 +11,8 @@ defmodule Spark.OptionsHelpers do
   - `{:tagged_tuple, tag, inner_type}` - maps to `{tag, type}`
   - `{:spark_behaviour, behaviour}` - expects a module that implements the given behaviour, and can be specified with options, i.e `mod` or `{mod, [opt: :val]}`
   - `{:spark_behaviour, behaviour, builtin_module}` - Same as the above, but also accepts a `builtin_module`. The builtin_module is used to provide additional options for the elixir_sense plugin.
+  - `{:spark_function_behaviour, behaviour, {function_mod, arity}}` - expects a module that implements the given behaviour, and can be specified with options, i.e `mod` or `{mod, [opt: :val]}`, that also has a special module that supports being provided an anonymous function or MFA as the `:fun` option.
+  - `{:spark_function_behaviour, behaviour, builtin_module, {function_mod, arity}}` - Same as the above, but also accepts a `builtin_module`. The builtin_module is used to provide additional options for the elixir_sense plugin.
   - `{:behaviour, behaviour}` - expects a module that implements a given behaviour.
   - `{:spark, dsl_module}` - expects a module that is a `Spark.Dsl`
   - `{:mfa_or_fun, arity}` - expects a function or MFA of a corresponding arity.
@@ -28,6 +30,8 @@ defmodule Spark.OptionsHelpers do
           | {:tagged_tuple, tag :: type, inner_type :: type}
           | {:spark_behaviour, module}
           | {:spark_behaviour, module, module}
+          | {:spark_function_behaviour, module, {module, integer}}
+          | {:spark_function_behaviour, module, module, {module, integer}}
           | {:behavior, module}
           | {:spark, module}
           | {:mfa_or_fun, non_neg_integer()}
@@ -164,6 +168,12 @@ defmodule Spark.OptionsHelpers do
       {:spark_behaviour, behaviour} ->
         {:custom, __MODULE__, :spark_behaviour, [behaviour]}
 
+      {:spark_function_behaviour, behaviour, _builtins, {functional, arity}} ->
+        {:custom, __MODULE__, :spark_function_behaviour, [behaviour, {functional, arity}]}
+
+      {:spark_function_behaviour, behaviour, {functional, arity}} ->
+        {:custom, __MODULE__, :spark_function_behaviour, [behaviour, {functional, arity}]}
+
       {:behaviour, _behaviour} ->
         :atom
 
@@ -225,7 +235,40 @@ defmodule Spark.OptionsHelpers do
   end
 
   def spark_behaviour(other, _) do
-    {:error, "Expected a module and opts, got: #{inspect(other)}"}
+    {:error, "expected a module and opts, got: #{inspect(other)}"}
+  end
+
+  def spark_function_behaviour({module, opts}, _behaviour, {_functional, _arity})
+      when is_atom(module) do
+    if Keyword.keyword?(opts) do
+      # We can't check if it implements the behaviour here, unfortunately
+      # As it may not be immediately available
+      {:ok, {module, opts}}
+    else
+      {:error, "Expected opts to be a keyword, got: #{inspect(opts)}"}
+    end
+  end
+
+  def spark_function_behaviour(module, behaviour, {functional, arity}) when is_atom(module) do
+    spark_function_behaviour({module, []}, behaviour, {functional, arity})
+  end
+
+  def spark_function_behaviour(function, _behaviour, {functional, arity})
+      when is_function(function, arity) do
+    {:ok, {functional, [fun: function]}}
+  end
+
+  def spark_function_behaviour(function, _behaviour, {_functional, arity})
+      when is_function(function) do
+    actual_arity = :erlang.fun_info(function)[:arity]
+
+    {:error,
+     "Expected a module and opts, or a #{arity} argument function. Got a #{actual_arity} argument function."}
+  end
+
+  def spark_function_behaviour(other, _, {_, arity}) do
+    {:error,
+     "Expected a module and opts, or a #{arity} argument function, got: #{inspect(other)}"}
   end
 
   def map(value) when is_map(value), do: {:ok, value}
