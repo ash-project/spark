@@ -4,9 +4,13 @@ defmodule Spark.ElixirSense.Plugin do
   Module.register_attribute(__MODULE__, :is_elixir_sense_plugin, persist: true)
   @is_elixir_sense_plugin true
 
-  if Application.compile_env(:spark, :enforce_spark_elixir_sense_behaviours?) do
-    @behaviour ElixirSense.Plugin
-    @behaviour ElixirSense.Providers.Suggestion.GenericReducer
+  case Code.ensure_compiled(ElixirSense.Plugin) do
+    {:module, _} ->
+      @behaviour ElixirSense.Plugin
+      @behaviour ElixirSense.Providers.Suggestion.GenericReducer
+
+    _ ->
+      :ok
   end
 
   def reduce(hint, env, buffer_metadata, cursor_context, acc) do
