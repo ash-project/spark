@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.4](https://github.com/ash-project/spark/compare/v0.2.3...v0.2.4) (2022-10-29)
+
+
+
+
+### Improvements:
+
+* support anonymous functions in the DSL
+
+* remove necessity for `{:elixir_sense, ...}` to make the plugin work
+
 ## [v0.2.3](https://github.com/ash-project/spark/compare/v0.2.2...v0.2.3) (2022-10-28)
 
 
