@@ -114,7 +114,7 @@ defmodule Spark.MixProject do
       {:git_ops, "~> 2.4.4", only: :dev},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:parse_trans, "3.3.0", only: [:dev, :test], override: true},
-      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test, :docs]}
+      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:test, :dev, :docs]}
     ]
   end
 

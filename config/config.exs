@@ -1,5 +1,7 @@
 import Config
 
+config :spark, :enforce_spark_elixir_sense_behaviours?, true
+
 if Mix.env() == :dev do
   config :git_ops,
     mix_project: Spark.MixProject,
