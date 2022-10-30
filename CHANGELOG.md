@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.5](https://github.com/ash-project/spark/compare/v0.2.4...v0.2.5) (2022-10-30)
+
+
+
+
+### Bug Fixes:
+
+* un-break recursive DSL entities
+
 ## [v0.2.4](https://github.com/ash-project/spark/compare/v0.2.3...v0.2.4) (2022-10-29)
 
 
