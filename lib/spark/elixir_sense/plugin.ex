@@ -315,10 +315,16 @@ defmodule Spark.ElixirSense.Plugin do
       {:spark_behaviour, behaviour, builtins} ->
         Entity.find_spark_behaviour_impls(behaviour, builtins, hint, opts.module_store)
 
+      {:spark_function_behaviour, behaviour, builtins, _} ->
+        Entity.find_spark_behaviour_impls(behaviour, builtins, hint, opts.module_store)
+
       {:behaviour, behaviour} ->
         Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
 
       {:spark_behaviour, behaviour} ->
+        Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
+
+      {:spark_function_behaviour, behaviour, _} ->
         Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
 
       _ ->
