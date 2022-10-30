@@ -761,38 +761,6 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
-  defmacro replace_funs(schema, opts) do
-    quote bind_quoted: [schema: schema, opts: opts] do
-      schema
-      |> Enum.filter(fn {_field, config} ->
-        is_tuple(config[:type]) &&
-          elem(config[:type], 0) == :spark_function_behaviour
-      end)
-      |> Enum.reduce(opts, fn {field, config}, opts ->
-        case Keyword.get(opts, field) do
-          {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-            {mod, arity} =
-              case config[:type] do
-                {_, _, {mod, arity}} -> {mod, arity}
-                {_, _, _, {mod, arity}} -> {mod, arity}
-              end
-
-            fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{field}"
-
-            @doc false
-            def unquote(fun_name)(unquote_splicing(args)) do
-              unquote(body)
-            end
-
-            Keyword.put(opts, field, {mod, fun: {__MODULE__, fun_name, []}})
-
-          other ->
-            opts
-        end
-      end)
-    end
-  end
-
   defp entity_mod_name(mod, nested_entity_path, section_path, entity) do
     nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
@@ -1476,6 +1444,7 @@ defmodule Spark.Dsl.Extension do
             entity_name = unquote(entity.name)
             recursive_as = unquote(entity.recursive_as)
             nested_entity_path = unquote(nested_entity_path)
+
             config = unquote(Macro.escape(config))
 
             Spark.Dsl.Extension.maybe_deprecated(
@@ -1516,13 +1485,10 @@ defmodule Spark.Dsl.Extension do
               end
 
             quote generated: true do
-              current_opts = Process.get({:builder_opts, nested_entity_path}, [])
-
               Spark.Dsl.Extension.set_entity_opt(
                 unquote(if only_escaped?, do: nil, else: value),
                 unquote(Macro.escape(value)),
                 unquote(Macro.escape(config[:type])),
-                unquote(nested_entity_path),
                 unquote(key)
               )
             end
@@ -1581,7 +1547,6 @@ defmodule Spark.Dsl.Extension do
              value,
              escaped_value,
              type,
-             nested_entity_path,
              key
            ) do
     quote generated: true,
@@ -1589,7 +1554,6 @@ defmodule Spark.Dsl.Extension do
             value: value,
             escaped_value: escaped_value,
             type: type,
-            nested_entity_path: nested_entity_path,
             key: key
           ] do
       value =
@@ -1618,6 +1582,8 @@ defmodule Spark.Dsl.Extension do
         else
           value
         end
+
+      nested_entity_path = Process.get(:recursive_builder_path)
 
       current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
