@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.6](https://github.com/ash-project/spark/compare/v0.2.5...v0.2.6) (2022-10-31)
+
+
+
+
+### Bug Fixes:
+
+* add new `spark_function_behaviour` to elixir_sense plugin
+
+### Improvements:
+
+* support `{:or, ...}` option types
+
 ## [v0.2.5](https://github.com/ash-project/spark/compare/v0.2.4...v0.2.5) (2022-10-30)
 
 
