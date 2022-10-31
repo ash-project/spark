@@ -327,6 +327,11 @@ defmodule Spark.ElixirSense.Plugin do
       {:spark_function_behaviour, behaviour, _} ->
         Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
 
+      {:or, subtypes} ->
+        Enum.flat_map(subtypes, fn subtype ->
+          option_values(key, Keyword.put(config, :type, subtype), hint, opts)
+        end)
+
       _ ->
         []
     end
