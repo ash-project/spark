@@ -83,6 +83,84 @@ defmodule Spark.DocIndex do
     end
   end
 
+  def render_replacements(docs, contexts \\ %{}, callback)
+  def render_replacements(nil, _, _), do: ""
+
+  def render_replacements(docs, contexts, callback) do
+    Enum.reduce(contexts, docs, fn {name, regex}, docs ->
+      String.replace(docs, regex, fn contents ->
+        contents
+        |> render_links(callback, name)
+        |> render_mix_deps(callback, name)
+      end)
+    end)
+    |> render_links(callback, nil)
+    |> render_mix_deps(callback, nil)
+  end
+
+  defp render_mix_deps(docs, callback, context) do
+    docs
+    |> String.replace(~r/____mix_dep_(.*)____/, fn text ->
+      library =
+        text
+        |> String.trim_leading("____mix_dep_")
+        |> String.trim_trailing("____")
+
+      callback.(:mix_dep, %{text: text, library: library}, context)
+    end)
+    |> String.replace(~r/{{mix_dep:.*}}/, fn text ->
+      try do
+        "{{mix_dep:" <> library = String.trim_trailing(text, "}}")
+        callback.(:mix_dep, %{text: text, library: library}, context)
+      rescue
+        e ->
+          IO.warn(
+            "Invalid link `#{text}`: #{Exception.format(:error, e)}\n#{Exception.format_stacktrace(__STACKTRACE__)}"
+          )
+
+          text
+      end
+    end)
+  end
+
+  def render_links(docs, callback, context) do
+    String.replace(docs, ~r/{{link:[^}]*}}/, fn text ->
+      try do
+        "{{link:" <> rest = String.trim_trailing(text, "}}")
+
+        [library, type | rest] = String.split(rest, ":")
+
+        {item, name_override} =
+          case rest do
+            [] ->
+              {nil, nil}
+
+            rest ->
+              case String.split(List.last(rest), "|") do
+                [item] ->
+                  {item, nil}
+
+                [item, name] ->
+                  {item, name}
+              end
+          end
+
+        callback.(
+          :link,
+          %{text: text, library: library, type: type, item: item, name_override: name_override},
+          context
+        )
+      rescue
+        e ->
+          IO.warn(
+            "Invalid link `#{text}`: #{Exception.format(:error, e)}\n#{Exception.format_stacktrace(__STACKTRACE__)}"
+          )
+
+          text
+      end
+    end)
+  end
+
   def find_undocumented_items(doc_index) do
     Enum.each(doc_index.extensions(), fn extension ->
       Enum.each(
