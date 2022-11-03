@@ -71,6 +71,16 @@ defmodule Spark.DocIndex do
                 end
               end)
 
+      def default_guide do
+        guides = guides()
+
+        guides
+        |> Enum.find(fn guide ->
+          String.contains?(guide.path, "started")
+        end)
+        |> Kernel.||(Enum.at(guides, 0))
+      end
+
       if guides_from do
         @impl Spark.DocIndex
         # sobelow_skip ["Traversal.FileModule"]
@@ -78,7 +88,9 @@ defmodule Spark.DocIndex do
           @guides
         end
 
-        defoverridable guides: 0
+        defoverridable guides: 0, default_guide: 0
+      else
+        defoverridable default_guide: 0
       end
     end
   end
@@ -130,18 +142,24 @@ defmodule Spark.DocIndex do
 
         [library, type | rest] = String.split(rest, ":")
 
-        {item, name_override} =
+        {item, type, name_override} =
           case rest do
             [] ->
-              {nil, nil}
+              case String.split(type, "|") do
+                [type] ->
+                  {nil, type, nil}
+
+                [type, name] ->
+                  {nil, type, name}
+              end
 
             rest ->
               case String.split(List.last(rest), "|") do
                 [item] ->
-                  {item, nil}
+                  {item, type, nil}
 
                 [item, name] ->
-                  {item, name}
+                  {item, type, name}
               end
           end
 
