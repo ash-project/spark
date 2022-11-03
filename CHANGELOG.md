@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.7](https://github.com/ash-project/spark/compare/v0.2.6...v0.2.7) (2022-11-03)
+
+
+
+
+### Improvements:
+
+* support generic docs replacements renderer
+
 ## [v0.2.6](https://github.com/ash-project/spark/compare/v0.2.5...v0.2.6) (2022-10-31)
 
 
