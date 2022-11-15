@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.10](https://github.com/ash-project/spark/compare/v0.2.9...v0.2.10) (2022-11-15)
+
+
+
+
+### Bug Fixes:
+
+* add basename to guide typespec
+
 ## [v0.2.9](https://github.com/ash-project/spark/compare/v0.2.8...v0.2.9) (2022-11-15)
 
 
