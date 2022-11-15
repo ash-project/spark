@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.9](https://github.com/ash-project/spark/compare/v0.2.8...v0.2.9) (2022-11-15)
+
+
+
+
+### Improvements:
+
+* support explicitly ordering guides
+
 ## [v0.2.8](https://github.com/ash-project/spark/compare/v0.2.7...v0.2.8) (2022-11-03)
 
 
