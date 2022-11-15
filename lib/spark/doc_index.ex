@@ -49,27 +49,40 @@ defmodule Spark.DocIndex do
   @optional_callbacks code_modules: 0, mix_tasks: 0
 
   defmacro __using__(opts) do
-    quote generated: true, bind_quoted: [guides_from: opts[:guides_from]] do
+    quote generated: true,
+          bind_quoted: [guides_from: opts[:guides_from], guide_order: opts[:guide_order]] do
       @behaviour Spark.DocIndex
 
-      @guides guides_from
-              |> Path.wildcard()
-              |> Enum.map(fn path ->
-                path
-                |> Path.split()
-                |> Enum.reverse()
-                |> Enum.take(2)
-                |> Enum.reverse()
-                |> case do
-                  [category, file] ->
-                    %{
-                      name: Spark.DocIndex.to_name(Path.rootname(file)),
-                      category: Spark.DocIndex.to_name(category),
-                      path: path,
-                      route: "#{Spark.DocIndex.to_path(category)}/#{Spark.DocIndex.to_path(file)}"
-                    }
-                end
-              end)
+      @guides if guides_from,
+                do:
+                  guides_from
+                  |> Path.wildcard()
+                  |> Enum.map(fn path ->
+                    path
+                    |> Path.split()
+                    |> Enum.reverse()
+                    |> Enum.take(2)
+                    |> Enum.reverse()
+                    |> case do
+                      [category, file] ->
+                        %{
+                          name: Spark.DocIndex.to_name(Path.rootname(file)),
+                          basename: Path.basename(file),
+                          category: Spark.DocIndex.to_name(category),
+                          path: path,
+                          route:
+                            "#{Spark.DocIndex.to_path(category)}/#{Spark.DocIndex.to_path(file)}"
+                        }
+                    end
+                  end)
+                  |> Enum.group_by(& &1.category)
+                  |> Enum.flat_map(fn {category, guides} ->
+                    order = guide_order[category] || guide_order[String.to_atom(category)] || []
+
+                    Enum.sort_by(guides, fn guide ->
+                      {Enum.find_index(order, &(&1 == guide.basename)), guide.name}
+                    end)
+                  end)
 
       def default_guide do
         guides = guides()
