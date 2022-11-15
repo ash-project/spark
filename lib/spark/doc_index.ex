@@ -34,10 +34,11 @@ defmodule Spark.DocIndex do
         }
 
   @type guide :: %{
-          name: String.t(),
-          path: String.t(),
-          category: String.t() | nil,
-          route: String.t() | nil
+          :name => String.t(),
+          :path => String.t(),
+          :category => String.t() | nil,
+          :route => String.t() | nil,
+          optional(:basename) => String.t()
         }
 
   @callback extensions() :: list(extension())
