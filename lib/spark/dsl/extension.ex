@@ -991,9 +991,7 @@ defmodule Spark.Dsl.Extension do
             field: field
           ] do
       value =
-        if is_tuple(type) &&
-             elem(type, 0) == :spark_function_behaviour &&
-             is_function(value) do
+        if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
           {mod, arity} =
             case type do
               {_, _, {mod, arity}} -> {mod, arity}
@@ -1184,7 +1182,7 @@ defmodule Spark.Dsl.Extension do
             |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
               type = entity_schema[key][:type]
 
-              if is_tuple(type) && elem(type, 0) == :spark_function_behaviour do
+              if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
                 {mod, arity} =
                   case type do
                     {_, _, {mod, arity}} -> {mod, arity}
@@ -1534,9 +1532,7 @@ defmodule Spark.Dsl.Extension do
             type: type,
             key: key
           ] do
-      if is_tuple(type) &&
-           elem(type, 0) == :spark_function_behaviour &&
-           is_function(value) do
+      if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
         {mod, arity} =
           case type do
             {_, _, {mod, arity}} -> {mod, arity}
@@ -1580,8 +1576,7 @@ defmodule Spark.Dsl.Extension do
             key: key
           ] do
       value =
-        if is_tuple(type) &&
-             elem(type, 0) == :spark_function_behaviour do
+        if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
           {mod, arity} =
             case type do
               {_, _, {mod, arity}} -> {mod, arity}
@@ -1673,5 +1668,21 @@ defmodule Spark.Dsl.Extension do
 
   def monotonic_number(key) do
     (Process.get({:spark_monotonic_number, key}) || -1) + 1
+  end
+
+  def could_be_spark_function_behaviour?({:or, types}) do
+    Enum.any?(types, &could_be_spark_function_behaviour?/1)
+  end
+
+  def could_be_spark_function_behaviour?({:spark_function_behaviour, _, _, _}) do
+    true
+  end
+
+  def could_be_spark_function_behaviour?({:spark_function_behaviour, _, _}) do
+    true
+  end
+
+  def could_be_spark_function_behaviour?(_) do
+    false
   end
 end
