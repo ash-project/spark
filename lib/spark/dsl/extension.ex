@@ -1002,7 +1002,10 @@ defmodule Spark.Dsl.Extension do
 
           case escaped_value do
             {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-              fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{field}"
+              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+              fun_name =
+                :"#{field}_#{Spark.Dsl.Extension.monotonic_number({field, fun_name})}_generated_#{fun_name}"
 
               @doc false
               def unquote(fun_name)(unquote_splicing(args)) do
@@ -1154,29 +1157,6 @@ defmodule Spark.Dsl.Extension do
             __CALLER__
           )
 
-          arg_values =
-            entity_args
-            |> Enum.zip(unquote(args))
-            |> Enum.map(fn {key, value} ->
-              Spark.Dsl.Extension.maybe_deprecated(
-                key,
-                entity_deprecations,
-                nested_entity_path,
-                __CALLER__
-              )
-
-              cond do
-                key in entity.modules ->
-                  Spark.Dsl.Extension.expand_alias(value, __CALLER__)
-
-                key in entity.no_depend_modules ->
-                  Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
-
-                true ->
-                  value
-              end
-            end)
-
           opts =
             Enum.map(opts, fn {key, value} ->
               Spark.Dsl.Extension.maybe_deprecated(
@@ -1227,8 +1207,10 @@ defmodule Spark.Dsl.Extension do
                      ]}
 
                   {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
+                    fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
                     fun_name =
-                      :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+                      :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
 
                     {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
                      [
@@ -1242,9 +1224,47 @@ defmodule Spark.Dsl.Extension do
                      ]}
 
                   value ->
+                    Spark.Dsl.Extension.maybe_deprecated(
+                      key,
+                      entity_deprecations,
+                      nested_entity_path,
+                      __CALLER__
+                    )
+
+                    value =
+                      cond do
+                        key in entity.modules ->
+                          Spark.Dsl.Extension.expand_alias(value, __CALLER__)
+
+                        key in entity.no_depend_modules ->
+                          Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
+
+                        true ->
+                          value
+                      end
+
                     {[value | args], funs}
                 end
               else
+                Spark.Dsl.Extension.maybe_deprecated(
+                  key,
+                  entity_deprecations,
+                  nested_entity_path,
+                  __CALLER__
+                )
+
+                arg_value =
+                  cond do
+                    key in entity.modules ->
+                      Spark.Dsl.Extension.expand_alias(arg_value, __CALLER__)
+
+                    key in entity.no_depend_modules ->
+                      Spark.Dsl.Extension.expand_alias_no_require(arg_value, __CALLER__)
+
+                    true ->
+                      arg_value
+                  end
+
                 {[arg_value | args], funs}
               end
             end)
@@ -1525,7 +1545,10 @@ defmodule Spark.Dsl.Extension do
 
         case escaped_value do
           {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-            fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+            fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+            fun_name =
+              :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
 
             @doc false
             def unquote(fun_name)(unquote_splicing(args)) do
@@ -1567,7 +1590,10 @@ defmodule Spark.Dsl.Extension do
 
           case escaped_value do
             {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-              fun_name = :"#{System.unique_integer([:positive, :monotonic])}_generated_#{key}"
+              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+              fun_name =
+                :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
 
               @doc false
               def unquote(fun_name)(unquote_splicing(args)) do
@@ -1629,5 +1655,23 @@ defmodule Spark.Dsl.Extension do
       other ->
         other
     end)
+  end
+
+  def code_identifier(code) do
+    code
+    |> Macro.prewalk(fn
+      {foo, meta, bar} ->
+        {foo, meta |> Keyword.delete(:line), bar}
+
+      other ->
+        other
+    end)
+    |> :erlang.term_to_binary()
+    |> :erlang.md5()
+    |> Base.encode16()
+  end
+
+  def monotonic_number(key) do
+    (Process.get({:spark_monotonic_number, key}) || -1) + 1
   end
 end
