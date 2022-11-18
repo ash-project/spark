@@ -991,32 +991,28 @@ defmodule Spark.Dsl.Extension do
             field: field
           ] do
       value =
-        if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
-          {mod, arity} =
-            case type do
-              {_, _, {mod, arity}} -> {mod, arity}
-              {_, _, _, {mod, arity}} -> {mod, arity}
+        case Spark.Dsl.Extension.spark_function_info(type) do
+          nil ->
+            value
+
+          {mod, arity} ->
+            case escaped_value do
+              {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+                fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+                fun_name =
+                  :"#{field}_#{Spark.Dsl.Extension.monotonic_number({field, fun_name})}_generated_#{fun_name}"
+
+                @doc false
+                def unquote(fun_name)(unquote_splicing(args)) do
+                  unquote(body)
+                end
+
+                {mod, fun: {__MODULE__, fun_name, []}}
+
+              _ ->
+                value
             end
-
-          case escaped_value do
-            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
-
-              fun_name =
-                :"#{field}_#{Spark.Dsl.Extension.monotonic_number({field, fun_name})}_generated_#{fun_name}"
-
-              @doc false
-              def unquote(fun_name)(unquote_splicing(args)) do
-                unquote(body)
-              end
-
-              {mod, fun: {__MODULE__, fun_name, []}}
-
-            _ ->
-              value
-          end
-        else
-          value
         end
 
       current_sections = Process.get({__MODULE__, :spark_sections}, [])
@@ -1182,88 +1178,85 @@ defmodule Spark.Dsl.Extension do
             |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
               type = entity_schema[key][:type]
 
-              if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
-                {mod, arity} =
-                  case type do
-                    {_, _, {mod, arity}} -> {mod, arity}
-                    {_, _, _, {mod, arity}} -> {mod, arity}
-                  end
+              case Spark.Dsl.Extension.spark_function_info(type) do
+                nil ->
+                  Spark.Dsl.Extension.maybe_deprecated(
+                    key,
+                    entity_deprecations,
+                    nested_entity_path,
+                    __CALLER__
+                  )
 
-                case arg_value do
-                  {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
-                    {[value | args], funs}
+                  arg_value =
+                    cond do
+                      key in entity.modules ->
+                        Spark.Dsl.Extension.expand_alias(arg_value, __CALLER__)
 
-                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} ->
-                    {:&, context1,
-                     [
-                       {:/, context2,
-                        [
-                          {{:., [], [{:__aliases__, [alias: false], [__CALLER__.module]}, name]},
-                           [no_parens: true], []},
-                          arity
-                        ]}
-                     ]}
+                      key in entity.no_depend_modules ->
+                        Spark.Dsl.Extension.expand_alias_no_require(arg_value, __CALLER__)
 
-                  {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
-                    fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+                      true ->
+                        arg_value
+                    end
 
-                    fun_name =
-                      :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+                  {[arg_value | args], funs}
 
-                    {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
-                     [
-                       quote generated: true do
-                         @doc false
-                         def unquote(fun_name)(unquote_splicing(fn_args)) do
-                           unquote(body)
+                {mod, arity} ->
+                  case arg_value do
+                    {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
+                      {[value | args], funs}
+
+                    {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} ->
+                      {:&, context1,
+                       [
+                         {:/, context2,
+                          [
+                            {{:., [],
+                              [{:__aliases__, [alias: false], [__CALLER__.module]}, name]},
+                             [no_parens: true], []},
+                            arity
+                          ]}
+                       ]}
+
+                    {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
+                      fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+                      fun_name =
+                        :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+
+                      {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
+                       [
+                         quote generated: true do
+                           @doc false
+                           def unquote(fun_name)(unquote_splicing(fn_args)) do
+                             unquote(body)
+                           end
                          end
-                       end
-                       | funs
-                     ]}
+                         | funs
+                       ]}
 
-                  value ->
-                    Spark.Dsl.Extension.maybe_deprecated(
-                      key,
-                      entity_deprecations,
-                      nested_entity_path,
-                      __CALLER__
-                    )
+                    value ->
+                      Spark.Dsl.Extension.maybe_deprecated(
+                        key,
+                        entity_deprecations,
+                        nested_entity_path,
+                        __CALLER__
+                      )
 
-                    value =
-                      cond do
-                        key in entity.modules ->
-                          Spark.Dsl.Extension.expand_alias(value, __CALLER__)
+                      value =
+                        cond do
+                          key in entity.modules ->
+                            Spark.Dsl.Extension.expand_alias(value, __CALLER__)
 
-                        key in entity.no_depend_modules ->
-                          Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
+                          key in entity.no_depend_modules ->
+                            Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
 
-                        true ->
-                          value
-                      end
+                          true ->
+                            value
+                        end
 
-                    {[value | args], funs}
-                end
-              else
-                Spark.Dsl.Extension.maybe_deprecated(
-                  key,
-                  entity_deprecations,
-                  nested_entity_path,
-                  __CALLER__
-                )
-
-                arg_value =
-                  cond do
-                    key in entity.modules ->
-                      Spark.Dsl.Extension.expand_alias(arg_value, __CALLER__)
-
-                    key in entity.no_depend_modules ->
-                      Spark.Dsl.Extension.expand_alias_no_require(arg_value, __CALLER__)
-
-                    true ->
-                      arg_value
+                      {[value | args], funs}
                   end
-
-                {[arg_value | args], funs}
               end
             end)
 
@@ -1532,32 +1525,28 @@ defmodule Spark.Dsl.Extension do
             type: type,
             key: key
           ] do
-      if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
-        {mod, arity} =
-          case type do
-            {_, _, {mod, arity}} -> {mod, arity}
-            {_, _, _, {mod, arity}} -> {mod, arity}
+      case Spark.Dsl.Extension.spark_function_info(type) do
+        nil ->
+          value
+
+        {mod, arity} ->
+          case escaped_value do
+            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+              fun_name =
+                :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+
+              @doc false
+              def unquote(fun_name)(unquote_splicing(args)) do
+                unquote(body)
+              end
+
+              {mod, fun: {__MODULE__, fun_name, []}}
+
+            _ ->
+              value
           end
-
-        case escaped_value do
-          {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-            fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
-
-            fun_name =
-              :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
-
-            @doc false
-            def unquote(fun_name)(unquote_splicing(args)) do
-              unquote(body)
-            end
-
-            {mod, fun: {__MODULE__, fun_name, []}}
-
-          _ ->
-            value
-        end
-      else
-        value
       end
     end
   end
@@ -1576,32 +1565,28 @@ defmodule Spark.Dsl.Extension do
             key: key
           ] do
       value =
-        if Spark.Dsl.Extension.could_be_spark_function_behaviour?(type) do
-          {mod, arity} =
-            case type do
-              {_, _, {mod, arity}} -> {mod, arity}
-              {_, _, _, {mod, arity}} -> {mod, arity}
+        case Spark.Dsl.Extension.spark_function_info(type) do
+          nil ->
+            value
+
+          {mod, arity} ->
+            case escaped_value do
+              {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
+                fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+
+                fun_name =
+                  :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+
+                @doc false
+                def unquote(fun_name)(unquote_splicing(args)) do
+                  unquote(body)
+                end
+
+                {mod, fun: {__MODULE__, fun_name, []}}
+
+              other ->
+                value
             end
-
-          case escaped_value do
-            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
-
-              fun_name =
-                :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
-
-              @doc false
-              def unquote(fun_name)(unquote_splicing(args)) do
-                unquote(body)
-              end
-
-              {mod, fun: {__MODULE__, fun_name, []}}
-
-            other ->
-              value
-          end
-        else
-          value
         end
 
       nested_entity_path = Process.get(:recursive_builder_path)
@@ -1670,19 +1655,19 @@ defmodule Spark.Dsl.Extension do
     (Process.get({:spark_monotonic_number, key}) || -1) + 1
   end
 
-  def could_be_spark_function_behaviour?({:or, types}) do
-    Enum.any?(types, &could_be_spark_function_behaviour?/1)
+  def spark_function_info({:or, types}) do
+    Enum.find_value(types, &spark_function_info/1)
   end
 
-  def could_be_spark_function_behaviour?({:spark_function_behaviour, _, _, _}) do
-    true
+  def spark_function_info({:spark_function_behaviour, _, _, {module, arity}}) do
+    {module, arity}
   end
 
-  def could_be_spark_function_behaviour?({:spark_function_behaviour, _, _}) do
-    true
+  def spark_function_info({:spark_function_behaviour, _, {module, arity}}) do
+    {module, arity}
   end
 
-  def could_be_spark_function_behaviour?(_) do
-    false
+  def spark_function_info(_) do
+    nil
   end
 end
