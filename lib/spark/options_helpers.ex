@@ -32,7 +32,7 @@ defmodule Spark.OptionsHelpers do
           | {:spark_behaviour, module, module}
           | {:spark_function_behaviour, module, {module, integer}}
           | {:spark_function_behaviour, module, module, {module, integer}}
-          | {:behavior, module}
+          | {:behaviour, module}
           | {:spark, module}
           | {:mfa_or_fun, non_neg_integer()}
           | {:spark_type, module, builtin_function :: atom}

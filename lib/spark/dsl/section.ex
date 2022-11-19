@@ -36,4 +36,25 @@ defmodule Spark.Dsl.Section do
     sections: [],
     docs: ""
   ]
+
+  alias Spark.{
+    Dsl.Entity,
+    Dsl.Section,
+    OptionsHelpers
+  }
+
+  @type t :: %Section{
+          name: atom,
+          imports: [module],
+          schema: [OptionsHelpers.schema()],
+          describe: String.t(),
+          snippet: String.t(),
+          links: [{atom, [String.t()]}],
+          examples: [String.t()],
+          no_depend_modules: [atom],
+          auto_set_fields: [{atom, any}],
+          entities: [Entity.t()],
+          sections: [Section.t()],
+          docs: String.t()
+        }
 end
