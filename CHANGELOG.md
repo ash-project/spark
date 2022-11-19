@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.11](https://github.com/ash-project/spark/compare/v0.2.10...v0.2.11) (2022-11-19)
+
+
+
+
+### Bug Fixes:
+
+* properly handle `{:or, [{:spark_function_behaviour, ...}]}` types
+
+* support anonymous functions in an `or` type
+
+* don't cause unnecessary export dependency recompilation
+
+### Improvements:
+
+* Add typespecs for `Spark.Dsl.Entity` and `Spark.Dsl.Section`. (#10)
+
 ## [v0.2.10](https://github.com/ash-project/spark/compare/v0.2.9...v0.2.10) (2022-11-15)
 
 
