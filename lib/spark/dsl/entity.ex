@@ -52,6 +52,31 @@ defmodule Spark.Dsl.Entity do
     docs: ""
   ]
 
+  alias Spark.{
+    Dsl.Entity,
+    OptionsHelpers
+  }
+
+  @type t :: %Entity{
+          name: atom,
+          target: module,
+          transform: mfa,
+          recursive_as: atom,
+          examples: [String.t()],
+          entities: [t],
+          deprecations: [{atom, String.t()}],
+          describe: String.t(),
+          snippet: String.t(),
+          args: [atom],
+          links: [{atom, [String.t()]}],
+          hide: boolean,
+          modules: [String.t()],
+          no_depend_modules: [atom],
+          schema: OptionsHelpers.schema(),
+          auto_set_fields: [{atom, any}],
+          docs: String.t()
+        }
+
   def build(
         %{target: target, schema: schema, auto_set_fields: auto_set_fields, transform: transform},
         opts,
@@ -61,7 +86,7 @@ defmodule Spark.Dsl.Entity do
       Keyword.split(auto_set_fields || [], Keyword.keys(schema))
 
     with {:ok, opts} <-
-           Spark.OptionsHelpers.validate(Keyword.merge(opts || [], before_validate_auto), schema),
+           OptionsHelpers.validate(Keyword.merge(opts || [], before_validate_auto), schema),
          opts <- Keyword.merge(opts, after_validate_auto),
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
          built <- struct(target, opts),
