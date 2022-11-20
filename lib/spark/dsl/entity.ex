@@ -64,16 +64,16 @@ defmodule Spark.Dsl.Entity do
           recursive_as: atom,
           examples: [String.t()],
           entities: [t],
-          deprecations: [{atom, String.t()}],
+          deprecations: Keyword.t(String.t()),
           describe: String.t(),
           snippet: String.t(),
           args: [atom],
-          links: [{atom, [String.t()]}],
-          hide: boolean,
+          links: Keyword.t([String.t()]),
+          hide: [atom],
           modules: [String.t()],
           no_depend_modules: [atom],
           schema: OptionsHelpers.schema(),
-          auto_set_fields: [{atom, any}],
+          auto_set_fields: Keyword.t(any),
           docs: String.t()
         }
 

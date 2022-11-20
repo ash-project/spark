@@ -71,17 +71,22 @@ defmodule Spark.OptionsHelpers do
   @typedoc """
   The schema type, as defined by the [NimbleOptions docs](https://hexdocs.pm/nimble_options/NimbleOptions.html#module-schema-options).
   """
-  @type schema :: [
+  @type nimble_schema :: [
           {:type, type | :any}
           | {:required, boolean}
           | {:default, :any}
-          | {:keys, [{atom, [type: type]}]}
+          | {:keys, Keyword.t({:type, type})}
           | {:deprecated, String.t()}
           | {:doc, String.t()}
           | {:subsection, String.t()}
           | {:type_doc, false | String.t()}
           | {:rename_to, atom}
         ]
+
+  @typedoc """
+  The actual schema type, as used in sections and entities.
+  """
+  @type schema :: Keyword.t(nimble_schema)
 
   @doc """
   Merges two schemas, and sets the `subsection` option on all options on the right

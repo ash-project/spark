@@ -46,13 +46,14 @@ defmodule Spark.Dsl.Section do
   @type t :: %Section{
           name: atom,
           imports: [module],
-          schema: [OptionsHelpers.schema()],
+          schema: OptionsHelpers.schema(),
           describe: String.t(),
           snippet: String.t(),
-          links: [{atom, [String.t()]}],
+          links: nil | Keyword.t([String.t()]),
           examples: [String.t()],
+          modules: [module],
           no_depend_modules: [atom],
-          auto_set_fields: [{atom, any}],
+          auto_set_fields: Keyword.t(any),
           entities: [Entity.t()],
           sections: [Section.t()],
           docs: String.t()
