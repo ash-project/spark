@@ -271,7 +271,10 @@ defmodule Spark.Formatter do
 
     Macro.prewalk(body, fn
       {func, meta, body} = node when is_atom(func) ->
-        if builders[func] == Enum.count(List.wrap(body)) && Keyword.keyword?(meta) &&
+        count = Enum.count(List.wrap(body))
+
+        if builders[func] in [count, count - 1] && Enum.count(List.wrap(body)) &&
+             Keyword.keyword?(meta) &&
              meta[:closing] do
           {func, Keyword.delete(meta, :closing), body}
         else
