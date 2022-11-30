@@ -108,6 +108,8 @@ defmodule Spark.Dsl.Extension do
   See the documentation for `Spark.Dsl.Section` and `Spark.Dsl.Entity` for more information
   """
 
+  @type t :: module
+
   @callback sections() :: [Spark.Dsl.section()]
   @callback transformers() :: [module]
   @callback explain(map) :: String.t() | nil
