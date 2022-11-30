@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Spark.Formatter do
           other -> raise "Error ensuring extension compiled #{inspect(other)}"
         end
 
-        all_entity_builders(extension_mod.sections())
+        Spark.Formatter.all_entity_builders(extension_mod.sections())
       end)
       |> Enum.uniq()
       |> Enum.sort()
@@ -80,59 +80,5 @@ defmodule Mix.Tasks.Spark.Formatter do
     else
       File.write!(".formatter.exs", contents_with_newline)
     end
-  end
-
-  defp all_entity_builders(sections) do
-    Enum.flat_map(sections, fn section ->
-      Enum.concat([
-        all_entity_option_builders(section),
-        section_option_builders(section),
-        section_entity_builders(section)
-      ])
-    end)
-  end
-
-  defp section_entity_builders(section) do
-    Enum.flat_map(section.entities(), fn entity ->
-      entity_builders(entity)
-    end) ++ all_entity_builders(section.sections())
-  end
-
-  defp entity_builders(entity) do
-    arg_count = Enum.count(entity.args)
-
-    [{entity.name, arg_count}, {entity.name, arg_count + 1}] ++
-      flat_map_nested_entities(entity, &entity_builders/1)
-  end
-
-  defp all_entity_option_builders(section) do
-    Enum.flat_map(section.entities, fn entity ->
-      entity_option_builders(entity)
-    end)
-  end
-
-  defp entity_option_builders(entity) do
-    entity.schema
-    |> Keyword.drop(entity.args)
-    |> Enum.map(fn {key, _schema} ->
-      {key, 1}
-    end)
-    |> Kernel.++(flat_map_nested_entities(entity, &entity_option_builders/1))
-  end
-
-  defp section_option_builders(section) do
-    Enum.map(section.schema, fn {key, _} ->
-      {key, 1}
-    end)
-  end
-
-  defp flat_map_nested_entities(entity, mapper) do
-    Enum.flat_map(entity.entities, fn {_, nested_entities} ->
-      nested_entities
-      |> List.wrap()
-      |> Enum.flat_map(fn nested_entity ->
-        mapper.(nested_entity)
-      end)
-    end)
   end
 end

@@ -16,6 +16,12 @@ defmodule Spark.Formatter do
 
   ```elixir
   config :spark, :formatter,
+    # This option is a bit experimental
+    # Worst case it could introduce some easy-to-fix syntax errors.
+    # Its been used on a few big projects without issue.
+    # Regardless, before you run this for the first time, commit any other changes you have.
+    remove_parens?: true,
+
     "Ash.Resource": [
       section_order: [
         :resource,
@@ -29,8 +35,10 @@ defmodule Spark.Formatter do
     "MyApp.Resource": [
       # Use this if you use a module that is not the spark DSL itself.
       # For example, you might have a "base" that you use instead that sets some simple defaults.
+
       # This tells us what the actual thing is so we know what extensions are included automatically.
       type: Ash.Resource,
+
       # Tell us what extensions might be added under the hood
       extensions: [MyApp.ResourceExtension],
       section_order: [...]
@@ -53,8 +61,12 @@ defmodule Spark.Formatter do
     config =
       :spark
       |> Application.get_env(:formatter, [])
-      |> Enum.map(fn {key, value} ->
-        {Code.ensure_compiled!(Module.concat([key])), value}
+      |> Enum.map(fn
+        {key, value} when key in [:remove_parens?] ->
+          {key, value}
+
+        {key, value} ->
+          {Code.ensure_compiled!(Module.concat([key])), value}
       end)
 
     parse_result =
@@ -226,7 +238,49 @@ defmodule Spark.Formatter do
         end
       end)
 
-    Enum.concat(non_section_exprs, new_sections)
+    non_section_exprs
+    |> Enum.concat(new_sections)
+    |> then(fn sections ->
+      if config[:remove_parens?] do
+        de_paren(sections, Enum.flat_map(extensions, & &1.sections))
+      else
+        sections
+      end
+    end)
+  end
+
+  defp de_paren(actual_sections, dsl_sections) do
+    actual_sections
+    |> Enum.map(fn
+      {name, meta, body} ->
+        case Enum.find(dsl_sections, &(&1.name == name)) do
+          nil ->
+            {name, meta, body}
+
+          section ->
+            {name, meta, de_paren_section(body, section)}
+        end
+
+      other ->
+        other
+    end)
+  end
+
+  defp de_paren_section(body, section) do
+    builders = all_entity_builders([section])
+
+    Macro.prewalk(body, fn
+      {func, meta, body} = node when is_atom(func) ->
+        if builders[func] == Enum.count(List.wrap(body)) && Keyword.keyword?(meta) &&
+             meta[:closing] do
+          {func, Keyword.delete(meta, :closing), body}
+        else
+          node
+        end
+
+      node ->
+        node
+    end)
   end
 
   defp sort_sections(sections, nil), do: sections
@@ -308,5 +362,62 @@ defmodule Spark.Formatter do
 
   defp opts_without_plugin(opts) do
     Keyword.update(opts, :plugins, [], &(&1 -- [__MODULE__]))
+  end
+
+  @doc false
+  def all_entity_builders(sections) do
+    Enum.flat_map(sections, fn section ->
+      Enum.concat([
+        all_entity_option_builders(section),
+        section_option_builders(section),
+        section_entity_builders(section)
+      ])
+    end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp section_entity_builders(section) do
+    Enum.flat_map(section.entities(), fn entity ->
+      entity_builders(entity)
+    end) ++ all_entity_builders(section.sections())
+  end
+
+  defp entity_builders(entity) do
+    arg_count = Enum.count(entity.args)
+
+    [{entity.name, arg_count}, {entity.name, arg_count + 1}] ++
+      flat_map_nested_entities(entity, &entity_builders/1)
+  end
+
+  defp all_entity_option_builders(section) do
+    Enum.flat_map(section.entities, fn entity ->
+      entity_option_builders(entity)
+    end)
+  end
+
+  defp entity_option_builders(entity) do
+    entity.schema
+    |> Keyword.drop(entity.args)
+    |> Enum.map(fn {key, _schema} ->
+      {key, 1}
+    end)
+    |> Kernel.++(flat_map_nested_entities(entity, &entity_option_builders/1))
+  end
+
+  defp section_option_builders(section) do
+    Enum.map(section.schema, fn {key, _} ->
+      {key, 1}
+    end)
+  end
+
+  defp flat_map_nested_entities(entity, mapper) do
+    Enum.flat_map(entity.entities, fn {_, nested_entities} ->
+      nested_entities
+      |> List.wrap()
+      |> Enum.flat_map(fn nested_entity ->
+        mapper.(nested_entity)
+      end)
+    end)
   end
 end

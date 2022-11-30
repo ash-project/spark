@@ -5,13 +5,23 @@ defmodule Spark.Test.FormatterTest do
     on_exit(fn ->
       Application.delete_env(:spark, :formatter)
     end)
+
+    opts = [
+      locals_without_parens: [
+        first_name: 1,
+        street: 1,
+        last_name: 1
+      ]
+    ]
+
+    %{opts: opts}
   end
 
   defp config_contact(config, mod \\ "Spark.Test.Contact") do
-    Application.put_env(:spark, :formatter, [{mod, config}])
+    Application.put_env(:spark, :formatter, [{mod, config}, remove_parens?: true])
   end
 
-  test "it reorders sections properly" do
+  test "it reorders sections properly", %{opts: opts} do
     config_contact(section_order: [:address, :personal_details])
 
     assert Spark.Formatter.format(
@@ -29,24 +39,24 @@ defmodule Spark.Test.FormatterTest do
                end
              end
              """,
-             []
+             opts
            ) == """
            defmodule IncredibleHulk do
              use Spark.Test.Contact
 
              address do
-               street("Avenger Lane")
+               street "Avenger Lane"
              end
 
              personal_details do
-               first_name("Incredible")
-               last_name("Hulk")
+               first_name "Incredible"
+               last_name "Hulk"
              end
            end
            """
   end
 
-  test "it reorders sections properly when using a base resource" do
+  test "it reorders sections properly when using a base resource", %{opts: opts} do
     config_contact(
       [type: Spark.Test.Contact, section_order: [:address, :personal_details]],
       "Base"
@@ -67,18 +77,18 @@ defmodule Spark.Test.FormatterTest do
                end
              end
              """,
-             []
+             opts
            ) == """
            defmodule IncredibleHulk do
              use Base
 
              address do
-               street("Avenger Lane")
+               street "Avenger Lane"
              end
 
              personal_details do
-               first_name("Incredible")
-               last_name("Hulk")
+               first_name "Incredible"
+               last_name "Hulk"
              end
            end
            """
