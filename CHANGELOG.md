@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.15](https://github.com/ash-project/spark/compare/v0.2.14...v0.2.15) (2022-12-01)
+
+
+
+
+### Bug Fixes:
+
+* properly avoid unquoting functions out of context
+
 ## [v0.2.14](https://github.com/ash-project/spark/compare/v0.2.13...v0.2.14) (2022-12-01)
 
 
