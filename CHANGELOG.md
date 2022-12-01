@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.14](https://github.com/ash-project/spark/compare/v0.2.13...v0.2.14) (2022-12-01)
+
+
+
+
+### Improvements:
+
+* various DSL utilities, like `fetch_opt` and `sparks/2`
+
 ## [v0.2.13](https://github.com/ash-project/spark/compare/v0.2.12...v0.2.13) (2022-11-30)
 
 
