@@ -216,30 +216,31 @@ defmodule Spark.Formatter do
 
     {section_exprs, non_section_exprs} =
       body
-      |> Enum.split_with(fn {name, _, _} ->
+      |> Enum.with_index()
+      |> Enum.split_with(fn {{name, _, _}, _index} ->
         name in section_names
       end)
 
     new_sections =
-      section_names
-      |> Enum.flat_map(fn section_name ->
-        matching_section =
-          Enum.find(section_exprs, fn
-            {^section_name, _, _} -> true
-            _ -> nil
-          end)
+      section_exprs
+      |> Enum.sort_by(fn {{name, _, _}, _} ->
+        Enum.find_index(section_names, &(&1 == name))
+      end)
 
-        case matching_section do
-          nil ->
-            []
+    new_section_indexes =
+      section_exprs
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.sort()
 
-          section_expr ->
-            [section_expr]
-        end
+    new_sections =
+      Enum.zip_with(new_sections, new_section_indexes, fn {new_section, _}, index ->
+        {new_section, index}
       end)
 
     non_section_exprs
     |> Enum.concat(new_sections)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
     |> then(fn sections ->
       if config[:remove_parens?] do
         de_paren(sections, Enum.flat_map(extensions, & &1.sections))
