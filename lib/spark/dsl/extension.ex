@@ -175,7 +175,7 @@ defmodule Spark.Dsl.Extension do
     if configurable? do
       case get_opt_config(Spark.Dsl.Transformer.get_persisted(map, :module), path, value) do
         {:ok, value} ->
-          value
+          {:ok, value}
 
         _ ->
           Spark.Dsl.Transformer.fetch_option(map, path, value)
@@ -191,7 +191,7 @@ defmodule Spark.Dsl.Extension do
     if configurable? do
       case get_opt_config(resource, path, value) do
         {:ok, value} ->
-          value
+          {:ok, value}
 
         _ ->
           Keyword.fetch(dsl!(resource)[path][:opts] || [], value)
