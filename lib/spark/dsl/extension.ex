@@ -162,23 +162,30 @@ defmodule Spark.Dsl.Extension do
 
   Checks to see if it has been overridden via configuration.
   """
-  def get_opt(resource, path, value, default \\ nil, configurable? \\ false)
+  def get_opt(resource, path, value, default \\ nil, configurable? \\ false) do
+    case fetch_opt(resource, path, value, configurable?) do
+      {:ok, value} -> value
+      :error -> default
+    end
+  end
 
-  def get_opt(map, path, value, default, configurable?) when is_map(map) do
+  def fetch_opt(resource, path, value, configurable? \\ false)
+
+  def fetch_opt(map, path, value, configurable?) when is_map(map) do
     if configurable? do
       case get_opt_config(Spark.Dsl.Transformer.get_persisted(map, :module), path, value) do
         {:ok, value} ->
           value
 
         _ ->
-          Spark.Dsl.Transformer.get_option(map, path, value, default)
+          Spark.Dsl.Transformer.fetch_option(map, path, value)
       end
     else
-      Spark.Dsl.Transformer.get_option(map, path, value, default)
+      Spark.Dsl.Transformer.fetch_option(map, path, value)
     end
   end
 
-  def get_opt(resource, path, value, default, configurable?) do
+  def fetch_opt(resource, path, value, configurable?) do
     path = List.wrap(path)
 
     if configurable? do
@@ -187,10 +194,10 @@ defmodule Spark.Dsl.Extension do
           value
 
         _ ->
-          Keyword.get(dsl!(resource)[path][:opts] || [], value, default)
+          Keyword.fetch(dsl!(resource)[path][:opts] || [], value)
       end
     else
-      Keyword.get(dsl!(resource)[path][:opts] || [], value, default)
+      Keyword.fetch(dsl!(resource)[path][:opts] || [], value)
     end
   end
 

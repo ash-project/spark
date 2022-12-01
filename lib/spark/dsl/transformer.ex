@@ -193,6 +193,14 @@ defmodule Spark.Dsl.Transformer do
     |> Map.get(:entities, [])
   end
 
+  def fetch_option(dsl_state, path, option) do
+    dsl_state
+    |> Map.get(path, %{opts: []})
+    |> Map.get(:opts)
+    |> Kernel.||([])
+    |> Keyword.fetch(option)
+  end
+
   def get_option(dsl_state, path, option, default \\ nil) do
     dsl_state
     |> Map.get(path, %{opts: []})

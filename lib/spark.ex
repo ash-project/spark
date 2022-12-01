@@ -3,6 +3,25 @@ defmodule Spark do
   Documentation for `Spark`.
   """
 
+  @doc """
+  Returns all modules that implement the specified behaviour for a given otp_app.
+
+  Should only be called at runtime, not at compile time, as it will have
+  inconsistent results at compile time.
+  """
+  def sparks(otp_app, spark) do
+    otp_app
+    |> :application.get_key(:modules)
+    |> case do
+      {:ok, mods} when is_list(mods) ->
+        mods
+
+      _ ->
+        []
+    end
+    |> Enum.filter(&Spark.Dsl.is?(&1, spark))
+  end
+
   @doc "Returns true if the module implements the specified behavior"
   def implements_behaviour?(module, behaviour) do
     :attributes
