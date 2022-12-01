@@ -942,29 +942,30 @@ defmodule Spark.Dsl.Extension do
                     value
                 end
 
-              value =
+              {value, only_escaped?} =
                 case value do
                   {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
-                    value
+                    {value, false}
 
-                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} ->
-                    {:&, context1,
-                     [
-                       {:/, context2,
-                        [
-                          {{:., [], [{:__aliases__, [alias: false], [__CALLER__.module]}, name]},
-                           [no_parens: true], []},
-                          arity
-                        ]}
-                     ]}
+                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value ->
+                    args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+
+                    {quote do
+                       fn unquote_splicing(args) ->
+                         unquote(value).(unquote_splicing(args))
+                       end
+                     end, true}
+
+                  {:fn, _, [{:->, _, _}]} = value ->
+                    {value, true}
 
                   value ->
-                    value
+                    {value, false}
                 end
 
               quote generated: true do
                 Spark.Dsl.Extension.set_section_opt(
-                  unquote(value),
+                  unquote(if only_escaped?, do: nil, else: value),
                   unquote(Macro.escape(value)),
                   unquote(Macro.escape(config[:type])),
                   unquote(section_path),
@@ -1499,6 +1500,9 @@ defmodule Spark.Dsl.Extension do
                        unquote(value).(unquote_splicing(args))
                      end
                    end, true}
+
+                {:fn, _, [{:->, _, _}]} = value ->
+                  {value, true}
 
                 value ->
                   {value, false}
