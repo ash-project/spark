@@ -977,6 +977,36 @@ defmodule Spark.Dsl.Extension do
                        end
                      end, true}
 
+                  {:&, _,
+                   [
+                     {{:., _, [{:__aliases__, _, _aliases}, name]}, _, args}
+                   ]} = value
+                  when is_atom(name) ->
+                    args =
+                      Macro.prewalk(args, [], fn
+                        {:&, _, [v]} = ast, acc when is_integer(v) ->
+                          {ast, [v | acc]}
+
+                        ast, acc ->
+                          {ast, acc}
+                      end)
+                      |> elem(1)
+                      |> Enum.uniq()
+                      |> Enum.count()
+                      |> Macro.generate_unique_arguments(__CALLER__.module)
+
+                    {quote do
+                       fn unquote_splicing(args) ->
+                         unquote(value).(unquote_splicing(args))
+                       end
+                     end, true}
+
+                    {quote do
+                       fn unquote_splicing(args) ->
+                         unquote(value).(unquote_splicing(args))
+                       end
+                     end, true}
+
                   {:fn, _, [{:->, _, _}]} = value ->
                     {value, true}
 
@@ -1267,6 +1297,24 @@ defmodule Spark.Dsl.Extension do
                          end
                        end, true}
 
+                    {:&, _,
+                     [
+                       {{:., _, [{:__aliases__, _, _aliases}, name]}, _, args}
+                     ]} = value
+                    when is_atom(name) ->
+                      args =
+                        Macro.prewalk(args, [], fn
+                          {:&, _, [v]} = ast, acc when is_integer(v) ->
+                            {ast, [v | acc]}
+
+                          ast, acc ->
+                            {ast, acc}
+                        end)
+                        |> elem(1)
+                        |> Enum.uniq()
+                        |> Enum.count()
+                        |> Macro.generate_unique_arguments(__CALLER__.module)
+
                     {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
                       fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
 
@@ -1542,6 +1590,30 @@ defmodule Spark.Dsl.Extension do
                    end, true}
 
                 {:&, _, [{name, _, args}]} = value when is_atom(name) ->
+                  args =
+                    Macro.prewalk(args, [], fn
+                      {:&, _, [v]} = ast, acc when is_integer(v) ->
+                        {ast, [v | acc]}
+
+                      ast, acc ->
+                        {ast, acc}
+                    end)
+                    |> elem(1)
+                    |> Enum.uniq()
+                    |> Enum.count()
+                    |> Macro.generate_unique_arguments(__CALLER__.module)
+
+                  {quote do
+                     fn unquote_splicing(args) ->
+                       unquote(value).(unquote_splicing(args))
+                     end
+                   end, true}
+
+                {:&, _,
+                 [
+                   {{:., _, [{:__aliases__, _, _aliases}, name]}, _, args}
+                 ]} = value
+                when is_atom(name) ->
                   args =
                     Macro.prewalk(args, [], fn
                       {:&, _, [v]} = ast, acc when is_integer(v) ->
