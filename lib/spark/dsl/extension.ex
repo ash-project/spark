@@ -947,7 +947,17 @@ defmodule Spark.Dsl.Extension do
                   {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
                     {value, false}
 
-                  {:&, _, [{name, _, args}]} when is_atom(name) ->
+                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value
+                  when is_integer(arity) ->
+                    args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+
+                    {quote do
+                       fn unquote_splicing(args) ->
+                         unquote(value).(unquote_splicing(args))
+                       end
+                     end, true}
+
+                  {:&, _, [{name, _, args}]} = value when is_atom(name) ->
                     args =
                       Macro.prewalk(args, [], fn
                         {:&, _, [v]} = ast, acc when is_integer(v) ->
@@ -960,15 +970,6 @@ defmodule Spark.Dsl.Extension do
                       |> Enum.uniq()
                       |> Enum.count()
                       |> Macro.generate_unique_arguments(__CALLER__.module)
-
-                    {quote do
-                       fn unquote_splicing(args) ->
-                         unquote(value).(unquote_splicing(args))
-                       end
-                     end, true}
-
-                  {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value ->
-                    args = Macro.generate_unique_arguments(arity, __CALLER__.module)
 
                     {quote do
                        fn unquote_splicing(args) ->
@@ -1236,7 +1237,17 @@ defmodule Spark.Dsl.Extension do
                     {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
                       {[value | args], funs}
 
-                    {:&, _, [{name, _, args}]} when is_atom(name) ->
+                    {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value
+                    when is_integer(arity) ->
+                      args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+
+                      {quote do
+                         fn unquote_splicing(args) ->
+                           unquote(value).(unquote_splicing(args))
+                         end
+                       end, true}
+
+                    {:&, _, [{name, _, args}]} = value when is_atom(name) ->
                       args =
                         Macro.prewalk(args, [], fn
                           {:&, _, [v]} = ast, acc when is_integer(v) ->
@@ -1249,15 +1260,6 @@ defmodule Spark.Dsl.Extension do
                         |> Enum.uniq()
                         |> Enum.count()
                         |> Macro.generate_unique_arguments(__CALLER__.module)
-
-                      {quote do
-                         fn unquote_splicing(args) ->
-                           unquote(value).(unquote_splicing(args))
-                         end
-                       end, true}
-
-                    {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value ->
-                      args = Macro.generate_unique_arguments(arity, __CALLER__.module)
 
                       {quote do
                          fn unquote_splicing(args) ->
@@ -1529,7 +1531,17 @@ defmodule Spark.Dsl.Extension do
                 {:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value ->
                   {value, false}
 
-                {:&, _, [{name, _, args}]} when is_atom(name) ->
+                {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value
+                when is_integer(arity) ->
+                  args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+
+                  {quote do
+                     fn unquote_splicing(args) ->
+                       unquote(value).(unquote_splicing(args))
+                     end
+                   end, true}
+
+                {:&, _, [{name, _, args}]} = value when is_atom(name) ->
                   args =
                     Macro.prewalk(args, [], fn
                       {:&, _, [v]} = ast, acc when is_integer(v) ->
@@ -1542,15 +1554,6 @@ defmodule Spark.Dsl.Extension do
                     |> Enum.uniq()
                     |> Enum.count()
                     |> Macro.generate_unique_arguments(__CALLER__.module)
-
-                  {quote do
-                     fn unquote_splicing(args) ->
-                       unquote(value).(unquote_splicing(args))
-                     end
-                   end, true}
-
-                {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value ->
-                  args = Macro.generate_unique_arguments(arity, __CALLER__.module)
 
                   {quote do
                      fn unquote_splicing(args) ->
