@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.16](https://github.com/ash-project/spark/compare/v0.2.15...v0.2.16) (2022-12-02)
+
+
+
+
+### Improvements:
+
+* support partial captures in functions
+
+* leave unordered code where it is when sorting DSL sections
+
 ## [v0.2.15](https://github.com/ash-project/spark/compare/v0.2.14...v0.2.15) (2022-12-01)
 
 
