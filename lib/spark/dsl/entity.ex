@@ -60,10 +60,10 @@ defmodule Spark.Dsl.Entity do
   @type t :: %Entity{
           name: atom,
           target: module,
-          transform: mfa,
-          recursive_as: atom,
+          transform: mfa | nil,
+          recursive_as: atom | nil,
           examples: [String.t()],
-          entities: [t],
+          entities: Keyword.t(t),
           deprecations: Keyword.t(String.t()),
           describe: String.t(),
           snippet: String.t(),
