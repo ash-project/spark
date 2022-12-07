@@ -90,5 +90,17 @@ defmodule Spark.DslTest do
       assert apply(m, f, ["Ghost Busters"]) ==
                "Who you gonna call: Ghost Busters"
     end
+
+    test "verifiers are run" do
+      assert_raise Spark.Error.DslError, ~r/Cannot be gandalf/, fn ->
+        defmodule Gandalf do
+          use Spark.Test.Contact
+
+          personal_details do
+            first_name("Gandalf")
+          end
+        end
+      end
+    end
   end
 end

@@ -74,7 +74,9 @@ defmodule Spark.Test.Contact do
       ]
     }
 
-    use Spark.Dsl.Extension, sections: [@contact, @personal_details, @address, @presets]
+    use Spark.Dsl.Extension,
+      sections: [@contact, @personal_details, @address, @presets],
+      verifiers: [Spark.Test.Contact.Verifiers.VerifyNotGandalf]
 
     def explain(dsl_state) do
       """

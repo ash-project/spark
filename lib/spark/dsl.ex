@@ -161,6 +161,7 @@ defmodule Spark.Dsl do
             @opts opts
             @before_compile Spark.Dsl
             @after_compile __MODULE__
+
             @spark_is parent
             @spark_parent parent
 
@@ -168,18 +169,20 @@ defmodule Spark.Dsl do
 
             defmacro __after_compile__(_, _) do
               quote do
-                transformers_to_run =
-                  @extensions
-                  |> Enum.flat_map(& &1.transformers())
-                  |> Spark.Dsl.Transformer.sort()
-                  |> Enum.filter(& &1.after_compile?())
+                if @after_compile_transformers do
+                  transformers_to_run =
+                    @extensions
+                    |> Enum.flat_map(& &1.transformers())
+                    |> Spark.Dsl.Transformer.sort()
+                    |> Enum.filter(& &1.after_compile?())
 
-                __MODULE__
-                |> Spark.Dsl.Extension.run_transformers(
-                  transformers_to_run,
-                  @spark_dsl_config,
-                  __ENV__
-                )
+                  __MODULE__
+                  |> Spark.Dsl.Extension.run_transformers(
+                    transformers_to_run,
+                    @spark_dsl_config,
+                    __ENV__
+                  )
+                end
               end
             end
 
@@ -254,10 +257,61 @@ defmodule Spark.Dsl do
     end)
   end
 
+  @after_verify_supported Version.match?(System.version(), ">= 1.14.0")
+
   defmacro __before_compile__(env) do
     parent = Module.get_attribute(env.module, :spark_parent)
     opts = Module.get_attribute(env.module, :opts)
     parent_code = parent.handle_before_compile(opts)
+
+    verify_code =
+      if @after_verify_supported do
+        quote do
+          @after_compile_transformers false
+          @after_verify {__MODULE__, :__verify_ash_dsl__}
+
+          @doc false
+          def __verify_ash_dsl__(_module) do
+            transformers_to_run =
+              @extensions
+              |> Enum.flat_map(& &1.transformers())
+              |> Spark.Dsl.Transformer.sort()
+              |> Enum.filter(& &1.after_compile?())
+
+            @extensions
+            |> Enum.flat_map(& &1.verifiers())
+            |> Enum.each(fn verifier ->
+              case verifier.verify(@spark_dsl_config) do
+                :ok ->
+                  :ok
+
+                {:warn, warnings} ->
+                  warnings
+                  |> List.wrap()
+                  |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+
+                {:error, error} ->
+                  if Exception.exception?(error) do
+                    raise error
+                  else
+                    raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
+                  end
+              end
+            end)
+
+            __MODULE__
+            |> Spark.Dsl.Extension.run_transformers(
+              transformers_to_run,
+              @spark_dsl_config,
+              __ENV__
+            )
+          end
+        end
+      else
+        quote do
+          @after_compile_transformers true
+        end
+      end
 
     code =
       quote generated: true, bind_quoted: [dsl: __MODULE__] do
@@ -289,7 +343,7 @@ defmodule Spark.Dsl do
         end
       end
 
-    [code, parent_code]
+    [code, parent_code, verify_code]
   end
 
   def is?(module, type) when is_atom(module) do
