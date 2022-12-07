@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.18](https://github.com/ash-project/spark/compare/v0.2.17...v0.2.18) (2022-12-07)
+
+
+
+
+### Bug Fixes:
+
+* fix modules typespec
+
+* typespecs: fix incorrect typespec for `Spark.Dsl.Entity.t` (#14)
+
+### Improvements:
+
+* update to latest nimble options
+
 ## [v0.2.17](https://github.com/ash-project/spark/compare/v0.2.16...v0.2.17) (2022-12-02)
 
 
