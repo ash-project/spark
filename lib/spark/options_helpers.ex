@@ -194,6 +194,9 @@ defmodule Spark.OptionsHelpers do
       {:spark_type, _, _, _} ->
         :any
 
+      {:tuple, subtypes} ->
+        {:tuple, Enum.map(subtypes, &sanitize_type(&1, key))}
+
       :literal ->
         :any
 
