@@ -34,8 +34,6 @@ defmodule TransfomerTest do
 
     {:ok, entity} = Spark.Dsl.Transformer.build_entity(Dsl, [:section], :entity, [])
 
-    IO.inspect(entity)
-
     assert entity.set_automatically == true
     assert entity.set_manually == nil
   end

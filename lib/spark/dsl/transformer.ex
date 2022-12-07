@@ -162,7 +162,7 @@ defmodule Spark.Dsl.Transformer do
 
     with {:ok, opts} <-
            Spark.OptionsHelpers.validate(
-             Keyword.merge(opts || [], before_validate_auto),
+             Keyword.merge(opts, before_validate_auto),
              entity.schema
            ),
          opts <- Keyword.merge(opts, after_validate_auto) do
