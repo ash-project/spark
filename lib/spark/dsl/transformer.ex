@@ -157,11 +157,18 @@ defmodule Spark.Dsl.Transformer do
 
     {entities, opts} = Keyword.split(opts, entity_names)
 
-    case Spark.OptionsHelpers.validate(opts, entity.schema) do
-      {:ok, opts} ->
-        result = struct(struct(entity.target, opts), entities)
-        Spark.Dsl.Entity.transform(entity.transform, result)
+    {before_validate_auto, after_validate_auto} =
+      Keyword.split(entity.auto_set_fields || [], Keyword.keys(entity.schema))
 
+    with {:ok, opts} <-
+           Spark.OptionsHelpers.validate(
+             Keyword.merge(opts || [], before_validate_auto),
+             entity.schema
+           ),
+         opts <- Keyword.merge(opts, after_validate_auto) do
+      result = struct(struct(entity.target, opts), entities)
+      Spark.Dsl.Entity.transform(entity.transform, result)
+    else
       {:error, error} ->
         {:error, error}
     end
