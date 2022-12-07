@@ -51,7 +51,7 @@ defmodule Spark.Dsl.Section do
           snippet: String.t(),
           links: nil | Keyword.t([String.t()]),
           examples: [String.t()],
-          modules: [module],
+          modules: [atom],
           no_depend_modules: [atom],
           auto_set_fields: Keyword.t(any),
           entities: [Entity.t()],

@@ -70,7 +70,7 @@ defmodule Spark.Dsl.Entity do
           args: [atom],
           links: Keyword.t([String.t()]),
           hide: [atom],
-          modules: [String.t()],
+          modules: [atom],
           no_depend_modules: [atom],
           schema: OptionsHelpers.schema(),
           auto_set_fields: Keyword.t(any),
