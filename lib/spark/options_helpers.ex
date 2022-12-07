@@ -200,6 +200,9 @@ defmodule Spark.OptionsHelpers do
       :literal ->
         :any
 
+      :module ->
+        :atom
+
       type ->
         type
     end
