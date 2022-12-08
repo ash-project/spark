@@ -1540,6 +1540,15 @@ defmodule Spark.Dsl.Extension do
         entity,
         nested_entity_path
       ) do
+    entity =
+      case entity.recursive_as do
+        nil ->
+          entity
+
+        recursive_as ->
+          %{entity | entities: Keyword.put_new(entity.entities || [], recursive_as, [])}
+      end
+
     Module.create(
       module_name,
       quote generated: true,
