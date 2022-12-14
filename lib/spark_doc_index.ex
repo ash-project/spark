@@ -30,26 +30,11 @@ defmodule Spark.SparkDocIndex do
   end
 
   @impl true
-  @spec code_modules :: [{String.t(), list(module)}]
   def code_modules do
     [
-      {"DSLs and Extensions",
-       [
-         Spark.Dsl,
-         Spark.Dsl.Entity,
-         Spark.Dsl.Extension,
-         Spark.Dsl.Section,
-         Spark.Dsl.Transformer,
-         Spark.Dsl.Builder
-       ]},
-      {"Documentation",
-       [
-         Spark.DocIndex
-       ]},
-      {"Errors",
-       [
-         Spark.Error.DslError
-       ]}
+      "DSLs and Extensions": ~r/^Spark.Dsl/,
+      Documentation: [Spark.DocIndex],
+      Errors: [Spark.Error.DslError]
     ]
   end
 end

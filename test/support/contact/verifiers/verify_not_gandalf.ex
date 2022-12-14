@@ -1,4 +1,5 @@
 defmodule Spark.Test.Contact.Verifiers.VerifyNotGandalf do
+  @moduledoc false
   use Spark.Dsl.Verifier
   alias Spark.Dsl.Verifier
 

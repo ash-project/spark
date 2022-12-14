@@ -169,6 +169,8 @@ defmodule Spark.Dsl do
 
             defmacro __after_compile__(_, _) do
               quote do
+                # This is here because dialyzer complains
+                # this is really dumb but it works so 🤷‍♂️
                 if @after_compile_transformers do
                   transformers_to_run =
                     @extensions
@@ -265,9 +267,11 @@ defmodule Spark.Dsl do
     opts = Module.get_attribute(env.module, :opts)
     parent_code = parent.handle_before_compile(opts)
 
+    # This `to_string() == "true"` bit is to appease dialyzer
+    # It is very dumb but it works so 🤷‍♂️
     verify_code =
-      if @after_verify_supported do
-        quote do
+      if to_string(@after_verify_supported) == "true" do
+        quote generated: true do
           @after_compile_transformers false
           @after_verify {__MODULE__, :__verify_ash_dsl__}
 
