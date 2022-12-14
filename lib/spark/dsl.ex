@@ -197,6 +197,7 @@ defmodule Spark.Dsl do
             end
 
             @persist {:module, __MODULE__}
+            @persist {:file, __ENV__.file}
 
             for single_extension_kind <- parent_opts[:single_extension_kinds] do
               @persist {single_extension_kind, opts[single_extension_kind]}
