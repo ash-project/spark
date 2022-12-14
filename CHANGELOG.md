@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.0](https://github.com/ash-project/spark/compare/v0.2.18...v0.3.0) (2022-12-14)
+
+
+
+
+### Features:
+
+* add verifiers
+
+### Bug Fixes:
+
+* ensure entities config exists for recursive entities
+
+* properly traverse tuple subtypes
+
+### Improvements:
+
+* allow regexes in code modules
+
+* add the file to the persisted state
+
+* add `module` type
+
 ## [v0.2.18](https://github.com/ash-project/spark/compare/v0.2.17...v0.2.18) (2022-12-07)
 
 
