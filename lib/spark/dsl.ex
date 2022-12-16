@@ -171,7 +171,7 @@ defmodule Spark.Dsl do
               quote do
                 # This is here because dialyzer complains
                 # this is really dumb but it works so 🤷‍♂️
-                if @after_compile_transformers |> IO.inspect() do
+                if @after_compile_transformers do
                   transformers_to_run =
                     @extensions
                     |> Enum.flat_map(& &1.transformers())
