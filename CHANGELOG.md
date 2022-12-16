@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.1](https://github.com/ash-project/spark/compare/v0.3.0...v0.3.1) (2022-12-16)
+
+
+
+
+### Bug Fixes:
+
+* handle raised error in doc_index link replacements better
+
+### Improvements:
+
+* support optional entity arguments (ð)
+
 ## [v0.3.0](https://github.com/ash-project/spark/compare/v0.2.18...v0.3.0) (2022-12-14)
 
 
