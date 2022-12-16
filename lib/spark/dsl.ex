@@ -171,12 +171,33 @@ defmodule Spark.Dsl do
               quote do
                 # This is here because dialyzer complains
                 # this is really dumb but it works so 🤷‍♂️
-                if @after_compile_transformers do
+                if @after_compile_transformers |> IO.inspect() do
                   transformers_to_run =
                     @extensions
                     |> Enum.flat_map(& &1.transformers())
                     |> Spark.Dsl.Transformer.sort()
                     |> Enum.filter(& &1.after_compile?())
+
+                  @extensions
+                  |> Enum.flat_map(& &1.verifiers())
+                  |> Enum.each(fn verifier ->
+                    case verifier.verify(@spark_dsl_config) do
+                      :ok ->
+                        :ok
+
+                      {:warn, warnings} ->
+                        warnings
+                        |> List.wrap()
+                        |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+
+                      {:error, error} ->
+                        if Exception.exception?(error) do
+                          raise error
+                        else
+                          raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
+                        end
+                    end
+                  end)
 
                   __MODULE__
                   |> Spark.Dsl.Extension.run_transformers(
