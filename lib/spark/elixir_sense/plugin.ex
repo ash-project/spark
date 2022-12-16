@@ -105,7 +105,7 @@ defmodule Spark.ElixirSense.Plugin do
                 with {:value, option} <- type,
                      entity when not is_nil(entity) <-
                        find_building_entity(constructors, option),
-                     [arg | _] <- entity.args,
+                     [arg | _] <- Spark.Dsl.Entity.arg_names(entity),
                      config when not is_nil(config) <- entity.schema[arg] do
                   option_values(arg, config, hint, opts)
                 else
@@ -408,7 +408,7 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp args(entity) do
-    case entity.args || [] do
+    case Spark.Dsl.Entity.arg_names(entity) do
       [] ->
         ""
 
@@ -481,7 +481,7 @@ defmodule Spark.ElixirSense.Plugin do
             find_entity_hints(entity, hint, recursives)
         else
           Enum.map(entity.schema, fn {key, value} ->
-            arg_index = Enum.find_index(entity.args || [], &(&1 == key))
+            arg_index = Enum.find_index(Spark.Dsl.Entity.arg_names(entity), &(&1 == key))
 
             if arg_index do
               {key, Keyword.put(value, :arg_index, arg_index)}
@@ -560,7 +560,7 @@ defmodule Spark.ElixirSense.Plugin do
   defp find_opt_hints(%{__struct__: Spark.Dsl.Entity} = entity, hint) do
     Enum.flat_map(entity.schema, fn {key, value} ->
       if apply(Matcher, :match?, [to_string(key), hint]) do
-        arg_index = Enum.find_index(entity.args || [], &(&1 == key))
+        arg_index = Enum.find_index(Spark.Dsl.Entity.arg_names(entity), &(&1 == key))
 
         if arg_index do
           [{key, Keyword.put(value, :arg_index, arg_index)}]

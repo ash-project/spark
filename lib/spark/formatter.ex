@@ -401,8 +401,10 @@ defmodule Spark.Formatter do
   end
 
   defp entity_option_builders(entity) do
+    entity_args_to_drop = Spark.Dsl.Entity.arg_names(entity)
+
     entity.schema
-    |> Keyword.drop(entity.args)
+    |> Keyword.drop(entity_args_to_drop)
     |> Enum.map(fn {key, _schema} ->
       {key, 1}
     end)

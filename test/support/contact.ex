@@ -67,10 +67,30 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @preset_with_optional %Spark.Dsl.Entity{
+      name: :preset_with_optional,
+      args: [{:optional, :name, :atom}, {:optional, :default_message}],
+      target: Preset,
+      schema: [
+        name: [
+          type: :atom
+        ],
+        default_message: [
+          type: {:or, [:string, {:in, [nil]}]}
+        ],
+        contacter: [
+          type:
+            {:spark_function_behaviour, Spark.Test.Contact.Contacter,
+             {Spark.Test.Contact.Contacter.Function, 1}}
+        ]
+      ]
+    }
+
     @presets %Spark.Dsl.Section{
       name: :presets,
       entities: [
-        @preset
+        @preset,
+        @preset_with_optional
       ]
     }
 

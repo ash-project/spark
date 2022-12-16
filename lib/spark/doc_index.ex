@@ -132,7 +132,16 @@ defmodule Spark.DocIndex do
         |> String.trim_leading("____mix_dep_")
         |> String.trim_trailing("____")
 
-      callback.(:mix_dep, %{text: text, library: library}, context)
+      try do
+        callback.(:mix_dep, %{text: text, library: library}, context)
+      rescue
+        e ->
+          IO.warn(
+            "Invalid link `#{text}`: #{Exception.format(:error, e)}\n#{Exception.format_stacktrace(__STACKTRACE__)}"
+          )
+
+          text
+      end
     end)
     |> String.replace(~r/{{mix_dep:.*}}/, fn text ->
       try do

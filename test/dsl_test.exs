@@ -91,6 +91,48 @@ defmodule Spark.DslTest do
                "Who you gonna call: Ghost Busters"
     end
 
+    test "optional values with defaults are set" do
+      defmodule BoBurnham do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional()
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(BoBurnham)
+      assert preset.default_message == nil
+      assert preset.name == :atom
+    end
+
+    test "optional values can be included without including all of them" do
+      defmodule BugsBunny do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional(:name)
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(BugsBunny)
+      assert preset.default_message == nil
+      assert preset.name == :name
+    end
+
+    test "all optional values can be included" do
+      defmodule DaffyDuck do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional(:name, "foo")
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(DaffyDuck)
+      assert preset.default_message == "foo"
+      assert preset.name == :name
+    end
+
     test "verifiers are run" do
       assert_raise Spark.Error.DslError, ~r/Cannot be gandalf/, fn ->
         defmodule Gandalf do

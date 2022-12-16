@@ -1174,7 +1174,25 @@ defmodule Spark.Dsl.Extension do
       nested_entity_path
     )
 
-    args = Enum.map(entity.args, &Macro.var(&1, mod_name))
+    args =
+      entity.args
+      |> Enum.map(fn
+        {:optional, name} ->
+          {:optional, name, nil}
+
+        other ->
+          other
+      end)
+      |> Enum.map(fn
+        {:optional, name, default} ->
+          {:\\, [], [{name, [], Elixir}, default]}
+
+        other ->
+          Macro.var(other, Elixir)
+      end)
+
+    entity_args = Spark.Dsl.Entity.arg_names(entity)
+    arg_vars = Enum.map(entity_args, &Macro.var(&1, Elixir))
 
     Module.create(
       mod_name,
@@ -1183,7 +1201,9 @@ defmodule Spark.Dsl.Extension do
               extension: extension,
               entity: Macro.escape(entity),
               args: Macro.escape(args),
+              arg_vars: Macro.escape(arg_vars),
               section_path: Macro.escape(section_path),
+              entity_args: Macro.escape(entity_args),
               options_mod_name: Macro.escape(options_mod_name),
               nested_entity_mods: Macro.escape(nested_entity_mods),
               nested_entity_path: Macro.escape(nested_entity_path),
@@ -1197,7 +1217,8 @@ defmodule Spark.Dsl.Extension do
           entity_schema = unquote(Macro.escape(entity.schema))
           entity = unquote(Macro.escape(entity))
           entity_name = unquote(Macro.escape(entity.name))
-          entity_args = unquote(Macro.escape(entity.args))
+          entity_args = unquote(Macro.escape(entity_args))
+          arg_vars = unquote(Macro.escape(arg_vars))
           entity_deprecations = unquote(entity.deprecations)
           options_mod_name = unquote(Macro.escape(options_mod_name))
           source = unquote(__MODULE__)
@@ -1240,7 +1261,7 @@ defmodule Spark.Dsl.Extension do
 
           {arg_values, funs} =
             entity_args
-            |> Enum.zip(unquote(args))
+            |> Enum.zip([unquote_splicing(arg_vars)])
             |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
               type = entity_schema[key][:type]
 

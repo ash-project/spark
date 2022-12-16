@@ -77,6 +77,18 @@ defmodule Spark.Dsl.Entity do
           docs: String.t()
         }
 
+  def arg_names(entity) do
+    entity.args
+    |> Kernel.||([])
+    |> Enum.map(fn
+      tuple when is_tuple(tuple) ->
+        elem(tuple, 1)
+
+      other ->
+        other
+    end)
+  end
+
   def build(
         %{target: target, schema: schema, auto_set_fields: auto_set_fields, transform: transform},
         opts,
