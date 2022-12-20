@@ -389,9 +389,11 @@ defmodule Spark.Formatter do
 
   defp entity_builders(entity) do
     arg_count = Enum.count(entity.args)
+    non_optional_arg_count = Enum.count(entity.args, &is_atom/1)
 
-    [{entity.name, arg_count}, {entity.name, arg_count + 1}] ++
-      flat_map_nested_entities(entity, &entity_builders/1)
+    non_optional_arg_count..arg_count
+    |> Enum.flat_map(&[{entity.name, &1}, {entity.name, &1 + 1}])
+    |> Enum.concat(flat_map_nested_entities(entity, &entity_builders/1))
   end
 
   defp all_entity_option_builders(section) do
