@@ -16,6 +16,10 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 * run verifiers in after_compile hook in old versions
 
+## Improvements:
+
+* support `imports` option on entities
+
 ## [v0.3.1](https://github.com/ash-project/spark/compare/v0.3.0...v0.3.1) (2022-12-16)
 
 
