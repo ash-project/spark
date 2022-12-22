@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.2](https://github.com/ash-project/spark/compare/v0.3.1...v0.3.2) (2022-12-22)
+
+
+
+
+### Bug Fixes:
+
+* support optional entity args in formatter
+
+* run verifiers in after_compile hook in old versions
+
 ## [v0.3.1](https://github.com/ash-project/spark/compare/v0.3.0...v0.3.1) (2022-12-16)
 
 
