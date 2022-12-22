@@ -46,6 +46,7 @@ defmodule Spark.Dsl.Entity do
     links: nil,
     hide: [],
     modules: [],
+    imports: [],
     no_depend_modules: [],
     schema: [],
     auto_set_fields: [],

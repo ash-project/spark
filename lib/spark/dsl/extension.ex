@@ -1385,8 +1385,16 @@ defmodule Spark.Dsl.Extension do
 
           arg_values = Enum.reverse(arg_values)
 
+          imports =
+            for module <- entity.imports do
+              quote generated: true do
+                import unquote(module)
+              end
+            end
+
           code =
             unimports ++
+              imports ++
               funs ++
               [
                 quote generated: true do
