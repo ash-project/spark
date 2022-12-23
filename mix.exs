@@ -18,7 +18,8 @@ defmodule Spark.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases(),
       source_url: "https://github.com/ash-project/spark",
-      homepage_url: "https://github.com/ash-project/spark"
+      homepage_url: "https://github.com/ash-project/spark",
+      dialyzer: [plt_add_apps: [:mix]]
     ]
   end
 
