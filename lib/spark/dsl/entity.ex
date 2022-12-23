@@ -64,6 +64,7 @@ defmodule Spark.Dsl.Entity do
           transform: mfa | nil,
           recursive_as: atom | nil,
           examples: [String.t()],
+          imports: [module],
           entities: Keyword.t(t),
           deprecations: Keyword.t(String.t()),
           describe: String.t(),
