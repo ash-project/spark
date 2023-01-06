@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.3](https://github.com/ash-project/spark/compare/v0.3.2...v0.3.3) (2023-01-06)
+
+
+
+
+### Improvements:
+
+* support functions in entity args better
+
 ## [v0.3.2](https://github.com/ash-project/spark/compare/v0.3.1...v0.3.2) (2022-12-22)
 
 
