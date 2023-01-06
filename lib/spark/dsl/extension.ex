@@ -1197,6 +1197,7 @@ defmodule Spark.Dsl.Extension do
     Module.create(
       mod_name,
       quote generated: true,
+            location: :keep,
             bind_quoted: [
               extension: extension,
               entity: Macro.escape(entity),
@@ -1295,17 +1296,27 @@ defmodule Spark.Dsl.Extension do
 
                     {:&, context1, [{:/, context2, [{name, _, _}, arity]}]} = value
                     when is_integer(arity) ->
-                      args = Macro.generate_unique_arguments(arity, __CALLER__.module)
+                      fn_args = Macro.generate_unique_arguments(arity, __CALLER__.module)
 
-                      {quote do
-                         fn unquote_splicing(args) ->
-                           unquote(value).(unquote_splicing(args))
+                      fun_name = Spark.Dsl.Extension.code_identifier(value)
+
+                      fun_name =
+                        :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+
+                      {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
+                       [
+                         quote generated: true do
+                           @doc false
+                           def unquote(fun_name)(unquote_splicing(fn_args)) do
+                             unquote(value).(unquote_splicing(fn_args))
+                           end
                          end
-                       end, true}
+                         | funs
+                       ]}
 
-                    {:&, _, [{name, _, args}]} = value when is_atom(name) ->
-                      args =
-                        Macro.prewalk(args, [], fn
+                    {:&, _, [{name, _, fn_args}]} = value when is_atom(name) ->
+                      fn_args =
+                        Macro.prewalk(fn_args, [], fn
                           {:&, _, [v]} = ast, acc when is_integer(v) ->
                             {ast, [v | acc]}
 
@@ -1317,19 +1328,29 @@ defmodule Spark.Dsl.Extension do
                         |> Enum.count()
                         |> Macro.generate_unique_arguments(__CALLER__.module)
 
-                      {quote do
-                         fn unquote_splicing(args) ->
-                           unquote(value).(unquote_splicing(args))
+                      fun_name = Spark.Dsl.Extension.code_identifier(value)
+
+                      fun_name =
+                        :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
+
+                      {[Macro.escape({mod, fun: {__CALLER__.module, fun_name, []}}) | args],
+                       [
+                         quote generated: true do
+                           @doc false
+                           def unquote(fun_name)(unquote_splicing(fn_args)) do
+                             unquote(value).(unquote_splicing(fn_args))
+                           end
                          end
-                       end, true}
+                         | funs
+                       ]}
 
                     {:&, _,
                      [
-                       {{:., _, [{:__aliases__, _, _aliases}, name]}, _, args}
+                       {{:., _, [{:__aliases__, _, _aliases}, name]}, _, fn_args}
                      ]} = value
                     when is_atom(name) ->
-                      args =
-                        Macro.prewalk(args, [], fn
+                      fn_args =
+                        Macro.prewalk(fn_args, [], fn
                           {:&, _, [v]} = ast, acc when is_integer(v) ->
                             {ast, [v | acc]}
 
@@ -1340,6 +1361,15 @@ defmodule Spark.Dsl.Extension do
                         |> Enum.uniq()
                         |> Enum.count()
                         |> Macro.generate_unique_arguments(__CALLER__.module)
+
+                      {[
+                         quote do
+                           fn unquote_splicing(fn_args) ->
+                             unquote(value).(unquote_splicing(fn_args))
+                           end
+                         end
+                         | args
+                       ], funs}
 
                     {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
                       fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
@@ -1698,45 +1728,6 @@ defmodule Spark.Dsl.Extension do
     )
 
     module_name
-  end
-
-  defmacro entity_arg(
-             value,
-             escaped_value,
-             type,
-             key
-           ) do
-    quote generated: true,
-          bind_quoted: [
-            value: value,
-            escaped_value: escaped_value,
-            type: type,
-            key: key
-          ] do
-      case Spark.Dsl.Extension.spark_function_info(type) do
-        nil ->
-          value
-
-        {mod, arity} ->
-          case escaped_value do
-            {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-              fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
-
-              fun_name =
-                :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
-
-              @doc false
-              def unquote(fun_name)(unquote_splicing(args)) do
-                unquote(body)
-              end
-
-              {mod, fun: {__MODULE__, fun_name, []}}
-
-            _ ->
-              value
-          end
-      end
-    end
   end
 
   defmacro set_entity_opt(

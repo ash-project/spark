@@ -231,7 +231,8 @@ defmodule Spark.OptionsHelpers do
      "Expected a tagged tuple in the form of {#{inspect(tag)}, value}, got: #{inspect(other)}"}
   end
 
-  def spark_behaviour({module, opts}, _behaviour) when is_atom(module) do
+  def spark_behaviour({module, opts}, _behaviour)
+      when is_atom(module) and module not in [nil, true, false] do
     if Keyword.keyword?(opts) do
       # We can't check if it implements the behaviour here, unfortunately
       # As it may not be immediately available
@@ -241,7 +242,8 @@ defmodule Spark.OptionsHelpers do
     end
   end
 
-  def spark_behaviour(module, behaviour) when is_atom(module) do
+  def spark_behaviour(module, behaviour)
+      when is_atom(module) and module not in [nil, true, false] do
     spark_behaviour({module, []}, behaviour)
   end
 
@@ -250,7 +252,7 @@ defmodule Spark.OptionsHelpers do
   end
 
   def spark_function_behaviour({module, opts}, _behaviour, {_functional, _arity})
-      when is_atom(module) do
+      when is_atom(module) and module not in [nil, true, false] do
     if Keyword.keyword?(opts) do
       # We can't check if it implements the behaviour here, unfortunately
       # As it may not be immediately available
@@ -260,7 +262,8 @@ defmodule Spark.OptionsHelpers do
     end
   end
 
-  def spark_function_behaviour(module, behaviour, {functional, arity}) when is_atom(module) do
+  def spark_function_behaviour(module, behaviour, {functional, arity})
+      when is_atom(module) and module not in [nil, true, false] do
     spark_function_behaviour({module, []}, behaviour, {functional, arity})
   end
 
@@ -297,7 +300,7 @@ defmodule Spark.OptionsHelpers do
     end
   end
 
-  def module_and_opts({module, opts}) when is_atom(module) do
+  def module_and_opts({module, opts}) when is_atom(module) and module not in [nil, true, false] do
     if Keyword.keyword?(opts) do
       {:ok, {module, opts}}
     else

@@ -48,6 +48,25 @@ defmodule Spark.Test.Contact do
       defstruct [:name, :contacter, :default_message]
     end
 
+    @preset_with_fn_arg %Spark.Dsl.Entity{
+      name: :preset_with_fn_arg,
+      args: [:name, :contacter],
+      target: Preset,
+      schema: [
+        name: [
+          type: :atom
+        ],
+        default_message: [
+          type: :string
+        ],
+        contacter: [
+          type:
+            {:spark_function_behaviour, Spark.Test.Contact.Contacter,
+             {Spark.Test.Contact.Contacter.Function, 1}}
+        ]
+      ]
+    }
+
     @preset %Spark.Dsl.Entity{
       name: :preset,
       args: [:name],
@@ -90,6 +109,7 @@ defmodule Spark.Test.Contact do
       name: :presets,
       entities: [
         @preset,
+        @preset_with_fn_arg,
         @preset_with_optional
       ]
     }

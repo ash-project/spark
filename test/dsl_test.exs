@@ -65,6 +65,20 @@ defmodule Spark.DslTest do
                "Help: I need some body"
     end
 
+    test "entities can functions in args" do
+      defmodule FredFlintstone do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_fn_arg(:help, &foo/1)
+        end
+
+        defp foo(bar) do
+          "Yabbadabbadoo: #{bar}"
+        end
+      end
+    end
+
     test "entities support references to functions in option setters" do
       defmodule GhostBusters do
         use Spark.Test.Contact

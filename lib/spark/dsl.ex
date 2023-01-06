@@ -25,6 +25,13 @@ defmodule Spark.Dsl do
       Default values for single extension kinds are overwritten if specified by the implementor, while many extension
       kinds are appended to if specified by the implementor.
       """
+    ],
+    opt_schema: [
+      type: :keyword_list,
+      default: [],
+      doc: """
+      A schema for additional options to accept when calling `use YourSpark`
+      """
     ]
   ]
 
@@ -87,6 +94,8 @@ defmodule Spark.Dsl do
 
     their_opt_schema = Keyword.put(their_opt_schema, :otp_app, type: :atom)
 
+    their_opt_schema = Keyword.merge(opts[:opt_schema] || [], their_opt_schema)
+
     quote bind_quoted: [
             their_opt_schema: their_opt_schema,
             parent_opts: opts,
@@ -145,16 +154,15 @@ defmodule Spark.Dsl do
           end)
           |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
 
-        opts =
-          opts
-          |> Spark.OptionsHelpers.validate!(their_opt_schema)
-          |> init()
-          |> Spark.Dsl.unwrap()
-
         body =
           quote generated: true do
+            opts =
+              unquote(opts)
+              |> Spark.OptionsHelpers.validate!(unquote(their_opt_schema))
+              |> unquote(__MODULE__).init()
+              |> Spark.Dsl.unwrap()
+
             parent = unquote(parent)
-            opts = unquote(opts)
             parent_opts = unquote(parent_opts)
             their_opt_schema = unquote(their_opt_schema)
 
