@@ -1404,10 +1404,10 @@ defmodule Spark.Dsl.Extension do
           last = List.last(arg_values)
 
           {arg_values, opts} =
-            if Keyword.keyword?(List.last(arg_values)) && is_nil(opts) do
+            if Keyword.keyword?(last) && is_nil(opts) do
               {:lists.droplast(arg_values), last}
             else
-              {arg_values, []}
+              {arg_values, opts || []}
             end
 
           opts =
