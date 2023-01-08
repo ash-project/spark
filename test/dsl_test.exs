@@ -133,6 +133,21 @@ defmodule Spark.DslTest do
       assert preset.name == :name
     end
 
+    test "optional values can be included without including all of them even with a do block" do
+      defmodule ElmerFudd do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional(:name) do
+          end
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(ElmerFudd)
+      assert preset.default_message == nil
+      assert preset.name == :name
+    end
+
     test "all optional values can be included" do
       defmodule DaffyDuck do
         use Spark.Test.Contact

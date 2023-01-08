@@ -1213,7 +1213,7 @@ defmodule Spark.Dsl.Extension do
               nested_key: nested_key
             ] do
         @moduledoc false
-        defmacro unquote(entity.name)(unquote_splicing(args), opts \\ []) do
+        defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
           section_path = unquote(Macro.escape(section_path))
           entity_schema = unquote(Macro.escape(entity.schema))
           entity = unquote(Macro.escape(entity))
@@ -1238,27 +1238,6 @@ defmodule Spark.Dsl.Extension do
             section_path ++ nested_entity_path,
             __CALLER__
           )
-
-          opts =
-            Enum.map(opts, fn {key, value} ->
-              Spark.Dsl.Extension.maybe_deprecated(
-                key,
-                entity_deprecations,
-                nested_entity_path,
-                __CALLER__
-              )
-
-              cond do
-                key in entity.modules ->
-                  {key, Spark.Dsl.Extension.expand_alias(value, __CALLER__)}
-
-                key in entity.no_depend_modules ->
-                  {key, Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)}
-
-                true ->
-                  {key, value}
-              end
-            end)
 
           {arg_values, funs} =
             entity_args
@@ -1421,6 +1400,36 @@ defmodule Spark.Dsl.Extension do
                 import unquote(module)
               end
             end
+
+          last = List.last(arg_values)
+
+          {arg_values, opts} =
+            if Keyword.keyword?(List.last(arg_values)) && is_nil(opts) do
+              {:lists.droplast(arg_values), last}
+            else
+              {arg_values, []}
+            end
+
+          opts =
+            Enum.map(opts, fn {key, value} ->
+              Spark.Dsl.Extension.maybe_deprecated(
+                key,
+                entity_deprecations,
+                nested_entity_path,
+                __CALLER__
+              )
+
+              cond do
+                key in entity.modules ->
+                  {key, Spark.Dsl.Extension.expand_alias(value, __CALLER__)}
+
+                key in entity.no_depend_modules ->
+                  {key, Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)}
+
+                true ->
+                  {key, value}
+              end
+            end)
 
           code =
             unimports ++
