@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.4](https://github.com/ash-project/spark/compare/v0.3.3...v0.3.4) (2023-01-09)
+
+
+
+
+### Bug Fixes:
+
+* properly ensure options list is pushed to the end
+
+* don't remove incorrect opts, broken in last commit
+
+* properly handle optional keyword list/do blocks with optional args
+
 ## [v0.3.3](https://github.com/ash-project/spark/compare/v0.3.2...v0.3.3) (2023-01-06)
 
 
