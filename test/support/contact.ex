@@ -92,7 +92,8 @@ defmodule Spark.Test.Contact do
       target: Preset,
       schema: [
         name: [
-          type: :atom
+          type: :atom,
+          required: true
         ],
         default_message: [
           type: {:or, [:string, {:in, [nil]}]}

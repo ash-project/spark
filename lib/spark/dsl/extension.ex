@@ -1239,9 +1239,13 @@ defmodule Spark.Dsl.Extension do
             __CALLER__
           )
 
-          {arg_values, funs} =
+          {args_without_opts, opts} =
             entity_args
             |> Enum.zip([unquote_splicing(arg_vars)])
+            |> Spark.Dsl.Extension.shuffle_opts_to_end(unquote(Macro.escape(entity.args)), opts)
+
+          {arg_values, funs} =
+            args_without_opts
             |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
               type = entity_schema[key][:type]
 
@@ -1399,15 +1403,6 @@ defmodule Spark.Dsl.Extension do
               quote generated: true do
                 import unquote(module)
               end
-            end
-
-          last = List.last(arg_values)
-
-          {arg_values, opts} =
-            if Keyword.keyword?(last) && is_nil(opts) do
-              {:lists.droplast(arg_values), last}
-            else
-              {arg_values, opts || []}
             end
 
           opts =
@@ -1857,5 +1852,30 @@ defmodule Spark.Dsl.Extension do
 
   def spark_function_info(_) do
     nil
+  end
+
+  def shuffle_opts_to_end(keyword, entity_args, nil) do
+    case Enum.find_index(keyword, fn {_key, value} -> Keyword.keyword?(value) end) do
+      nil ->
+        {keyword, []}
+
+      index ->
+        key = keyword |> Enum.at(index) |> elem(0)
+
+        default =
+          Enum.find_value(entity_args, fn
+            {:optional, ^key, default} ->
+              default
+
+            _ ->
+              nil
+          end)
+
+        {List.replace_at(keyword, index, {key, default}), keyword |> Enum.at(index) |> elem(1)}
+    end
+  end
+
+  def shuffle_opts_to_end(keyword, _entity_args, opts) do
+    {keyword, opts}
   end
 end

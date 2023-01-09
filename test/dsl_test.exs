@@ -110,7 +110,8 @@ defmodule Spark.DslTest do
         use Spark.Test.Contact
 
         presets do
-          preset_with_optional()
+          preset_with_optional do
+          end
         end
       end
 
