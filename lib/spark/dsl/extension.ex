@@ -1823,8 +1823,8 @@ defmodule Spark.Dsl.Extension do
   def code_identifier(code) do
     code
     |> Macro.prewalk(fn
-      {foo, meta, bar} ->
-        {foo, meta |> Keyword.delete(:line), bar}
+      {foo, _, bar} ->
+        {foo, [], bar}
 
       other ->
         other
