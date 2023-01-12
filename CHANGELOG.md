@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.5](https://github.com/ash-project/spark/compare/v0.3.4...v0.3.5) (2023-01-12)
+
+
+
+
+### Bug Fixes:
+
+* exclude all metadata from code identifier
+
 ## [v0.3.4](https://github.com/ash-project/spark/compare/v0.3.3...v0.3.4) (2023-01-09)
 
 
