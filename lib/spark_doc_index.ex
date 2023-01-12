@@ -32,7 +32,7 @@ defmodule Spark.SparkDocIndex do
   @impl true
   def code_modules do
     [
-      "DSLs and Extensions": ~r/^Spark.Dsl/,
+      "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers)/,
       Documentation: [Spark.DocIndex],
       Errors: [Spark.Error.DslError]
     ]
