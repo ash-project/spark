@@ -40,6 +40,7 @@ defmodule Spark.OptionsHelpers do
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
           | {:struct, module}
           | :literal
+          | :quoted
 
   @typedoc """
   The types as specified by the [NimbleOptions docs](https://hexdocs.pm/nimble_options/NimbleOptions.html#module-types).
