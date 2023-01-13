@@ -928,6 +928,13 @@ defmodule Spark.Dsl.Extension do
               config = unquote(Macro.escape(config))
               section = unquote(Macro.escape(section))
 
+              value =
+                if config[:type] == :quoted do
+                  Macro.escape(value)
+                else
+                  value
+                end
+
               Spark.Dsl.Extension.maybe_deprecated(
                 field,
                 section.deprecations,
@@ -1064,7 +1071,7 @@ defmodule Spark.Dsl.Extension do
           {mod, arity} ->
             case escaped_value do
               {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-                fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+                fun_name = Spark.CodeHelpers.code_identifier(quoted_fn)
 
                 fun_name =
                   :"#{field}_#{Spark.Dsl.Extension.monotonic_number({field, fun_name})}_generated_#{fun_name}"
@@ -1242,6 +1249,7 @@ defmodule Spark.Dsl.Extension do
           {args_without_opts, opts} =
             entity_args
             |> Enum.zip([unquote_splicing(arg_vars)])
+            |> Spark.Dsl.Extension.escape_quoted(entity_schema)
             |> Spark.Dsl.Extension.shuffle_opts_to_end(unquote(Macro.escape(entity.args)), opts)
 
           {arg_values, funs} =
@@ -1281,7 +1289,7 @@ defmodule Spark.Dsl.Extension do
                     when is_integer(arity) ->
                       fn_args = Macro.generate_unique_arguments(arity, __CALLER__.module)
 
-                      fun_name = Spark.Dsl.Extension.code_identifier(value)
+                      fun_name = Spark.CodeHelpers.code_identifier(value)
 
                       fun_name =
                         :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
@@ -1311,7 +1319,7 @@ defmodule Spark.Dsl.Extension do
                         |> Enum.count()
                         |> Macro.generate_unique_arguments(__CALLER__.module)
 
-                      fun_name = Spark.Dsl.Extension.code_identifier(value)
+                      fun_name = Spark.CodeHelpers.code_identifier(value)
 
                       fun_name =
                         :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
@@ -1355,7 +1363,7 @@ defmodule Spark.Dsl.Extension do
                        ], funs}
 
                     {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn ->
-                      fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+                      fun_name = Spark.CodeHelpers.code_identifier(quoted_fn)
 
                       fun_name =
                         :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
@@ -1632,6 +1640,13 @@ defmodule Spark.Dsl.Extension do
 
             config = unquote(Macro.escape(config))
 
+            value =
+              if config[:type] == :quoted do
+                Macro.escape(value)
+              else
+                value
+              end
+
             Spark.Dsl.Extension.maybe_deprecated(
               key,
               deprecations,
@@ -1734,6 +1749,17 @@ defmodule Spark.Dsl.Extension do
     module_name
   end
 
+  @doc false
+  def escape_quoted(options, schema) do
+    Enum.map(options, fn {name, value} ->
+      if schema[name][:type] == :quoted do
+        {name, Macro.escape(value)}
+      else
+        {name, value}
+      end
+    end)
+  end
+
   defmacro set_entity_opt(
              value,
              escaped_value,
@@ -1755,7 +1781,7 @@ defmodule Spark.Dsl.Extension do
           {mod, arity} ->
             case escaped_value do
               {:fn, _, [{:->, _, [args, body]}]} = quoted_fn ->
-                fun_name = Spark.Dsl.Extension.code_identifier(quoted_fn)
+                fun_name = Spark.CodeHelpers.code_identifier(quoted_fn)
 
                 fun_name =
                   :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
@@ -1818,20 +1844,6 @@ defmodule Spark.Dsl.Extension do
       other ->
         other
     end)
-  end
-
-  def code_identifier(code) do
-    code
-    |> Macro.prewalk(fn
-      {foo, _, bar} ->
-        {foo, [], bar}
-
-      other ->
-        other
-    end)
-    |> :erlang.term_to_binary()
-    |> :erlang.md5()
-    |> Base.encode16()
   end
 
   def monotonic_number(key) do

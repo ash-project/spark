@@ -19,6 +19,7 @@ defmodule Spark.OptionsHelpers do
   - `{:spark_type, module, builtin_function}` - a behaviour that defines `builtin_function/0` that returns a list of atoms that map to built in variations of that thing.
   - `{:spark_type, module, builtin_function, templates}` - same as the above, but includes additional templates for elixir_sense autocomplete
   - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
+  - `:quoted` -> retains the quoted value of the code provided to the option
   """
 
   @typedoc """
@@ -166,6 +167,9 @@ defmodule Spark.OptionsHelpers do
 
       {:list, values} ->
         {:list, sanitize_type(values, key)}
+
+      :quoted ->
+        :any
 
       {:spark_behaviour, behaviour, _builtins} ->
         {:custom, __MODULE__, :spark_behaviour, [behaviour]}

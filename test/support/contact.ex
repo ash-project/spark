@@ -86,6 +86,20 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @preset_with_quoted %Spark.Dsl.Entity{
+      name: :preset_with_quoted,
+      args: [:name],
+      target: Preset,
+      schema: [
+        name: [
+          type: :quoted
+        ],
+        default_message: [
+          type: :quoted
+        ]
+      ]
+    }
+
     @preset_with_optional %Spark.Dsl.Entity{
       name: :preset_with_optional,
       args: [{:optional, :name, :atom}, {:optional, :default_message}],
@@ -111,7 +125,8 @@ defmodule Spark.Test.Contact do
       entities: [
         @preset,
         @preset_with_fn_arg,
-        @preset_with_optional
+        @preset_with_optional,
+        @preset_with_quoted
       ]
     }
 

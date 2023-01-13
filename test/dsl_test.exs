@@ -1,6 +1,8 @@
 defmodule Spark.DslTest do
   use ExUnit.Case
 
+  import Spark.CodeHelpers
+
   test "defining an instance of the DSL works" do
     defmodule HanSolo do
       use Spark.Test.Contact
@@ -161,6 +163,25 @@ defmodule Spark.DslTest do
       assert [preset] = Spark.Test.Contact.Info.presets(DaffyDuck)
       assert preset.default_message == "foo"
       assert preset.name == :name
+    end
+
+    test "quoted values are stored" do
+      defmodule HarryPotter do
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_quoted(name <> "fred")
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(HarryPotter)
+
+      assert strip_meta(preset.name) ==
+               strip_meta(
+                 quote do
+                   name <> "fred"
+                 end
+               )
     end
 
     test "verifiers are run" do
