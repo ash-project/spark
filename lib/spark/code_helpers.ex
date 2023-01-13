@@ -11,6 +11,9 @@ defmodule Spark.CodeHelpers do
 
   def strip_meta(code) do
     Macro.prewalk(code, fn
+      {foo, _, bar} when is_atom(foo) and is_atom(bar) ->
+        {foo, [], nil}
+
       {foo, _, bar} ->
         {foo, [], bar}
 
