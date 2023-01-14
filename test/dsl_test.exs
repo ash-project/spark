@@ -37,9 +37,7 @@ defmodule Spark.DslTest do
       assert {Spark.Test.Contact.Contacter.Function, opts} =
                Spark.Test.Contact.Info.contacter(ObiWan)
 
-      assert {m, f, a} = opts[:fun]
-
-      assert apply(m, f, ["you're my only hope." | a]) ==
+      assert opts[:fun].("you're my only hope.") ==
                "Help me Obi-Wan Kenobi: you're my only hope."
     end
 
@@ -61,9 +59,9 @@ defmodule Spark.DslTest do
       assert [preset] = Spark.Test.Contact.Info.presets(PaulMcCartney)
       assert preset.default_message == "help"
 
-      assert {_, [fun: {m, f, _a}]} = preset.contacter
+      assert {_, [fun: fun]} = preset.contacter
 
-      assert apply(m, f, ["Help"]) ==
+      assert fun.("Help") ==
                "Help: I need some body"
     end
 
@@ -101,9 +99,9 @@ defmodule Spark.DslTest do
       assert [preset] = Spark.Test.Contact.Info.presets(GhostBusters)
       assert preset.default_message == "ghostbusters"
 
-      assert {_, [fun: {m, f, _a}]} = preset.contacter
+      assert {_, [fun: fun]} = preset.contacter
 
-      assert apply(m, f, ["Ghost Busters"]) ==
+      assert fun.("Ghost Busters") ==
                "Who you gonna call: Ghost Busters"
     end
 
