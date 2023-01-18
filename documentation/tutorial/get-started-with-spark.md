@@ -14,4 +14,4 @@ This library has only recently been extracted out from Ash core, so there is sti
 
 ## Dependency
 
-{{mix_dep:spark}}
+`{:spark, "~> 0.3.5"}`

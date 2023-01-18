@@ -82,8 +82,21 @@ defmodule Spark.MixProject do
       main: "get-started-with-spark",
       source_ref: "v#{@version}",
       extra_section: "GUIDES",
+      spark: [
+        mix_tasks: [
+          Formatting: [
+            Mix.Tasks.Spark.Formatter
+          ]
+        ]
+      ],
       extras: extras(),
-      groups_for_extras: groups_for_extras()
+      groups_for_extras: groups_for_extras(),
+      groups_for_modules: [
+        "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers)/,
+        Documentation: [Spark.DocIndex],
+        Errors: [Spark.Error.DslError],
+        Internals: ~r/.*/
+      ]
     ]
   end
 

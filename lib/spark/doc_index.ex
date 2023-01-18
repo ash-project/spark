@@ -2,27 +2,7 @@ defmodule Spark.DocIndex do
   @moduledoc """
   A module for creating an index of documentation for a library. Can be rendered by tools like `ash_hq`.
 
-  There is a small template syntax available in any documentation.
-  The template syntax will link to the user's currently selected
-  version for the relevant library.
-
-  All templates should be wrapped in double curly braces, e.g `{{}}`.
-
-  ## Links to other documentation
-
-  `{{link:library:item_type:name}}`
-
-  For example:
-
-  `{{link:ash:guide:Attributes}}` might be transformed to `<a href="/docs/guides/ash/topics/attributes.md">Attributes</a>`
-
-  ## Mix dependencies
-
-  `{{mix_dep:library}}`
-
-  For example:
-
-  `{{mix_dep:ash}}` might be transformed to `{:ash, "~> 1.5"}`
+  This has been deprecated, but remains for backwards compatibility
   """
 
   @type extension :: %{
@@ -109,6 +89,7 @@ defmodule Spark.DocIndex do
     end
   end
 
+  @doc "This has been deprecated and will be removed in future releases"
   def render_replacements(docs, contexts \\ %{}, callback)
   def render_replacements(nil, _, _), do: ""
 
