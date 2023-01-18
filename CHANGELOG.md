@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.6](https://github.com/ash-project/spark/compare/v0.3.5...v0.3.6) (2023-01-18)
+
+
+
+
+### Bug Fixes:
+
+* remove variable scope when stripping metadata
+
+### Improvements:
+
+* update to new docs patterns
+
+* centralize anonymous function handling code
+
+* add `:quoted` type
+
 ## [v0.3.5](https://github.com/ash-project/spark/compare/v0.3.4...v0.3.5) (2023-01-12)
 
 
