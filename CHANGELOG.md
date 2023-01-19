@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.7](https://github.com/ash-project/spark/compare/v0.3.6...v0.3.7) (2023-01-19)
+
+
+
+
+### Improvements:
+
+* don't suggest do/end blocks for entities
+
 ## [v0.3.6](https://github.com/ash-project/spark/compare/v0.3.5...v0.3.6) (2023-01-18)
 
 
