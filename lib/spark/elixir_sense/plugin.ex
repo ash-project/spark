@@ -207,20 +207,11 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp entity_suggestions(entity) do
-    snippet = Map.get(entity, :snippet)
-
-    snippet =
-      if snippet && snippet != "" do
-        snippet
-      else
-        "$0"
-      end
-
     %{
       type: :generic,
       kind: :function,
       label: to_string(entity.name),
-      snippet: "#{entity.name} #{args(entity)}do\n  #{snippet}\nend",
+      snippet: "#{entity.name} #{args(entity)}",
       detail: "Dsl Entity",
       documentation: Map.get(entity, :docs) || ""
     }
