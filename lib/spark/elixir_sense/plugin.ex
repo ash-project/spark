@@ -411,7 +411,6 @@ defmodule Spark.ElixirSense.Plugin do
         end)
         |> Enum.intersperse(", ")
         |> Enum.join()
-        |> Kernel.<>(" ")
     end
   end
 
