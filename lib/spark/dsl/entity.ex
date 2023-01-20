@@ -59,8 +59,8 @@ defmodule Spark.Dsl.Entity do
   }
 
   @type t :: %Entity{
-          name: atom,
-          target: module,
+          name: atom | nil,
+          target: module | nil,
           transform: mfa | nil,
           recursive_as: atom | nil,
           examples: [String.t()],
@@ -70,7 +70,7 @@ defmodule Spark.Dsl.Entity do
           describe: String.t(),
           snippet: String.t(),
           args: [atom],
-          links: Keyword.t([String.t()]),
+          links: Keyword.t([String.t()]) | nil,
           hide: [atom],
           modules: [atom],
           no_depend_modules: [atom],
