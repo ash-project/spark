@@ -41,6 +41,32 @@ defmodule Spark.DslTest do
                "Help me Obi-Wan Kenobi: you're my only hope."
     end
 
+    test "supports multiple function clauses" do
+      defmodule Prequel do
+        use Spark.Test.Contact
+
+        contact do
+          contacter(fn
+            "Hello there" ->
+              "General Kenobi"
+
+            "A surprise to be sure" ->
+              "But a welcome one"
+
+            "This is outrageous" ->
+              "It's unfair"
+          end)
+        end
+      end
+
+      assert {Spark.Test.Contact.Contacter.Function, opts} =
+               Spark.Test.Contact.Info.contacter(Prequel)
+
+      assert opts[:fun].("Hello there") == "General Kenobi"
+      assert opts[:fun].("A surprise to be sure") == "But a welcome one"
+      assert opts[:fun].("This is outrageous") == "It's unfair"
+    end
+
     test "entities support functions in option setters" do
       defmodule PaulMcCartney do
         use Spark.Test.Contact

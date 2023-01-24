@@ -136,8 +136,9 @@ defmodule Spark.CodeHelpers do
            end
          end}
 
-      {:fn, _, [{:->, _, [fn_args, body]}]} = quoted_fn when is_list(fn_args) ->
+      {:fn, _, [{:->, _, [fn_args, _body]} | _] = clauses} = quoted_fn when is_list(fn_args) ->
         fun_name = Spark.CodeHelpers.code_identifier(quoted_fn)
+        arity = Enum.count(fn_args)
 
         fun_name =
           :"#{key}_#{Spark.Dsl.Extension.monotonic_number({key, fun_name})}_generated_#{fun_name}"
@@ -149,16 +150,23 @@ defmodule Spark.CodeHelpers do
               [
                 {{:., [], [{:__aliases__, [alias: false], [caller.module]}, fun_name]},
                  [no_parens: true], []},
-                Enum.count(fn_args)
+                arity
               ]}
            ]}
+
+        function_defs =
+          for {:->, _, [args, body]} <- clauses do
+            quote do
+              def unquote(fun_name)(unquote_splicing(args)) do
+                unquote(body)
+              end
+            end
+          end
 
         {function,
          quote generated: true do
            @doc false
-           def unquote(fun_name)(unquote_splicing(fn_args)) do
-             unquote(body)
-           end
+           unquote_splicing(function_defs)
          end}
 
       value ->
