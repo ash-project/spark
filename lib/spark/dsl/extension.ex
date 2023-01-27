@@ -918,7 +918,7 @@ defmodule Spark.Dsl.Extension do
                 require Dsl.Extension
 
                 Dsl.Extension.build_section(
-                  agent,
+                  unquote(agent),
                   unquote(extension),
                   unquote(Macro.escape(nested_section)),
                   unquote(unimports),
