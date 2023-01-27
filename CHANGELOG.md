@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.8](https://github.com/ash-project/spark/compare/v0.3.7...v0.3.8) (2023-01-27)
+
+
+
+
+### Bug Fixes:
+
+* Support multiple function clauses in anonymous functions (#18)
+
+* Entity.t: included `nil` option in typespecs where a field could be left default. (#17)
+
+### Improvements:
+
+* compile modules async for much faster compilation
+
+* speed up compilation by defining DSL modules in parallel
+
 ## [v0.3.7](https://github.com/ash-project/spark/compare/v0.3.6...v0.3.7) (2023-01-19)
 
 
