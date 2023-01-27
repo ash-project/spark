@@ -628,9 +628,13 @@ defmodule Spark.Dsl.Extension do
           bind_quoted: [sections: sections, extension: extension, module_prefix: module_prefix] do
       alias Spark.Dsl.Extension
 
-      for section <- sections do
-        Extension.build_section(extension, section, [], [], module_prefix)
-      end
+      sections
+      |> Enum.map(fn section ->
+        Spark.Dsl.Extension.async_compile(fn ->
+          Extension.build_section(extension, section, [], [], module_prefix)
+        end)
+      end)
+      |> Task.await_many()
     end
   end
 
@@ -856,59 +860,65 @@ defmodule Spark.Dsl.Extension do
           | auto_set_fields: Keyword.merge(section.auto_set_fields, entity.auto_set_fields)
         }
 
-        build_entity(
-          mod,
-          extension,
-          path ++ [section.name],
-          entity,
-          section.deprecations,
-          [],
-          unimports ++
-            unimports(
-              mod,
-              %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
-              path,
-              opts_mod_name
-            )
-        )
+        Spark.Dsl.Extension.async_compile(fn ->
+          build_entity(
+            mod,
+            extension,
+            path ++ [section.name],
+            entity,
+            section.deprecations,
+            [],
+            unimports ++
+              unimports(
+                mod,
+                %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
+                path,
+                opts_mod_name
+              )
+          )
+        end)
       end)
+      |> Task.await_many(:infinity)
 
     section_modules =
       Enum.map(section.sections, fn nested_section ->
-        nested_mod_name =
-          path
-          |> Enum.drop(1)
-          |> Enum.map(fn nested_section_name ->
-            Macro.camelize(to_string(nested_section_name))
-          end)
+        Spark.Dsl.Extension.async_compile(fn ->
+          nested_mod_name =
+            path
+            |> Enum.drop(1)
+            |> Enum.map(fn nested_section_name ->
+              Macro.camelize(to_string(nested_section_name))
+            end)
 
-        mod_name =
-          Module.concat(
-            [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
-          )
+          mod_name =
+            Module.concat(
+              [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
+            )
 
-        {:module, module, _, _} =
-          Module.create(
-            mod_name,
-            quote generated: true do
-              @moduledoc false
-              alias Spark.Dsl
+          {:module, module, _, _} =
+            Module.create(
+              mod_name,
+              quote generated: true do
+                @moduledoc false
+                alias Spark.Dsl
 
-              require Dsl.Extension
+                require Dsl.Extension
 
-              Dsl.Extension.build_section(
-                unquote(extension),
-                unquote(Macro.escape(nested_section)),
-                unquote(unimports),
-                unquote(path ++ [section.name]),
-                nil
-              )
-            end,
-            Macro.Env.location(__ENV__)
-          )
+                Dsl.Extension.build_section(
+                  unquote(extension),
+                  unquote(Macro.escape(nested_section)),
+                  unquote(unimports),
+                  unquote(path ++ [section.name]),
+                  nil
+                )
+              end,
+              Macro.Env.location(__ENV__)
+            )
 
-        module
+          module
+        end)
       end)
+      |> Task.await_many(:infinity)
 
     if opts_mod_name do
       Module.create(
@@ -1416,6 +1426,7 @@ defmodule Spark.Dsl.Extension do
               nested_entity_path: nested_entity_path
             ] do
         @moduledoc false
+
         for {key, config} <- entity.schema do
           defmacro unquote(key)(value) do
             key = unquote(key)
@@ -1593,5 +1604,16 @@ defmodule Spark.Dsl.Extension do
 
   def shuffle_opts_to_end(keyword, _entity_args, opts) do
     {keyword, opts}
+  end
+
+  @doc false
+  def async_compile(func) do
+    case :erlang.get(:elixir_compiler_info) do
+      :undefined ->
+        Task.async(func)
+
+      _ ->
+        Kernel.ParallelCompiler.async(func)
+    end
   end
 end
