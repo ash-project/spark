@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.9](https://github.com/ash-project/spark/compare/v0.3.8...v0.3.9) (2023-01-30)
+
+
+
+
+### Bug Fixes:
+
+* CodeHelpers: don't generate duplicate functions. (#20)
+
 ## [v0.3.8](https://github.com/ash-project/spark/compare/v0.3.7...v0.3.8) (2023-01-27)
 
 
