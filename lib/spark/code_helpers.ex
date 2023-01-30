@@ -57,9 +57,11 @@ defmodule Spark.CodeHelpers do
 
     {function,
      quote generated: true do
-       @doc false
-       def unquote(fn_name)(unquote_splicing(fn_args)) do
-         unquote(value).(unquote_splicing(fn_args))
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+         @doc false
+         def unquote(fn_name)(unquote_splicing(fn_args)) do
+           unquote(value).(unquote_splicing(fn_args))
+         end
        end
      end}
   end
@@ -72,9 +74,11 @@ defmodule Spark.CodeHelpers do
 
     {function,
      quote generated: true do
-       @doc false
-       def unquote(fn_name)(unquote_splicing(fn_args)) do
-         unquote(value).(unquote_splicing(fn_args))
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+         @doc false
+         def unquote(fn_name)(unquote_splicing(fn_args)) do
+           unquote(value).(unquote_splicing(fn_args))
+         end
        end
      end}
   end
@@ -92,9 +96,11 @@ defmodule Spark.CodeHelpers do
 
     {function,
      quote generated: true do
-       @doc false
-       def unquote(fn_name)(unquote_splicing(fn_args)) do
-         unquote(value).(unquote_splicing(fn_args))
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+         @doc false
+         def unquote(fn_name)(unquote_splicing(fn_args)) do
+           unquote(value).(unquote_splicing(fn_args))
+         end
        end
      end}
   end
@@ -120,8 +126,10 @@ defmodule Spark.CodeHelpers do
 
     {function,
      quote generated: true do
-       @doc false
-       unquote_splicing(function_defs)
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+         @doc false
+         unquote_splicing(function_defs)
+       end
      end}
   end
 
