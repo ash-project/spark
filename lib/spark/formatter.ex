@@ -243,14 +243,14 @@ defmodule Spark.Formatter do
     |> Enum.map(&elem(&1, 0))
     |> then(fn sections ->
       if config[:remove_parens?] do
-        de_paren(sections, Enum.flat_map(extensions, & &1.sections))
+        de_paren(sections, Enum.flat_map(extensions, & &1.sections), extensions)
       else
         sections
       end
     end)
   end
 
-  defp de_paren(actual_sections, dsl_sections) do
+  defp de_paren(actual_sections, dsl_sections, extensions) do
     actual_sections
     |> Enum.map(fn
       {name, meta, body} ->
@@ -259,7 +259,7 @@ defmodule Spark.Formatter do
             {name, meta, body}
 
           section ->
-            {name, meta, de_paren_section(body, section)}
+            {name, meta, de_paren_section(body, section, extensions)}
         end
 
       other ->
@@ -267,8 +267,8 @@ defmodule Spark.Formatter do
     end)
   end
 
-  defp de_paren_section(body, section) do
-    builders = all_entity_builders([section])
+  defp de_paren_section(body, section, extensions) do
+    builders = all_entity_builders([section], extensions, extensions)
 
     Macro.prewalk(body, fn
       {func, meta, body} = node when is_atom(func) ->
@@ -369,22 +369,36 @@ defmodule Spark.Formatter do
   end
 
   @doc false
-  def all_entity_builders(sections) do
+  def all_entity_builders(sections, extensions, path \\ []) do
     Enum.flat_map(sections, fn section ->
       Enum.concat([
         all_entity_option_builders(section),
         section_option_builders(section),
-        section_entity_builders(section)
+        section_entity_builders(section, extensions, path)
       ])
     end)
     |> Enum.uniq()
     |> Enum.sort()
   end
 
-  defp section_entity_builders(section) do
-    Enum.flat_map(section.entities(), fn entity ->
+  defp section_entity_builders(section, extensions, path) do
+    match_path = path ++ section.name
+
+    mixed_in_entities =
+      extensions
+      |> Enum.flat_map(& &1.dsl_patches())
+      |> Enum.filter(fn
+        %Spark.Dsl.Patch.AddEntity{section_path: ^match_path} ->
+          true
+
+        _ ->
+          false
+      end)
+      |> Enum.map(& &1.entity)
+
+    Enum.flat_map(section.entities ++ mixed_in_entities, fn entity ->
       entity_builders(entity)
-    end) ++ all_entity_builders(section.sections())
+    end) ++ all_entity_builders(section.sections, extensions, path ++ [section.name])
   end
 
   defp entity_builders(entity) do

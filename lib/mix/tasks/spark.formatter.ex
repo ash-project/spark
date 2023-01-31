@@ -12,8 +12,10 @@ defmodule Mix.Tasks.Spark.Formatter do
       raise "Must supply a comma separated list of extensions to generate a .formatter.exs for"
     end
 
+    extensions = opts[:extensions]
+
     locals_without_parens =
-      opts[:extensions]
+      extensions
       |> String.split(",")
       |> Enum.flat_map(fn extension ->
         extension_mod = Module.concat([extension])
@@ -23,7 +25,7 @@ defmodule Mix.Tasks.Spark.Formatter do
           other -> raise "Error ensuring extension compiled #{inspect(other)}"
         end
 
-        Spark.Formatter.all_entity_builders(extension_mod.sections())
+        Spark.Formatter.all_entity_builders(extension_mod.sections(), extensions)
       end)
       |> Enum.uniq()
       |> Enum.sort()

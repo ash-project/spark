@@ -67,7 +67,24 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   def get_suggestions(hint, opts, opt_path \\ [], type \\ nil) do
-    with true <- Enum.any?(opts.env.attributes, &(&1.name == :spark_is)),
+    is_spark_entity? =
+      Enum.any?(opts.env.attributes, &(&1.name == :spark_is)) ||
+        Enum.any?(opts.env.requires, fn module ->
+          try do
+            module.module_info(:attributes)
+            |> Enum.any?(fn
+              {:spark_dsl, [true]} ->
+                true
+
+              _ ->
+                false
+            end)
+          rescue
+            _ -> false
+          end
+        end)
+
+    with true <- is_spark_entity?,
          dsl_mod when not is_nil(dsl_mod) <-
            Enum.find(opts.env.requires, &spark_extension?/1) do
       extension_kinds =
@@ -419,7 +436,7 @@ defmodule Spark.ElixirSense.Plugin do
       extensions,
       fn extension ->
         try do
-          Enum.filter(extension.sections(), fn section ->
+          Enum.filter(apply_dsl_patches(extension.sections(), extensions), fn section ->
             apply(Matcher, :match?, [to_string(section.name), hint])
           end)
         rescue
@@ -435,7 +452,7 @@ defmodule Spark.ElixirSense.Plugin do
       extensions,
       fn extension ->
         try do
-          Enum.flat_map(extension.sections(), fn section ->
+          Enum.flat_map(apply_dsl_patches(extension.sections(), extensions), fn section ->
             if section.name == first do
               do_find_constructors(section, rest, hint, type)
             else
@@ -448,6 +465,38 @@ defmodule Spark.ElixirSense.Plugin do
         end
       end
     )
+  end
+
+  defp apply_dsl_patches(sections_or_entities, extensions, path \\ [])
+
+  defp apply_dsl_patches(sections_or_entities, extensions, path)
+       when is_list(sections_or_entities) do
+    Enum.map(sections_or_entities, &apply_dsl_patches(&1, extensions, path))
+  end
+
+  defp apply_dsl_patches(%Spark.Dsl.Entity{} = entity, _, _), do: entity
+
+  defp apply_dsl_patches(%Spark.Dsl.Section{} = section, extensions, path) do
+    section_path_matcher = path ++ [section.name]
+
+    new_entities =
+      Enum.flat_map(extensions, fn extension ->
+        extension.dsl_patches()
+        |> Enum.flat_map(fn
+          %Spark.Dsl.Patch.AddEntity{section_path: ^section_path_matcher, entity: entity} ->
+            [entity]
+
+          _ ->
+            []
+        end)
+      end)
+
+    %{
+      section
+      | sections:
+          Enum.map(section.sections, &apply_dsl_patches(&1, extensions, path ++ [section.name])),
+        entities: section.entities ++ new_entities
+    }
   end
 
   defp do_find_constructors(entity_or_section, path, hint, type, recursives \\ [])
