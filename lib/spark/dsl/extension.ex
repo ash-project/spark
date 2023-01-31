@@ -411,21 +411,30 @@ defmodule Spark.Dsl.Extension do
             sections: opts[:sections] || [],
             transformers: opts[:transformers] || [],
             verifiers: opts[:verifiers] || [],
+            dsl_patches: opts[:dsl_patches] || [],
             module_prefix: opts[:module_prefix]
           ],
           generated: true do
       alias Spark.Dsl.Extension
+      module_prefix = module_prefix || __MODULE__
 
       @behaviour Extension
-      Extension.build(__MODULE__, module_prefix, sections)
+      Extension.build(__MODULE__, module_prefix, sections, dsl_patches)
       @_sections sections
       @_transformers transformers
       @_verifiers verifiers
+      @_dsl_patches dsl_patches
 
       @doc false
       def sections, do: set_docs(@_sections)
       @doc false
       def verifiers, do: @_verifiers
+      @doc false
+      def module_prefix, do: unquote(module_prefix) || __MODULE__
+      @doc false
+      def transformers, do: @_transformers
+      @doc false
+      def dsl_patches, do: @_dsl_patches
 
       defp set_docs(items) when is_list(items) do
         Enum.map(items, &set_docs/1)
@@ -446,9 +455,6 @@ defmodule Spark.Dsl.Extension do
         |> Map.put(:sections, set_docs(section.sections))
         |> Map.put(:docs, Spark.Dsl.Extension.doc_section(section))
       end
-
-      @doc false
-      def transformers, do: @_transformers
     end
   end
 
@@ -478,9 +484,13 @@ defmodule Spark.Dsl.Extension do
       for extension <- extensions || [] do
         extension = Macro.expand_once(extension, __ENV__)
 
+        only_sections =
+          extension.sections()
+          |> Enum.map(&{&1.name, 1})
+
         quote generated: true, location: :keep do
           require Spark.Dsl.Extension
-          import unquote(extension), only: :macros
+          import unquote(extension), only: unquote(only_sections)
         end
       end
 
@@ -623,18 +633,40 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  defmacro build(extension, module_prefix, sections) do
+  defmacro build(extension, module_prefix, sections, dsl_patches) do
     quote generated: true,
-          bind_quoted: [sections: sections, extension: extension, module_prefix: module_prefix] do
+          bind_quoted: [
+            dsl_patches: dsl_patches,
+            sections: sections,
+            extension: extension,
+            module_prefix: module_prefix
+          ] do
       alias Spark.Dsl.Extension
 
       {:ok, agent} = Agent.start_link(fn -> [] end)
+      agent_and_pid = {agent, self()}
 
       Enum.each(sections, fn section ->
-        agent_and_pid = {agent, self()}
-
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
           Extension.build_section(agent_and_pid, extension, section, [], [], module_prefix)
+        end)
+      end)
+
+      Enum.each(dsl_patches, fn %Spark.Dsl.Patch.AddEntity{
+                                  section_path: section_path,
+                                  entity: entity
+                                } ->
+        Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
+          Extension.build_entity(
+            agent_and_pid,
+            module_prefix,
+            extension,
+            section_path,
+            entity,
+            [],
+            [],
+            []
+          )
         end)
       end)
 
@@ -667,7 +699,7 @@ defmodule Spark.Dsl.Extension do
       {section_modules, entity_modules, opts_module} =
         Dsl.Extension.do_build_section(
           agent,
-          module_prefix || __MODULE__,
+          module_prefix,
           extension,
           section,
           path,
@@ -749,10 +781,33 @@ defmodule Spark.Dsl.Extension do
             ]
           end
 
+        entity_modules = unquote(entity_modules)
+
+        patch_modules =
+          __CALLER__.module
+          |> Module.get_attribute(:extensions, [])
+          |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
+          |> Enum.reject(&(&1 in entity_modules))
+
+        patch_module_imports =
+          Enum.map(patch_modules, fn patch_module ->
+            quote do
+              import unquote(patch_module), only: :macros
+            end
+          end)
+
+        patch_module_unimports =
+          Enum.map(patch_modules, fn patch_module ->
+            quote do
+              import unquote(patch_module), only: []
+            end
+          end)
+
         entity_imports ++
           section_imports ++
           opts_import ++
           configured_imports ++
+          patch_module_imports ++
           unimports ++
           [
             quote generated: true do
@@ -789,6 +844,7 @@ defmodule Spark.Dsl.Extension do
             end
           ] ++
           configured_unimports ++
+          patch_module_unimports ++
           opts_unimport ++ entity_unimports ++ section_unimports
       end
     end
@@ -1669,5 +1725,22 @@ defmodule Spark.Dsl.Extension do
       end
 
     task
+  end
+
+  def get_entity_dsl_patches(extensions, section_path) do
+    extensions
+    |> Enum.flat_map(fn extension ->
+      extension.dsl_patches()
+      |> Enum.filter(fn
+        %Spark.Dsl.Patch.AddEntity{section_path: ^section_path} ->
+          true
+
+        _ ->
+          false
+      end)
+      |> Enum.map(fn %Spark.Dsl.Patch.AddEntity{entity: entity} ->
+        entity_mod_name(extension.module_prefix(), [], section_path, entity)
+      end)
+    end)
   end
 end

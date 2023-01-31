@@ -154,6 +154,8 @@ defmodule Spark.Dsl do
           end)
           |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
 
+        Module.put_attribute(__CALLER__.module, :extensions, extensions)
+
         body =
           quote generated: true do
             opts =

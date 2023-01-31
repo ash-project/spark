@@ -219,5 +219,21 @@ defmodule Spark.DslTest do
         end
       end
     end
+
+    test "extensions can add entities to other entities extensions" do
+      defmodule MartyMcfly do
+        use Spark.Test.Contact,
+          extensions: [Spark.Test.ContactPatcher]
+
+        presets do
+          preset(:foo)
+          special_preset(:foo)
+        end
+      end
+
+      assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
+      assert preset.name == :foo
+      assert special_preset.name == :foo
+    end
   end
 end
