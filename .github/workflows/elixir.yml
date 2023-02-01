@@ -11,4 +11,4 @@ on:
     branches: main
 jobs:
   ash-ci:
-    uses: ash-project/ash/.github/workflows/ash-ci.yml
+    uses: ash-project/ash/.github/workflows/ash-ci.yml@main
