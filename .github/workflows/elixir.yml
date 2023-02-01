@@ -2,13 +2,10 @@ name: Spark CI
 
 on:
   push:
+    tags:
+      - "v*"
     branches: [main]
-    tags-ignore: ["v*"]
-  pull_request:
-    branches: [main]
-  create:
-    tags: ["v*"]
-    branches: main
+  workflow_call:
 jobs:
   ash-ci:
     uses: ash-project/ash/.github/workflows/ash-ci.yml@main
