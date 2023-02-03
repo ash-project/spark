@@ -140,8 +140,14 @@ defmodule Spark.OptionsHelpers do
 
   defp sanitize_schema(schema) do
     Enum.map(schema, fn {key, opts} ->
-      new_opts = Keyword.update!(opts, :type, &sanitize_type(&1, key))
-      {key, Keyword.drop(new_opts, @non_nimble_options)}
+      opts =
+        if opts[:type] do
+          Keyword.update!(opts, :type, &sanitize_type(&1, key))
+        else
+          opts
+        end
+
+      {key, Keyword.drop(opts, @non_nimble_options)}
     end)
   end
 
