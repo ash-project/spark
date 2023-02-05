@@ -268,7 +268,7 @@ defmodule Spark.Formatter do
   end
 
   defp de_paren_section(body, section, extensions) do
-    builders = all_entity_builders([section], extensions, extensions)
+    builders = all_entity_builders([section], extensions)
 
     Macro.prewalk(body, fn
       {func, meta, body} = node when is_atom(func) ->
