@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.10](https://github.com/ash-project/spark/compare/v0.3.9...v0.3.10) (2023-02-05)
+
+
+
+
+### Bug Fixes:
+
+* don't use `Keyword.update!` when we don't know the key is there
+
+### Improvements:
+
+* support DSL modules having an explain callback
+
+* support adding entities via dsl patches
+
 ## [v0.3.9](https://github.com/ash-project/spark/compare/v0.3.8...v0.3.9) (2023-01-30)
 
 
