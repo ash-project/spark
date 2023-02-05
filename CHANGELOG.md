@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.12](https://github.com/ash-project/spark/compare/v0.3.11...v0.3.12) (2023-02-05)
+
+
+
+
+### Bug Fixes:
+
+* spark.formatter properly split modules
+
 ## [v0.3.11](https://github.com/ash-project/spark/compare/v0.3.10...v0.3.11) (2023-02-05)
 
 
