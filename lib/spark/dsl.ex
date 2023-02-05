@@ -120,6 +120,8 @@ defmodule Spark.Dsl do
       @spark_extension_kinds List.wrap(parent_opts[:many_extension_kinds]) ++
                                List.wrap(parent_opts[:single_extension_kinds])
 
+      @behaviour Spark.Dsl
+
       def init(opts), do: {:ok, opts}
 
       def explain(_, _), do: nil
