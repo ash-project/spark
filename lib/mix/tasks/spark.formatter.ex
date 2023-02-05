@@ -12,14 +12,13 @@ defmodule Mix.Tasks.Spark.Formatter do
       raise "Must supply a comma separated list of extensions to generate a .formatter.exs for"
     end
 
-    extensions = opts[:extensions]
+    extensions =
+      opts[:extensions]
+      |> String.split(",")
+      |> Enum.map(&Module.concat([&1]))
 
     locals_without_parens =
-      extensions
-      |> String.split(",")
-      |> Enum.flat_map(fn extension ->
-        extension_mod = Module.concat([extension])
-
+      Enum.flat_map(extensions, fn extension_mod ->
         case Code.ensure_compiled(extension_mod) do
           {:module, _module} -> :ok
           other -> raise "Error ensuring extension compiled #{inspect(other)}"
