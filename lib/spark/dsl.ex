@@ -61,6 +61,12 @@ defmodule Spark.Dsl do
   Validate/add options. Those options will be passed to `handle_opts` and `handle_before_compile`
   """
   @callback init(opts) :: {:ok, opts} | {:error, String.t() | term}
+
+  @doc """
+  Validate/add options. Those options will be passed to `handle_opts` and `handle_before_compile`
+  """
+  @callback explain(t(), opts) :: String.t() | nil
+
   @doc """
   Handle options in the context of the module. Must return a `quote` block.
 
@@ -116,6 +122,8 @@ defmodule Spark.Dsl do
 
       def init(opts), do: {:ok, opts}
 
+      def explain(_, _), do: nil
+
       def default_extensions, do: @spark_default_extensions
 
       def handle_opts(opts) do
@@ -128,7 +136,7 @@ defmodule Spark.Dsl do
         end
       end
 
-      defoverridable init: 1, handle_opts: 1, handle_before_compile: 1
+      defoverridable init: 1, handle_opts: 1, handle_before_compile: 1, explain: 2
 
       defmacro __using__(opts) do
         parent = unquote(parent)
@@ -350,7 +358,7 @@ defmodule Spark.Dsl do
       end
 
     code =
-      quote generated: true, bind_quoted: [dsl: __MODULE__] do
+      quote generated: true, bind_quoted: [dsl: __MODULE__, parent: parent] do
         require Spark.Dsl.Extension
 
         Module.register_attribute(__MODULE__, :spark_is, persist: true)
@@ -372,10 +380,10 @@ defmodule Spark.Dsl do
           @moduledoc """
           #{@moduledoc}
 
-          #{Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)}
+          #{Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)}
           """
         else
-          @moduledoc Spark.Dsl.Extension.explain(@extensions, @spark_dsl_config)
+          @moduledoc Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)
         end
       end
 

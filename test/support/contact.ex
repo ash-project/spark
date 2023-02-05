@@ -136,11 +136,15 @@ defmodule Spark.Test.Contact do
 
     def explain(dsl_state) do
       """
-      first_name: #{Spark.Test.Contact.Info.first_name(dsl_state)}
-      last_name: #{Spark.Test.Contact.Info.last_name(dsl_state)}
+      * first_name: #{Spark.Test.Contact.Info.first_name(dsl_state)}
+      * last_name: #{Spark.Test.Contact.Info.last_name(dsl_state)}
       """
     end
   end
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
+
+  def explain(_dsl_state, _opts) do
+    "Here is an explanation"
+  end
 end
