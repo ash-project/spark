@@ -1,7 +1,7 @@
 defmodule Spark.MixProject do
   use Mix.Project
 
-  @version "0.3.10"
+  @version "0.3.11"
 
   @description "Generic tooling for building DSLs"
 

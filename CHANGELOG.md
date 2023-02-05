@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.11](https://github.com/ash-project/spark/compare/v0.3.10...v0.3.11) (2023-02-05)
+
+
+
+
+### Bug Fixes:
+
+* `all_entity_builders/3` passing extensions as path
+
+* properly use Spark.Dsl behaviour
+
 ## [v0.3.10](https://github.com/ash-project/spark/compare/v0.3.9...v0.3.10) (2023-02-05)
 
 
