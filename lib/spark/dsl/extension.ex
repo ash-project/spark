@@ -475,15 +475,9 @@ defmodule Spark.Dsl.Extension do
     extension_explanations =
       extensions
       |> Enum.filter(&function_exported?(&1, :explain, 1))
-      |> Enum.map(&{&1, &1.explain(dsl_state)})
-      |> Enum.reject(fn {_, docs} -> docs in [nil, ""] end)
-      |> Enum.map_join("\n", fn {extension, docs} ->
-        """
-        ## #{inspect(extension)}
-
-        #{docs}
-        """
-      end)
+      |> Enum.map(& &1.explain(dsl_state))
+      |> Enum.reject(fn docs -> docs in [nil, ""] end)
+      |> Enum.join("\n\n")
 
     prefix <> extension_explanations
   end
