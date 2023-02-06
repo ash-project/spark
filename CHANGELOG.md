@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.0](https://github.com/ash-project/spark/compare/v0.3.12...v0.4.0) (2023-02-06)
+
+
+
+
+### Features:
+
+* InfoGenerator: extract from AshAuthentication. (#22)
+
 ## [v0.3.12](https://github.com/ash-project/spark/compare/v0.3.11...v0.3.12) (2023-02-05)
 
 
