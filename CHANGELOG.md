@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.1](https://github.com/ash-project/spark/compare/v0.4.0...v0.4.1) (2023-02-08)
+
+
+
+
+### Bug Fixes:
+
+* Make sections explicitly patchable, improve info generator. (#23)
+
 ## [v0.4.0](https://github.com/ash-project/spark/compare/v0.3.12...v0.4.0) (2023-02-06)
 
 
