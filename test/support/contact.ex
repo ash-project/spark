@@ -122,6 +122,7 @@ defmodule Spark.Test.Contact do
 
     @presets %Spark.Dsl.Section{
       name: :presets,
+      patchable?: true,
       entities: [
         @preset,
         @preset_with_fn_arg,

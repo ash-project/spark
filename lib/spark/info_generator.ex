@@ -86,7 +86,7 @@ defmodule Spark.InfoGenerator do
       extension.sections()
       |> Stream.filter(&(&1.name in sections))
       |> Stream.flat_map(&explode_section([], &1))
-      |> Stream.filter(fn {_, section} -> Enum.any?(section.entities) end)
+      |> Stream.filter(fn {_, section} -> section.patchable? || Enum.any?(section.entities) end)
       |> Stream.map(&elem(&1, 0))
 
     for path <- entity_paths do

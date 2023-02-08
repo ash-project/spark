@@ -34,7 +34,8 @@ defmodule Spark.Dsl.Section do
     deprecations: [],
     entities: [],
     sections: [],
-    docs: ""
+    docs: "",
+    patchable?: false
   ]
 
   alias Spark.{
@@ -56,6 +57,7 @@ defmodule Spark.Dsl.Section do
           auto_set_fields: Keyword.t(any),
           entities: [Entity.t()],
           sections: [Section.t()],
-          docs: String.t()
+          docs: String.t(),
+          patchable?: boolean
         }
 end
