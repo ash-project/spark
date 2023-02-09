@@ -368,7 +368,7 @@ defmodule Spark.Dsl do
 
         Spark.Dsl.Extension.set_state(@persist)
 
-        for {block, bindings} <- @spark_dsl_config[:eval] || [] do
+        for {block, bindings} <- Enum.reverse(@spark_dsl_config[:eval] || []) do
           Code.eval_quoted(block, bindings, __ENV__)
         end
 
