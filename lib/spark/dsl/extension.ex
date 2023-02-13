@@ -1628,7 +1628,7 @@ defmodule Spark.Dsl.Extension do
     Macro.postwalk(ast, fn
       {:__aliases__, _, _} = node ->
         # This is basically just `Macro.expand_literal/2`
-        Macro.expand(node, %{env | function: {:spark_dsl_config, 0}})
+        do_expand(node, %{env | function: {:module_info, 0}})
 
       other ->
         other
@@ -1637,12 +1637,45 @@ defmodule Spark.Dsl.Extension do
 
   def expand_alias_no_require(ast, env) do
     Macro.postwalk(ast, fn
-      {:__aliases__, _, _} = node ->
-        Macro.expand(node, %{env | lexical_tracker: nil})
+      {:__aliases__, _, parts} = node ->
+        expanded = do_expand(node, %{env | lexical_tracker: nil})
+
+        if is_atom(expanded) do
+          try do
+            used = Module.concat(parts)
+            # Dear Jose, I know you would hate this if you saw it 😢.
+            # I will propose a utility for doing this with a public
+            # API soon, but this had to do for the short term.
+
+            Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, used)
+          rescue
+            _e ->
+              :ok
+          end
+        end
+
+        expanded
 
       other ->
         other
     end)
+  end
+
+  cond do
+    function_exported?(Macro, :expand_literals, 2) ->
+      def do_expand(node, env) do
+        Macro.expand_literals(node, env)
+      end
+
+    function_exported?(Macro, :expand_literal, 2) ->
+      def do_expand(node, env) do
+        Macro.expand_literal(node, env)
+      end
+
+    true ->
+      def do_expand(node, env) do
+        Macro.expand(node, env)
+      end
   end
 
   def monotonic_number(key) do

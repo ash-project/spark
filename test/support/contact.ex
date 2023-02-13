@@ -8,7 +8,12 @@ defmodule Spark.Test.Contact do
 
     @contact %Spark.Dsl.Section{
       name: :contact,
+      no_depend_modules: [:module],
       schema: [
+        module: [
+          type: :atom,
+          doc: "A module"
+        ],
         contacter: [
           doc: "A function that wil contact this person with a message",
           type:
