@@ -1,5 +1,5 @@
 defmodule TedDansen do
-  @moduledoc false
+  @moduledoc "Stuff"
   use Spark.Test.Contact
 
   personal_details do

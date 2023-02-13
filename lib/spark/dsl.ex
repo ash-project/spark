@@ -378,14 +378,19 @@ defmodule Spark.Dsl do
           @spark_dsl_config
         end
 
-        if @moduledoc do
-          @moduledoc """
-          #{@moduledoc}
+        cond do
+          @moduledoc == false ->
+            :ok
 
-          #{Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)}
-          """
-        else
-          @moduledoc Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)
+          @moduledoc ->
+            @moduledoc """
+            #{@moduledoc}
+
+            #{Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)}
+            """
+
+          true ->
+            @moduledoc Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)
         end
       end
 
