@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.3](https://github.com/ash-project/spark/compare/v0.4.2...v0.4.3) (2023-02-13)
+
+
+
+
+### Improvements:
+
+* fix unused alias warnings once and for all
+
 ## [v0.4.2](https://github.com/ash-project/spark/compare/v0.4.1...v0.4.2) (2023-02-13)
 
 
