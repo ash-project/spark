@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.2](https://github.com/ash-project/spark/compare/v0.4.1...v0.4.2) (2023-02-13)
+
+
+
+
+### Bug Fixes:
+
+* don't add docs to `@moduledoc false` mods
+
+### Improvements:
+
+* evaluate `Transformer.eval` chunks in the order they're added. (#24)
+
 ## [v0.4.1](https://github.com/ash-project/spark/compare/v0.4.0...v0.4.1) (2023-02-08)
 
 
