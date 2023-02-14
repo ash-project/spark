@@ -5,7 +5,7 @@ defmodule TedDansen do
   alias Foo.Bar
 
   contact do
-    module(Bar)
+    module(Bar.Baz)
   end
 
   personal_details do

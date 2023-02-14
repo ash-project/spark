@@ -1642,12 +1642,21 @@ defmodule Spark.Dsl.Extension do
 
         if is_atom(expanded) do
           try do
-            used = Module.concat(parts)
-            # Dear Jose, I know you would hate this if you saw it 😢.
-            # I will propose a utility for doing this with a public
-            # API soon, but this had to do for the short term.
+            alias_used =
+              Enum.find_value(env.aliases, fn {alias_value, destination} ->
+                if List.last(Module.split(destination)) ==
+                     to_string(List.first(parts)) do
+                  alias_value
+                end
+              end)
 
-            Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, used)
+            if alias_used do
+              # Dear Jose, I know you would hate this if you saw it 😢.
+              # I will propose a utility for doing this with a public
+              # API soon, but this had to do for the short term.
+
+              Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, alias_used)
+            end
           rescue
             _e ->
               :ok
