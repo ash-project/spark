@@ -150,6 +150,10 @@ defmodule Spark.Test.Contact do
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
 
+  defmacro __using__(opts) do
+    super(opts)
+  end
+
   def explain(_dsl_state, _opts) do
     "Here is an explanation"
   end
