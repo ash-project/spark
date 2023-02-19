@@ -138,8 +138,6 @@ defmodule Spark.Dsl do
         end
       end
 
-      defoverridable init: 1, handle_opts: 1, handle_before_compile: 1, explain: 2
-
       defmacro __using__(opts) do
         parent = unquote(parent)
         parent_opts = unquote(parent_opts)
@@ -260,6 +258,8 @@ defmodule Spark.Dsl do
         preparations = Spark.Dsl.Extension.prepare(extensions)
         [body | preparations]
       end
+
+      defoverridable init: 1, handle_opts: 1, handle_before_compile: 1, explain: 2, __using__: 1
     end
   end
 
