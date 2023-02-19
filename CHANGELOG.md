@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.5](https://github.com/ash-project/spark/compare/v0.4.4...v0.4.5) (2023-02-19)
+
+
+
+
+### Improvements:
+
+* Make generated __using__/1 overridable for Dsls. (#26)
+
 ## [v0.4.4](https://github.com/ash-project/spark/compare/v0.4.3...v0.4.4) (2023-02-14)
 
 
