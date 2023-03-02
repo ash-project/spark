@@ -373,7 +373,7 @@ defmodule Spark.Formatter do
     Enum.flat_map(sections, fn section ->
       Enum.concat([
         all_entity_option_builders(section),
-        all_patch_entity_builders(extensions, path ++ [section.name]),
+        all_patch_entity_builders(extensions, section, path),
         section_option_builders(section),
         section_entity_builders(section, extensions, path)
       ])
@@ -382,7 +382,9 @@ defmodule Spark.Formatter do
     |> Enum.sort()
   end
 
-  defp all_patch_entity_builders(extensions, match_path) do
+  defp all_patch_entity_builders(extensions, section, path) do
+    match_path = path ++ [section.name]
+
     extensions
     |> Enum.flat_map(& &1.dsl_patches())
     |> tap(fn patches ->
@@ -400,7 +402,7 @@ defmodule Spark.Formatter do
   end
 
   defp section_entity_builders(section, extensions, path) do
-    match_path = path ++ section.name
+    match_path = path ++ [section.name]
 
     mixed_in_entities =
       extensions

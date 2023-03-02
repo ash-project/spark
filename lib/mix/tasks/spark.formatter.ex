@@ -83,7 +83,7 @@ defmodule Mix.Tasks.Spark.Formatter do
     end
   end
 
-  defp all_entity_builders_everywhere(sections, extensions, path \\ []) do
+  def all_entity_builders_everywhere(sections, extensions, path \\ []) do
     sections
     |> Enum.flat_map(fn section ->
       all_entity_builders_everywhere(
