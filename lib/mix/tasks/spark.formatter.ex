@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Spark.Formatter do
           other -> raise "Error ensuring extension compiled #{inspect(other)}"
         end
 
-        Spark.Formatter.all_entity_builders(extension_mod.sections(), extensions)
+        all_entity_builders_everywhere(extension_mod.sections(), extensions)
       end)
       |> Enum.uniq()
       |> Enum.sort()
@@ -81,5 +81,17 @@ defmodule Mix.Tasks.Spark.Formatter do
     else
       File.write!(".formatter.exs", contents_with_newline)
     end
+  end
+
+  defp all_entity_builders_everywhere(sections, extensions, path \\ []) do
+    sections
+    |> Enum.flat_map(fn section ->
+      all_entity_builders_everywhere(
+        section.sections,
+        extensions,
+        path ++ [section.name]
+      )
+    end)
+    |> Enum.concat(Spark.Formatter.all_entity_builders(sections, extensions, path))
   end
 end

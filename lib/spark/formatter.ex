@@ -373,12 +373,30 @@ defmodule Spark.Formatter do
     Enum.flat_map(sections, fn section ->
       Enum.concat([
         all_entity_option_builders(section),
+        all_patch_entity_builders(extensions, path ++ [section.name]),
         section_option_builders(section),
         section_entity_builders(section, extensions, path)
       ])
     end)
     |> Enum.uniq()
     |> Enum.sort()
+  end
+
+  defp all_patch_entity_builders(extensions, match_path) do
+    extensions
+    |> Enum.flat_map(& &1.dsl_patches())
+    |> tap(fn patches ->
+      Enum.map(patches, & &1.section_path)
+    end)
+    |> Enum.filter(fn
+      %Spark.Dsl.Patch.AddEntity{section_path: ^match_path} ->
+        true
+
+      _ ->
+        false
+    end)
+    |> Enum.map(& &1.entity)
+    |> Enum.flat_map(&entity_option_builders/1)
   end
 
   defp section_entity_builders(section, extensions, path) do
