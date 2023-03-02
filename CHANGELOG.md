@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.7](https://github.com/ash-project/spark/compare/v0.4.6...v0.4.7) (2023-03-02)
+
+
+
+
+### Bug Fixes:
+
+* properly match patched entities in formatter
+
 ## [v0.4.6](https://github.com/ash-project/spark/compare/v0.4.5...v0.4.6) (2023-03-02)
 
 
