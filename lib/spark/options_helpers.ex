@@ -208,6 +208,9 @@ defmodule Spark.OptionsHelpers do
       {:tuple, subtypes} ->
         {:tuple, Enum.map(subtypes, &sanitize_type(&1, key))}
 
+      {:literal, value} ->
+        {:custom, __MODULE__, :literal_value, [value]}
+
       :literal ->
         :any
 
@@ -218,6 +221,9 @@ defmodule Spark.OptionsHelpers do
         type
     end
   end
+
+  def literal_value(value, value), do: {:ok, value}
+  def literal_value(_, value), do: {:error, "is not #{inspect(value)}"}
 
   def tagged_tuple({tag, value}, key, type, tag) do
     case Spark.OptionsHelpers.validate(
