@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.8](https://github.com/ash-project/spark/compare/v0.4.7...v0.4.8) (2023-03-20)
+
+
+
+
+### Improvements:
+
+* ad `{:literal_value, value}` type
+
 ## [v0.4.7](https://github.com/ash-project/spark/compare/v0.4.6...v0.4.7) (2023-03-02)
 
 
