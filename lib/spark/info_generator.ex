@@ -232,6 +232,17 @@ defmodule Spark.InfoGenerator do
     value
   end
 
+  defp spec_for_type({:literal, value}) when is_tuple(value) do
+    value
+    |> Tuple.to_list()
+    |> Enum.map(&spec_for_type({:literal, &1}))
+    |> List.to_tuple()
+  end
+
+  defp spec_for_type({:literal, value}) when is_list(value) do
+    Enum.map(value, &spec_for_type({:literal, &1}))
+  end
+
   defp spec_for_type({:literal, _value}) do
     {:any, [], Elixir}
   end
