@@ -228,6 +228,14 @@ defmodule Spark.InfoGenerator do
     end
   end
 
+  defp spec_for_type({:literal, value}) when is_atom(value) or is_integer(value) do
+    value
+  end
+
+  defp spec_for_type({:literal, _value}) do
+    {:any, [], Elixir}
+  end
+
   defp spec_for_type({:behaviour, _module}), do: {:module, [], Elixir}
 
   defp spec_for_type({:spark_function_behaviour, behaviour, {_, arity}}),
@@ -280,6 +288,10 @@ defmodule Spark.InfoGenerator do
 
   defp spec_for_type(:string),
     do: {{:., [], [{:__aliases__, [alias: false], [:String]}, :t]}, [], []}
+
+  defp spec_for_type(:literal) do
+    {:any, [], Elixir}
+  end
 
   defp spec_for_type(terminal)
        when terminal in ~w[any map atom string boolean integer non_neg_integer pos_integer float timeout pid reference mfa]a,
