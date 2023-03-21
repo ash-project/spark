@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.9](https://github.com/ash-project/spark/compare/v0.4.8...v0.4.9) (2023-03-21)
+
+
+
+
+### Bug Fixes:
+
+* better typespec generation
+
 ## [v0.4.8](https://github.com/ash-project/spark/compare/v0.4.7...v0.4.8) (2023-03-20)
 
 
