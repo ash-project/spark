@@ -1,5 +1,7 @@
 defmodule Spark.CodeHelpers do
-  @moduledoc false
+  @moduledoc """
+  Helpers for meta programming around code and code snippets
+  """
 
   @doc """
   Given a section of Elixir AST, generate a hash of the code to help with
