@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.11](https://github.com/ash-project/spark/compare/v0.4.10...v0.4.11) (2023-03-23)
+
+
+
+
+### Improvements:
+
+* make code helpers public
+
 ## [v0.4.10](https://github.com/ash-project/spark/compare/v0.4.9...v0.4.10) (2023-03-23)
 
 
