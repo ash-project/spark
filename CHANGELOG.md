@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.10](https://github.com/ash-project/spark/compare/v0.4.9...v0.4.10) (2023-03-23)
+
+
+
+
+### Improvements:
+
+* update to nimble_options 1.0
+
 ## [v0.4.9](https://github.com/ash-project/spark/compare/v0.4.8...v0.4.9) (2023-03-21)
 
 
