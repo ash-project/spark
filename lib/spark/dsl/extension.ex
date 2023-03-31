@@ -655,9 +655,38 @@ defmodule Spark.Dsl.Extension do
       {:ok, agent} = Agent.start_link(fn -> [] end)
       agent_and_pid = {agent, self()}
 
+      # This won't work for nested recursive entities (that don't appear in the top level)
+      # but I'm not aware of anyone doing anything like that, and so I'm okay with it for now
+      all_recursive_entity_module_names =
+        sections
+        |> Enum.flat_map(fn section ->
+          section.entities
+          |> Enum.filter(& &1.recursive_as)
+          |> Enum.map(fn entity ->
+            mod_name =
+              Module.concat([
+                module_prefix,
+                Macro.camelize(to_string(section.name)),
+                Macro.camelize(to_string(entity.name)),
+                Options
+              ])
+
+            quote generated: true do
+              import unquote(mod_name), only: []
+            end
+          end)
+        end)
+
       Enum.each(sections, fn section ->
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
-          Extension.build_section(agent_and_pid, extension, section, [], [], module_prefix)
+          Extension.build_section(
+            agent_and_pid,
+            extension,
+            section,
+            all_recursive_entity_module_names,
+            [],
+            module_prefix
+          )
         end)
       end)
 
@@ -700,7 +729,7 @@ defmodule Spark.Dsl.Extension do
             path: path,
             extension: extension,
             module_prefix: module_prefix,
-            unimports: Macro.escape(unimports)
+            unimports: unimports
           ],
           generated: true do
       alias Spark.Dsl
@@ -945,7 +974,15 @@ defmodule Spark.Dsl.Extension do
 
         new_unimports =
           if entity.recursive_as do
-            []
+            if opts_mod_name do
+              [
+                quote generated: true do
+                  import unquote(opts_mod_name), only: []
+                end
+              ]
+            else
+              []
+            end
           else
             unimports(
               mod,
@@ -1235,6 +1272,15 @@ defmodule Spark.Dsl.Extension do
 
     entity_args = Spark.Dsl.Entity.arg_names(entity)
     arg_vars = Enum.map(entity_args, &Macro.var(&1, Elixir))
+
+    unimports =
+      Enum.reject(unimports, fn
+        {:import, _, [^options_mod_name, _]} ->
+          true
+
+        _ ->
+          false
+      end)
 
     async_compile(agent, fn ->
       Module.create(

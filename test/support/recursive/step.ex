@@ -1,4 +1,4 @@
 defmodule Spark.Test.Step do
   @moduledoc false
-  defstruct [:name, steps: []]
+  defstruct [:name, :number, steps: []]
 end

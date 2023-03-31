@@ -90,6 +90,35 @@ defmodule Spark.RecursiveTest do
            ] = Info.steps(MixedRecurseSharedEntity)
   end
 
+  test "recursive DSLs that share options don't collide" do
+    defmodule OptionsDontCollide do
+      use Spark.Test.Recursive
+
+      steps do
+        step :foo do
+          number(10)
+
+          special_step(:special) do
+            number(12)
+          end
+        end
+      end
+    end
+
+    assert [
+             %Spark.Test.Step{
+               name: :foo,
+               number: 10,
+               steps: [
+                 %Spark.Test.Step{
+                   name: :special,
+                   number: 12
+                 }
+               ]
+             }
+           ] = Info.steps(OptionsDontCollide)
+  end
+
   test "recursive DSLs can share entities and be deeply nested" do
     defmodule DeeplyNested do
       use Spark.Test.Recursive

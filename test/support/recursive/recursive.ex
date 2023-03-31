@@ -26,6 +26,9 @@ defmodule Spark.Test.Recursive do
         name: [
           type: :atom,
           required: true
+        ],
+        number: [
+          type: :integer
         ]
       ]
     }
@@ -42,6 +45,9 @@ defmodule Spark.Test.Recursive do
         name: [
           type: :atom,
           required: true
+        ],
+        number: [
+          type: :integer
         ]
       ]
     }
