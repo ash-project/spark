@@ -705,7 +705,7 @@ defmodule Spark.Dsl.Extension do
           generated: true do
       alias Spark.Dsl
 
-      {section_modules, entity_modules, opts_module} =
+      {section_modules, entity_modules, unimport_modules, opts_module} =
         Dsl.Extension.do_build_section(
           agent,
           module_prefix,
@@ -725,6 +725,7 @@ defmodule Spark.Dsl.Extension do
         section_path = unquote(path ++ [section.name])
         section = unquote(Macro.escape(section))
         unimports = unquote(Macro.escape(unimports))
+        unimport_modules = unquote(Macro.escape(unimport_modules))
 
         configured_imports =
           for module <- unquote(section.imports) do
@@ -766,7 +767,7 @@ defmodule Spark.Dsl.Extension do
           end
 
         entity_unimports =
-          for module <- unquote(entity_modules) do
+          for module <- unquote(unimport_modules) do
             quote generated: true do
               import unquote(module), only: []
             end
@@ -887,7 +888,9 @@ defmodule Spark.Dsl.Extension do
 
   defp unimports(mod, section, path, opts_mod_name) do
     entity_modules =
-      Enum.map(section.entities, fn entity ->
+      section.entities
+      |> Enum.reject(& &1.recursive_as)
+      |> Enum.map(fn entity ->
         entity_mod_name(mod, [], path ++ [section.name], entity)
       end)
 
@@ -933,29 +936,42 @@ defmodule Spark.Dsl.Extension do
         Module.concat([mod, Macro.camelize(to_string(section.name)), Options])
       end
 
-    entity_modules =
-      Enum.map(section.entities, fn entity ->
+    {entity_modules, unimport_modules} =
+      Enum.reduce(section.entities, {[], []}, fn entity, {entity_modules, unimport_mods} ->
         entity = %{
           entity
           | auto_set_fields: Keyword.merge(section.auto_set_fields, entity.auto_set_fields)
         }
 
-        build_entity(
-          agent,
-          mod,
-          extension,
-          path ++ [section.name],
-          entity,
-          section.deprecations,
-          [],
-          unimports ++
+        new_unimports =
+          if entity.recursive_as do
+            []
+          else
             unimports(
               mod,
               %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
               path,
               opts_mod_name
             )
-        )
+          end
+
+        entity_mod =
+          build_entity(
+            agent,
+            mod,
+            extension,
+            path ++ [section.name],
+            entity,
+            section.deprecations,
+            [],
+            unimports ++ new_unimports
+          )
+
+        if entity.recursive_as do
+          {[entity_mod | entity_modules], unimport_mods}
+        else
+          {[entity_mod | entity_modules], [entity_mod | unimport_mods]}
+        end
       end)
 
     section_modules =
@@ -1065,7 +1081,7 @@ defmodule Spark.Dsl.Extension do
       )
     end
 
-    {section_modules, entity_modules, opts_mod_name}
+    {section_modules, entity_modules, unimport_modules, opts_mod_name}
   end
 
   defmacro set_section_opt(
@@ -1134,47 +1150,64 @@ defmodule Spark.Dsl.Extension do
 
     options_mod_name = Module.concat(mod_name, "Options")
 
-    nested_entity_mods =
-      Enum.flat_map(entity.entities, fn {key, entities} ->
-        entities
-        |> List.wrap()
-        |> Enum.map(fn nested_entity ->
-          nested_entity_mod_names =
-            entity.entities
-            |> Enum.flat_map(fn {key, entities} ->
-              entities
-              |> List.wrap()
-              |> Enum.reject(&(&1.name == nested_entity.name))
-              |> Enum.map(fn nested_entity ->
-                entity_mod_name(
+    {nested_entity_mods, nested_entity_unimports} =
+      Enum.reduce(entity.entities, {[], []}, fn
+        {key, entities}, {nested_entity_mods, nested_entity_unimports} ->
+          entities
+          |> List.wrap()
+          |> Enum.reduce(
+            {nested_entity_mods, nested_entity_unimports},
+            fn nested_entity, {nested_entity_mods, nested_entity_unimports} ->
+              entities_to_unimport =
+                entity.entities
+                |> Enum.flat_map(fn {key, entities} ->
+                  entities
+                  |> List.wrap()
+                  |> Enum.reject(&(&1.name == nested_entity.name))
+                  |> Enum.flat_map(fn nested_entity ->
+                    if nested_entity.recursive_as do
+                      []
+                    else
+                      [
+                        entity_mod_name(
+                          mod_name,
+                          nested_entity_path ++ [key],
+                          section_path,
+                          nested_entity
+                        )
+                      ]
+                    end
+                  end)
+                end)
+
+              unimports =
+                unimports ++
+                  Enum.map(
+                    [options_mod_name | entities_to_unimport],
+                    fn mod_name ->
+                      quote generated: true do
+                        import unquote(mod_name), only: []
+                      end
+                    end
+                  )
+
+              entity_mod =
+                build_entity(
+                  agent,
                   mod_name,
-                  nested_entity_path ++ [key],
+                  extension,
                   section_path,
-                  nested_entity
+                  nested_entity,
+                  nested_entity.deprecations,
+                  nested_entity_path ++ [key],
+                  unimports,
+                  key
                 )
-              end)
-            end)
 
-          unimports =
-            unimports ++
-              Enum.map([options_mod_name | nested_entity_mod_names], fn mod_name ->
-                quote generated: true do
-                  import unquote(mod_name), only: []
-                end
-              end)
-
-          build_entity(
-            agent,
-            mod_name,
-            extension,
-            section_path,
-            nested_entity,
-            nested_entity.deprecations,
-            nested_entity_path ++ [key],
-            unimports,
-            key
+              {[entity_mod | nested_entity_mods],
+               [entity_mod | nested_entity_unimports] ++ entities_to_unimport}
+            end
           )
-        end)
       end)
 
     Spark.Dsl.Extension.build_entity_options(
@@ -1216,6 +1249,7 @@ defmodule Spark.Dsl.Extension do
                 section_path: Macro.escape(section_path),
                 entity_args: Macro.escape(entity_args),
                 options_mod_name: Macro.escape(options_mod_name),
+                nested_entity_unimports: Macro.escape(nested_entity_unimports),
                 nested_entity_mods: Macro.escape(nested_entity_mods),
                 nested_entity_path: Macro.escape(nested_entity_path),
                 deprecations: deprecations,
@@ -1235,6 +1269,7 @@ defmodule Spark.Dsl.Extension do
             source = unquote(__MODULE__)
             extension = unquote(Macro.escape(extension))
             nested_entity_mods = unquote(Macro.escape(nested_entity_mods))
+            nested_entity_unimports = unquote(Macro.escape(nested_entity_unimports))
             nested_entity_path = unquote(Macro.escape(nested_entity_path))
             deprecations = unquote(deprecations)
             unimports = unquote(Macro.escape(unimports))
@@ -1326,6 +1361,7 @@ defmodule Spark.Dsl.Extension do
                     extension = unquote(extension)
                     recursive_as = unquote(entity.recursive_as)
                     nested_key = unquote(nested_key)
+                    parent_recursive_as = Process.get(:parent_recursive_as)
 
                     original_nested_entity_path = Process.get(:recursive_builder_path)
 
@@ -1334,11 +1370,13 @@ defmodule Spark.Dsl.Extension do
                         Process.put(:recursive_builder_path, [])
                         []
                       else
-                        unless recursive_as || nested_key do
+                        unless recursive_as || nested_key || parent_recursive_as do
                           raise "Somehow got a nested entity without a `recursive_as` or `nested_key`"
                         end
 
-                        path = (original_nested_entity_path || []) ++ [recursive_as || nested_key]
+                        path =
+                          (original_nested_entity_path || []) ++
+                            [recursive_as || nested_key || parent_recursive_as]
 
                         Process.put(
                           :recursive_builder_path,
@@ -1347,6 +1385,10 @@ defmodule Spark.Dsl.Extension do
 
                         path
                       end
+
+                    if recursive_as do
+                      Process.put(:parent_recursive_as, recursive_as)
+                    end
 
                     current_sections = Process.get({__MODULE__, :spark_sections}, [])
 
@@ -1369,6 +1411,7 @@ defmodule Spark.Dsl.Extension do
                     unquote(opts[:do])
 
                     Process.put(:recursive_builder_path, original_nested_entity_path)
+                    Process.put(:parent_recursive_as, parent_recursive_as)
 
                     current_config =
                       Process.get(
@@ -1733,49 +1776,50 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def await_all_tasks(agent, done_ref \\ nil) do
-    case Agent.get_and_update(agent, fn state ->
-           state =
-             if done_ref do
-               state -- [done_ref]
-             else
-               state
-             end
+  def await_all_tasks(agent) do
+    Agent.get_and_update(
+      agent,
+      fn state ->
+        case state do
+          [] ->
+            {:stop, []}
 
-           {Enum.empty?(state), state}
-         end) do
-      true ->
+          funs ->
+            {{:tasks, funs}, []}
+        end
+      end,
+      :infinity
+    )
+    |> case do
+      :stop ->
         :ok
 
-      false ->
-        receive do
-          {:task_done, ref} ->
-            await_all_tasks(agent, ref)
-        end
+      {:tasks, funs} ->
+        funs
+        |> Enum.map(fn func ->
+          case :erlang.get(:elixir_compiler_info) do
+            :undefined ->
+              Task.async(func)
+
+            _ ->
+              Kernel.ParallelCompiler.async(func)
+          end
+        end)
+        |> Task.await_many(:infinity)
+
+        await_all_tasks(agent)
     end
   end
 
   @doc false
-  def async_compile({agent, pid}, func) do
-    ref = make_ref()
-
-    func = fn ->
-      func.()
-      send(pid, {:task_done, ref})
-    end
-
-    Agent.update(agent, &[ref | &1])
-
-    task =
-      case :erlang.get(:elixir_compiler_info) do
-        :undefined ->
-          Task.async(func)
-
-        _ ->
-          Kernel.ParallelCompiler.async(func)
-      end
-
-    task
+  def async_compile({agent, _pid}, func) do
+    Agent.update(
+      agent,
+      fn funs ->
+        [func | funs]
+      end,
+      :infinity
+    )
   end
 
   def get_entity_dsl_patches(extensions, section_path) do
