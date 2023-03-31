@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.1](https://github.com/ash-project/spark/compare/v1.0.0...v1.0.1) (2023-03-31)
+
+
+
+
+### Bug Fixes:
+
+* unimport recursive options everywhere
+
 ## [v1.0.0](https://github.com/ash-project/spark/compare/v0.4.12...v1.0.0) (2023-03-31)
 ### Breaking Changes:
 
