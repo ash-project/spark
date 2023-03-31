@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.0](https://github.com/ash-project/spark/compare/v0.4.12...v1.0.0) (2023-03-31)
+### Breaking Changes:
+
+* much better recursive DSL ergonomics
+
+
+
+### Improvements:
+
+* better async compiler task handling
+
 ## [v0.4.12](https://github.com/ash-project/spark/compare/v0.4.11...v0.4.12) (2023-03-25)
 
 
