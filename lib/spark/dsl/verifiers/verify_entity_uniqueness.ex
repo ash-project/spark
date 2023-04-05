@@ -1,4 +1,8 @@
 defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
+  @moduledoc """
+  Verifies that each entity that has an identifier is unique at each path.
+  """
+
   use Spark.Dsl.Verifier
 
   alias Spark.Dsl.Verifier
@@ -47,9 +51,8 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
           module,
           nested_entity,
           section_path,
-          entities_to_check ++ recursive_entities,
-          [key],
-          new_recursive_entities
+          entities_to_check,
+          [key]
         )
       end)
     end)
@@ -60,8 +63,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
          nested_entity,
          section_path,
          entities_to_check,
-         nested_entity_path,
-         recursive_entities
+         nested_entity_path
        ) do
     unique_entities_or_error(
       entities_to_check,
@@ -87,8 +89,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
           nested_entity,
           section_path,
           nested_entities_to_check,
-          nested_entity_path ++ [key],
-          recursive_entities
+          nested_entity_path ++ [key]
         )
       end)
     end)

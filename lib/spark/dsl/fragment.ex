@@ -1,4 +1,20 @@
 defmodule Spark.Dsl.Fragment do
+  @moduledoc """
+  Allows splitting up a DSL into multiple modules, potentially organizing large DSLs
+
+  Use the `of` option to expression what your fragment is a fragment of. You can add
+  extensions as you would normally to that resource, and they will be added to the
+  parent resource.
+
+  defmodule MyApp.Resource.Graphql do
+    use Spark.Dsl.Fragment, of: Ash.Resource, extensions: AshGraphql.Resource
+
+    graphql do
+      ...
+    end
+  end
+  """
+
   defmacro __using__(opts) do
     opts = Macro.expand_literals(opts, __CALLER__)
     single_extension_kinds = opts[:of].single_extension_kinds()
