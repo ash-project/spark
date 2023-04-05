@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.3](https://github.com/ash-project/spark/compare/v1.0.2...v1.0.3) (2023-04-05)
+
+
+
+
+### Bug Fixes:
+
+* nested entities not being correctly checked for uniqueness. (#28)
+
 ## [v1.0.2](https://github.com/ash-project/spark/compare/v1.0.1...v1.0.2) (2023-04-05)
 
 
