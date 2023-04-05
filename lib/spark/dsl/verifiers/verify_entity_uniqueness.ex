@@ -26,7 +26,6 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
     section_path = path ++ [section.name]
 
     section.entities
-    |> Enum.filter(& &1.identifier)
     |> Enum.each(fn entity ->
       do_verify_entity_uniqueness(module, entity, section_path, dsl_state)
     end)
@@ -42,9 +41,6 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
       entity.entities
       |> Enum.flat_map(fn {key, nested_entities} ->
         Enum.map(nested_entities, &{key, &1})
-      end)
-      |> Enum.filter(fn {_, nested_entity} ->
-        nested_entity.identifier
       end)
       |> Enum.each(fn {key, nested_entity} ->
         verify_nested_entity_uniqueness(
@@ -100,6 +96,8 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
     |> Verifier.get_entities(section_path)
     |> unique_entities_or_error(entity.identifier, module, section_path)
   end
+
+  defp unique_entities_or_error(_, nil, _, _), do: :ok
 
   defp unique_entities_or_error(entities_to_check, identifier, module, path) do
     entities_to_check
