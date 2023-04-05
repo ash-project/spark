@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.4](https://github.com/ash-project/spark/compare/v1.0.3...v1.0.4) (2023-04-05)
+
+
+
+
+### Bug Fixes:
+
+* don't rely on new elixir version function
+
+### Improvements:
+
+* properly set extension types, and prevent overwriting
+
 ## [v1.0.3](https://github.com/ash-project/spark/compare/v1.0.2...v1.0.3) (2023-04-05)
 
 
