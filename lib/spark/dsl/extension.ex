@@ -428,7 +428,7 @@ defmodule Spark.Dsl.Extension do
       @doc false
       def sections, do: set_docs(@_sections)
       @doc false
-      def verifiers, do: @_verifiers
+      def verifiers, do: [Spark.Dsl.Verifiers.VerifyEntityUniqueness | @_verifiers]
       @doc false
       def module_prefix, do: unquote(module_prefix) || __MODULE__
       @doc false
@@ -487,6 +487,7 @@ defmodule Spark.Dsl.Extension do
     body =
       quote generated: true, location: :keep do
         @extensions unquote(extensions)
+        @persist {:spark_extensions, @extensions}
       end
 
     imports =
@@ -507,10 +508,13 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  defmacro set_state(additional_persisted_data) do
+  defmacro set_state(additional_persisted_data, transform? \\ true) do
     quote generated: true,
           location: :keep,
-          bind_quoted: [additional_persisted_data: additional_persisted_data] do
+          bind_quoted: [
+            additional_persisted_data: additional_persisted_data,
+            transform?: transform?
+          ] do
       alias Spark.Dsl.Transformer
 
       persist =
@@ -542,10 +546,14 @@ defmodule Spark.Dsl.Extension do
       end
 
       transformers_to_run =
-        @extensions
-        |> Enum.flat_map(& &1.transformers())
-        |> Transformer.sort()
-        |> Enum.reject(& &1.after_compile?())
+        if transform? do
+          @extensions
+          |> Enum.flat_map(& &1.transformers())
+          |> Transformer.sort()
+          |> Enum.reject(& &1.after_compile?())
+        else
+          []
+        end
 
       @spark_dsl_config __MODULE__
                         |> Spark.Dsl.Extension.run_transformers(
@@ -1160,11 +1168,7 @@ defmodule Spark.Dsl.Extension do
         %{
           current_config
           | opts:
-              Keyword.put(
-                current_config.opts,
-                field,
-                value
-              )
+              Spark.Dsl.merge_with_warning(current_config.opts, [{field, value}], section_path)
         }
       )
     end

@@ -76,6 +76,7 @@ defmodule Spark.Test.Contact do
       name: :preset,
       args: [:name],
       target: Preset,
+      identifier: :name,
       schema: [
         name: [
           type: :atom

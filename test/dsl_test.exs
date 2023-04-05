@@ -227,13 +227,48 @@ defmodule Spark.DslTest do
 
         presets do
           preset(:foo)
-          special_preset(:foo)
+          special_preset(:bar)
         end
       end
 
       assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
       assert preset.name == :foo
-      assert special_preset.name == :foo
+      assert special_preset.name == :bar
+    end
+
+    test "identifiers are honored" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Got duplicate Spark.Test.Contact.Dsl.Preset: foo/,
+                   fn ->
+                     defmodule Squidward do
+                       use Spark.Test.Contact
+
+                       presets do
+                         preset(:foo)
+                         preset(:foo)
+                       end
+                     end
+                   end
+    end
+
+    test "extensions honor identifiers when adding entities to other entities extensions" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Got duplicate Spark.Test.Contact.Dsl.Preset: foo/,
+                   fn ->
+                     defmodule Doc do
+                       use Spark.Test.Contact,
+                         extensions: [Spark.Test.ContactPatcher]
+
+                       presets do
+                         preset(:foo)
+                         special_preset(:foo)
+                       end
+                     end
+
+                     assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
+                     assert preset.name == :foo
+                     assert special_preset.name == :foo
+                   end
     end
   end
 end

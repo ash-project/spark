@@ -98,7 +98,11 @@ defmodule Spark.Dsl do
         their_opt_schema
       end
 
-    their_opt_schema = Keyword.put(their_opt_schema, :otp_app, type: :atom)
+    their_opt_schema =
+      Keyword.merge(their_opt_schema,
+        otp_app: [type: :atom],
+        fragments: [type: {:list, :module}]
+      )
 
     their_opt_schema = Keyword.merge(opts[:opt_schema] || [], their_opt_schema)
 
@@ -127,6 +131,9 @@ defmodule Spark.Dsl do
       def explain(_, _), do: nil
 
       def default_extensions, do: @spark_default_extensions
+      def default_extension_kinds, do: List.wrap(unquote(parent_opts[:default_extensions]))
+      def many_extension_kinds, do: List.wrap(unquote(parent_opts[:many_extension_kinds]))
+      def single_extension_kinds, do: List.wrap(unquote(parent_opts[:single_extension_kinds]))
 
       def handle_opts(opts) do
         quote do
@@ -162,6 +169,16 @@ defmodule Spark.Dsl do
           end)
           |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
 
+        fragment_extensions =
+          opts[:fragments]
+          |> Macro.expand_literals(__CALLER__)
+          |> List.wrap()
+          |> Enum.flat_map(fn fragment ->
+            fragment.extensions()
+          end)
+
+        extensions = Enum.uniq(extensions ++ fragment_extensions)
+
         Module.put_attribute(__CALLER__.module, :extensions, extensions)
 
         body =
@@ -179,6 +196,9 @@ defmodule Spark.Dsl do
             @opts opts
             @before_compile Spark.Dsl
             @after_compile __MODULE__
+
+            Module.register_attribute(__MODULE__, :spark_is, persist: true)
+            @spark_dsl_config Spark.Dsl.handle_fragments(opts[:fragments])
 
             @spark_is parent
             @spark_parent parent
@@ -404,4 +424,38 @@ defmodule Spark.Dsl do
   end
 
   def is?(_module, _type), do: false
+
+  def handle_fragments(fragments) do
+    fragments
+    |> List.wrap()
+    |> Enum.reduce(%{}, fn fragment, acc ->
+      config = Map.delete(fragment.spark_dsl_config(), :persist)
+
+      Map.merge(acc, config, fn
+        key, %{entities: entities, opts: opts}, %{entities: right_entities, opts: right_opts} ->
+          %{
+            entities: entities ++ right_entities,
+            opts: merge_with_warning(opts, right_opts, key, "fragment: #{fragment}")
+          }
+      end)
+    end)
+  end
+
+  @doc false
+  def merge_with_warning(left, right, path, overwriting_by \\ nil) do
+    Keyword.merge(left, right, fn key, left, right ->
+      by =
+        if overwriting_by do
+          " by #{overwriting_by}"
+        else
+          ""
+        end
+
+      IO.warn(
+        "#{Enum.join(path ++ [key], ".")} is being overwritten from #{inspect(left)} to #{inspect(right)}#{by}"
+      )
+
+      right
+    end)
+  end
 end

@@ -67,26 +67,10 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   def get_suggestions(hint, opts, opt_path \\ [], type \\ nil) do
-    is_spark_entity? =
-      Enum.any?(opts.env.attributes, &(&1.name == :spark_is)) ||
-        Enum.any?(opts.env.requires, fn module ->
-          try do
-            module.module_info(:attributes)
-            |> Enum.any?(fn
-              {:spark_dsl, [true]} ->
-                true
-
-              _ ->
-                false
-            end)
-          rescue
-            _ -> false
-          end
-        end)
+    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
 
     with true <- is_spark_entity?,
-         dsl_mod when not is_nil(dsl_mod) <-
-           Enum.find(opts.env.requires, &spark_extension?/1) do
+         dsl_mod when not is_nil(dsl_mod) <- get_dsl_mod(opts) do
       extension_kinds =
         List.flatten(dsl_mod.module_info[:attributes][:spark_extension_kinds] || [])
 
@@ -166,6 +150,56 @@ defmodule Spark.ElixirSense.Plugin do
     else
       hints
     end
+  end
+
+  defp is_dsl?(env) do
+    Enum.any?(env.attributes, &(&1.name == :spark_is)) ||
+      Enum.any?(env.requires, fn module ->
+        try do
+          module.module_info(:attributes)
+          |> Enum.any?(fn
+            {:spark_dsl, [true]} ->
+              true
+
+            _ ->
+              false
+          end)
+        rescue
+          _ -> false
+        end
+      end)
+  end
+
+  defp is_fragment?(env) do
+    Enum.any?(env.attributes, &(&1.name == :spark_fragment_of)) ||
+      Spark.Dsl.Fragment in env.requires
+  end
+
+  defp get_dsl_mod(opts) do
+    if Spark.Dsl.Fragment in opts.env.requires do
+      parse_fragment(opts)
+    else
+      Enum.find(opts.env.requires, &spark_extension?/1)
+    end
+  end
+
+  defp parse_fragment(opts) do
+    case Regex.named_captures(
+           ~r/of:\s+?(?<of>|([^\s]*))?[\,\s$]/,
+           opts.cursor_context.text_before
+         ) do
+      %{"of" => dsl} when dsl != "" ->
+        module = Module.concat([dsl])
+
+        if Code.ensure_loaded?(module) do
+          module
+        end
+
+      _ ->
+        nil
+    end
+  rescue
+    _ -> false
   end
 
   defp find_building_entity(constructors, option) do

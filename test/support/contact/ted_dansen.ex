@@ -1,6 +1,6 @@
 defmodule TedDansen do
   @moduledoc "Stuff"
-  use Spark.Test.Contact
+  use Spark.Test.Contact, fragments: [Spark.Test.Contact.TedDansenFragment]
 
   alias Foo.Bar
 
