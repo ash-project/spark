@@ -30,6 +30,8 @@ defmodule Spark.Dsl.Entity do
   `entities` allows you to specify a keyword list of nested entities. Nested entities are stored
   on the struct in the corresponding key, and are used in the same way entities are otherwise.
 
+  `identifier` expresses that a given entity is unique by that field, validated by the DSL.
+
   For a full example, see `Spark.Dsl.Extension`.
   """
   defstruct [
