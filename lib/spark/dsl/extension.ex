@@ -1763,25 +1763,65 @@ defmodule Spark.Dsl.Extension do
     end)
   end
 
-  cond do
-    function_exported?(Macro, :expand_literals, 2) ->
-      @doc false
-      def do_expand(node, env) do
-        Macro.expand_literals(node, env)
-      end
-
-    function_exported?(Macro, :expand_literal, 2) ->
-      @doc false
-      def do_expand(node, env) do
-        Macro.expand_literal(node, env)
-      end
-
-    true ->
-      @doc false
-      def do_expand(node, env) do
-        Macro.expand(node, env)
-      end
+  @doc false
+  def do_expand(ast, env) do
+    {ast, :ok} = expand_literals(ast, :ok, fn node, :ok -> {Macro.expand(node, env), :ok} end)
+    ast
   end
+
+  def expand_literals(ast, acc, fun)
+
+  def expand_literals({:__aliases__, meta, args}, acc, fun) do
+    {args, acc} = expand_literals(args, acc, fun)
+
+    if :lists.all(&is_atom/1, args) do
+      fun.({:__aliases__, meta, args}, acc)
+    else
+      {{:__aliases__, meta, args}, acc}
+    end
+  end
+
+  def expand_literals({:__MODULE__, _meta, ctx} = node, acc, fun) when is_atom(ctx) do
+    fun.(node, acc)
+  end
+
+  def expand_literals({:%, meta, [left, right]}, acc, fun) do
+    {left, acc} = expand_literals(left, acc, fun)
+    {right, acc} = expand_literals(right, acc, fun)
+    {{:%, meta, [left, right]}, acc}
+  end
+
+  def expand_literals({:%{}, meta, args}, acc, fun) do
+    {args, acc} = expand_literals(args, acc, fun)
+    {{:%{}, meta, args}, acc}
+  end
+
+  def expand_literals({:{}, meta, args}, acc, fun) do
+    {args, acc} = expand_literals(args, acc, fun)
+    {{:{}, meta, args}, acc}
+  end
+
+  def expand_literals({left, right}, acc, fun) do
+    {left, acc} = expand_literals(left, acc, fun)
+    {right, acc} = expand_literals(right, acc, fun)
+    {{left, right}, acc}
+  end
+
+  def expand_literals(list, acc, fun) when is_list(list) do
+    :lists.mapfoldl(&expand_literals(&1, &2, fun), acc, list)
+  end
+
+  def expand_literals(
+        {{:., _, [{:__aliases__, _, [:Application]}, :compile_env]} = node, meta,
+         [app, key, default]},
+        acc,
+        fun
+      ) do
+    {default, acc} = expand_literals(default, acc, fun)
+    {{node, meta, [app, key, default]}, acc}
+  end
+
+  def expand_literals(term, acc, _fun), do: {term, acc}
 
   def monotonic_number(key) do
     (Process.get({:spark_monotonic_number, key}) || -1) + 1

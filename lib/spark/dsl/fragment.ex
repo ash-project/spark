@@ -17,6 +17,7 @@ defmodule Spark.Dsl.Fragment do
 
   defmacro __using__(opts) do
     opts = Spark.Dsl.Extension.do_expand(opts, __CALLER__)
+    original_opts = opts
     single_extension_kinds = opts[:of].single_extension_kinds()
     many_extension_kinds = opts[:of].many_extension_kinds()
 
@@ -49,7 +50,7 @@ defmodule Spark.Dsl.Fragment do
 
     Module.put_attribute(__CALLER__.module, :spark_fragment_of, opts[:of])
     Module.put_attribute(__CALLER__.module, :extensions, extensions)
-    Module.put_attribute(__CALLER__.module, :opts, opts)
+    Module.put_attribute(__CALLER__.module, :original_opts, original_opts)
 
     Module.put_attribute(
       __CALLER__.module,
@@ -74,7 +75,7 @@ defmodule Spark.Dsl.Fragment do
       end
 
       def opts do
-        @opts
+        @original_opts
       end
 
       def spark_dsl_config do

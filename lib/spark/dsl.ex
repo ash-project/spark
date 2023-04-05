@@ -151,13 +151,35 @@ defmodule Spark.Dsl do
         their_opt_schema = unquote(their_opt_schema)
         require Spark.Dsl.Extension
 
+        fragments =
+          opts[:fragments]
+          |> List.wrap()
+          |> Enum.map(&Spark.Dsl.Extension.do_expand(&1, __CALLER__))
+
         {opts, extensions} =
           parent_opts[:default_extensions]
           |> Enum.reduce(opts, fn {key, defaults}, opts ->
             Keyword.update(opts, key, defaults, fn current_value ->
               cond do
                 key in parent_opts[:single_extension_kinds] ->
-                  current_value || defaults
+                  fragments_set =
+                    Enum.filter(fragments, fn fragment ->
+                      fragment.opts
+                      |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
+                      |> elem(0)
+                      |> Keyword.get(key)
+                    end)
+
+                  cond do
+                    current_value && !Enum.empty?(fragments_set) ->
+                      raise "#{key} is being set as an option, but is also set in fragments: #{Enum.map_join(fragments_set, ", ", &inspect/1)}"
+
+                    Enum.count(fragments_set) > 1 ->
+                      raise "#{key} is being set by multiple fragments: #{Enum.map_join(fragments_set, ", ", &inspect/1)}"
+
+                    true ->
+                      current_value || List.first(fragments_set) || defaults
+                  end
 
                 key in parent_opts[:many_extension_kinds] || key == :extensions ->
                   List.wrap(current_value) ++ List.wrap(defaults)
@@ -169,12 +191,27 @@ defmodule Spark.Dsl do
           end)
           |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
 
-        fragment_extensions =
-          opts[:fragments]
-          |> Spark.Dsl.Extension.do_expand(__CALLER__)
-          |> List.wrap()
-          |> Enum.flat_map(fn fragment ->
-            fragment.extensions()
+        fragment_extensions = Enum.flat_map(fragments, & &1.extensions())
+
+        opts =
+          Enum.reduce(fragments, opts, fn fragment, opts ->
+            fragment.opts()
+            |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
+            |> elem(0)
+            |> Enum.reduce(opts, fn {key, value}, opts ->
+              cond do
+                key in parent_opts[:single_extension_kinds] ->
+                  Keyword.put(opts, key, value)
+
+                key in parent_opts[:many_extension_kinds] ->
+                  Keyword.update(opts, key, value, fn current_extensions ->
+                    Enum.uniq(current_extensions ++ List.wrap(value))
+                  end)
+
+                true ->
+                  opts
+              end
+            end)
           end)
 
         extensions = Enum.uniq(extensions ++ fragment_extensions)
