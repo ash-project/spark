@@ -171,7 +171,7 @@ defmodule Spark.Dsl do
 
         fragment_extensions =
           opts[:fragments]
-          |> Macro.expand_literals(__CALLER__)
+          |> Spark.Dsl.Extension.do_expand(__CALLER__)
           |> List.wrap()
           |> Enum.flat_map(fn fragment ->
             fragment.extensions()

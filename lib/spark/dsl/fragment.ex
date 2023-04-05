@@ -16,11 +16,11 @@ defmodule Spark.Dsl.Fragment do
   """
 
   defmacro __using__(opts) do
-    opts = Macro.expand_literals(opts, __CALLER__)
+    opts = Spark.Dsl.Extension.do_expand(opts, __CALLER__)
     single_extension_kinds = opts[:of].single_extension_kinds()
     many_extension_kinds = opts[:of].many_extension_kinds()
 
-    {_, extensions} =
+    {opts, extensions} =
       opts[:of].default_extension_kinds()
       |> Enum.reduce(opts, fn {key, defaults}, opts ->
         Keyword.update(opts, key, defaults, fn current_value ->
@@ -49,6 +49,7 @@ defmodule Spark.Dsl.Fragment do
 
     Module.put_attribute(__CALLER__.module, :spark_fragment_of, opts[:of])
     Module.put_attribute(__CALLER__.module, :extensions, extensions)
+    Module.put_attribute(__CALLER__.module, :opts, opts)
 
     Module.put_attribute(
       __CALLER__.module,
@@ -70,6 +71,10 @@ defmodule Spark.Dsl.Fragment do
 
       def extensions do
         @extensions
+      end
+
+      def opts do
+        @opts
       end
 
       def spark_dsl_config do

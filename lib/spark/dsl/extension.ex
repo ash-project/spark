@@ -1765,16 +1765,19 @@ defmodule Spark.Dsl.Extension do
 
   cond do
     function_exported?(Macro, :expand_literals, 2) ->
+      @doc false
       def do_expand(node, env) do
         Macro.expand_literals(node, env)
       end
 
     function_exported?(Macro, :expand_literal, 2) ->
+      @doc false
       def do_expand(node, env) do
         Macro.expand_literal(node, env)
       end
 
     true ->
+      @doc false
       def do_expand(node, env) do
         Macro.expand(node, env)
       end
