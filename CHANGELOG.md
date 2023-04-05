@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.2](https://github.com/ash-project/spark/compare/v1.0.1...v1.0.2) (2023-04-05)
+
+
+
+
+### Improvements:
+
+* fragments & identifiers
+
 ## [v1.0.1](https://github.com/ash-project/spark/compare/v1.0.0...v1.0.1) (2023-03-31)
 
 
