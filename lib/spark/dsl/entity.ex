@@ -47,7 +47,7 @@ defmodule Spark.Dsl.Entity do
     args: [],
     links: nil,
     hide: [],
-    identifier: :name,
+    identifier: nil,
     modules: [],
     imports: [],
     no_depend_modules: [],
