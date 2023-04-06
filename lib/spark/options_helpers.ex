@@ -150,8 +150,8 @@ defmodule Spark.OptionsHelpers do
         end
 
       opts =
-        if opts[:schema] && Keyword.keyword?(opts[:schema]) do
-          Keyword.update!(opts, :schema, &sanitize_schema(&1))
+        if opts[:keys] && Keyword.keyword?(opts[:keys]) do
+          Keyword.update!(opts, :keys, &sanitize_schema(&1))
         else
           opts
         end
