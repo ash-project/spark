@@ -16,12 +16,7 @@ defmodule Spark.Formatter do
 
   ```elixir
   config :spark, :formatter,
-    # This option is a bit experimental
-    # Worst case it could introduce some easy-to-fix syntax errors.
-    # Its been used on a few big projects without issue.
-    # Regardless, before you run this for the first time, commit any other changes you have.
     remove_parens?: true,
-
     "Ash.Resource": [
       section_order: [
         :resource,

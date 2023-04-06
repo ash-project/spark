@@ -235,7 +235,6 @@ defmodule Spark.Dsl do
             @after_compile __MODULE__
 
             Module.register_attribute(__MODULE__, :spark_is, persist: true)
-            @spark_dsl_config Spark.Dsl.handle_fragments(opts[:fragments])
 
             @spark_is parent
             @spark_parent parent
@@ -417,13 +416,15 @@ defmodule Spark.Dsl do
       end
 
     code =
-      quote generated: true, bind_quoted: [dsl: __MODULE__, parent: parent] do
+      quote generated: true,
+            bind_quoted: [dsl: __MODULE__, parent: parent, fragments: opts[:fragments]] do
         require Spark.Dsl.Extension
 
         Module.register_attribute(__MODULE__, :spark_is, persist: true)
         Module.put_attribute(__MODULE__, :spark_is, @spark_is)
 
         Spark.Dsl.Extension.set_state(@persist)
+        @spark_dsl_config Spark.Dsl.handle_fragments(@spark_dsl_config, fragments)
 
         for {block, bindings} <- Enum.reverse(@spark_dsl_config[:eval] || []) do
           Code.eval_quoted(block, bindings, __ENV__)
@@ -462,10 +463,10 @@ defmodule Spark.Dsl do
 
   def is?(_module, _type), do: false
 
-  def handle_fragments(fragments) do
+  def handle_fragments(dsl_config, fragments) do
     fragments
     |> List.wrap()
-    |> Enum.reduce(%{}, fn fragment, acc ->
+    |> Enum.reduce(dsl_config, fn fragment, acc ->
       config = Map.delete(fragment.spark_dsl_config(), :persist)
 
       Map.merge(acc, config, fn
