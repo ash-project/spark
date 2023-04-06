@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.5](https://github.com/ash-project/spark/compare/v1.0.4...v1.0.5) (2023-04-06)
+
+
+
+
+### Bug Fixes:
+
+* properly merge fragments with base DSL
+
 ## [v1.0.4](https://github.com/ash-project/spark/compare/v1.0.3...v1.0.4) (2023-04-05)
 
 
