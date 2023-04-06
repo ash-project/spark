@@ -149,6 +149,13 @@ defmodule Spark.OptionsHelpers do
           opts
         end
 
+      opts =
+        if opts[:schema] && Keyword.keyword?(opts[:schema]) do
+          Keyword.update!(opts, :schema, &sanitize_schema(&1))
+        else
+          opts
+        end
+
       {key, Keyword.drop(opts, @non_nimble_options)}
     end)
   end
