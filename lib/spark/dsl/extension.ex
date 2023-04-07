@@ -1167,7 +1167,7 @@ defmodule Spark.Dsl.Extension do
         {__MODULE__, :spark, section_path},
         %{
           current_config
-          | opts: Keyword.put(current_config.opts, [{field, value}], section_path)
+          | opts: Keyword.put(current_config.opts, field, value)
         }
       )
     end
