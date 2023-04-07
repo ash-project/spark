@@ -1167,8 +1167,7 @@ defmodule Spark.Dsl.Extension do
         {__MODULE__, :spark, section_path},
         %{
           current_config
-          | opts:
-              Spark.Dsl.merge_with_warning(current_config.opts, [{field, value}], section_path)
+          | opts: Keyword.put(current_config.opts, [{field, value}], section_path)
         }
       )
     end
