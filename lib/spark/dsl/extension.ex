@@ -1049,7 +1049,7 @@ defmodule Spark.Dsl.Extension do
                   unquote(Macro.escape(nested_section)),
                   unquote(unimports),
                   unquote(path ++ [section.name]),
-                  nil
+                  unquote(mod)
                 )
               end,
               Macro.Env.location(__ENV__)
