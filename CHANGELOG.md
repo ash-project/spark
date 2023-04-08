@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.7](https://github.com/ash-project/spark/compare/v1.0.6...v1.0.7) (2023-04-08)
+
+
+
+
+### Bug Fixes:
+
+* fix nested section module prefix
+
+* remove merge warning in a single DSL
+
 ## [v1.0.6](https://github.com/ash-project/spark/compare/v1.0.5...v1.0.6) (2023-04-06)
 
 
