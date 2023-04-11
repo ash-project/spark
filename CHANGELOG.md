@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.8](https://github.com/ash-project/spark/compare/v1.0.7...v1.0.8) (2023-04-11)
+
+
+
+
+### Bug Fixes:
+
+* fix keyword_list types and list types
+
 ## [v1.0.7](https://github.com/ash-project/spark/compare/v1.0.6...v1.0.7) (2023-04-08)
 
 
