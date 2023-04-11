@@ -144,7 +144,7 @@ defmodule Spark.InfoGenerator do
           opts
           |> Map.new()
           |> Map.take(~w[type doc default]a)
-          |> Map.update!(:type, &spec_for_type/1)
+          |> Map.update!(:type, &spec_for_type(&1, opts))
           |> Map.put(:pred?, name |> to_string() |> String.ends_with?("?"))
           |> Map.put(:name, name)
           |> Map.put(:path, path)
@@ -228,28 +228,52 @@ defmodule Spark.InfoGenerator do
     end
   end
 
-  defp spec_for_type({:literal, value}) when is_atom(value) or is_integer(value) do
+  def spec_for_type(:keyword_list, opts) do
+    value_type =
+      opts[:keys]
+      |> Enum.map(fn {key, spec} ->
+        key_spec =
+          case key do
+            :* -> spec_for_type(:atom, [])
+            other -> other
+          end
+
+        {key_spec, spec_for_type(spec[:type], spec)}
+      end)
+      |> Enum.uniq()
+      |> Enum.reduce(nil, fn
+        type, nil ->
+          type
+
+        type, other_type ->
+          {:|, [], [type, other_type]}
+      end)
+
+    [value_type]
+  end
+
+  def spec_for_type({:literal, value}, _opts) when is_atom(value) or is_integer(value) do
     value
   end
 
-  defp spec_for_type({:literal, value}) when is_tuple(value) do
+  def spec_for_type({:literal, value}, _opts) when is_tuple(value) do
     value
     |> Tuple.to_list()
-    |> Enum.map(&spec_for_type({:literal, &1}))
+    |> Enum.map(&spec_for_type({:literal, &1}, []))
     |> List.to_tuple()
   end
 
-  defp spec_for_type({:literal, value}) when is_list(value) do
-    Enum.map(value, &spec_for_type({:literal, &1}))
+  def spec_for_type({:literal, value}, _opts) when is_list(value) do
+    Enum.map(value, &spec_for_type({:literal, &1}, []))
   end
 
-  defp spec_for_type({:literal, _value}) do
+  def spec_for_type({:literal, _value}, _opts) do
     {:any, [], Elixir}
   end
 
-  defp spec_for_type({:behaviour, _module}), do: {:module, [], Elixir}
+  def spec_for_type({:behaviour, _module}, _opts), do: {:module, [], Elixir}
 
-  defp spec_for_type({:spark_function_behaviour, behaviour, {_, arity}}),
+  def spec_for_type({:spark_function_behaviour, behaviour, {_, arity}}, _opts),
     do:
       spec_for_type(
         {:or,
@@ -257,10 +281,11 @@ defmodule Spark.InfoGenerator do
            {:behaviour, behaviour},
            {{:behaviour, behaviour}, {:keyword, [], Elixir}},
            {:fun, arity}
-         ]}
+         ]},
+        []
       )
 
-  defp spec_for_type({:fun, arity}) do
+  def spec_for_type({:fun, arity}, _opts) do
     args =
       0..(arity - 1)
       |> Enum.map(fn _ -> {:any, [], Elixir} end)
@@ -268,56 +293,71 @@ defmodule Spark.InfoGenerator do
     [{:->, [], [args, {:any, [], Elixir}]}]
   end
 
-  defp spec_for_type({:or, [type]}), do: spec_for_type(type)
+  def spec_for_type({:or, [type]}, _opts), do: spec_for_type(type, [])
 
-  defp spec_for_type({:or, [next | remaining]}),
-    do: {:|, [], [spec_for_type(next), spec_for_type({:or, remaining})]}
+  def spec_for_type({:or, [next | remaining]}, _opts),
+    do: {:|, [], [spec_for_type(next, []), spec_for_type({:or, remaining}, [])]}
 
-  defp spec_for_type({:in, %Range{first: first, last: last}})
-       when is_integer(first) and is_integer(last),
-       do: {:.., [], [first, last]}
+  def spec_for_type({:in, %Range{first: first, last: last}}, _opts)
+      when is_integer(first) and is_integer(last),
+      do: {:.., [], [first, last]}
 
-  defp spec_for_type({:in, %Range{first: first, last: last}}),
+  def spec_for_type({:in, %Range{first: first, last: last}}, _opts),
     do:
       {{:., [], [{:__aliases__, [], [:Range]}, :t]}, [],
-       [spec_for_type(first), spec_for_type(last)]}
+       [spec_for_type(first, []), spec_for_type(last, [])]}
 
-  defp spec_for_type({:in, [type]}), do: spec_for_type(type)
+  def spec_for_type({:in, types}, _opts) do
+    types
+    |> Enum.map(&spec_for_type({:literal, &1}, []))
+    |> case do
+      [] ->
+        {:any, [], Elixir}
 
-  defp spec_for_type({:in, [next | remaining]}),
-    do: {:|, [], [spec_for_type(next), spec_for_type({:in, remaining})]}
+      specs ->
+        Enum.reduce(specs, nil, fn
+          spec, nil ->
+            spec
 
-  defp spec_for_type({:list, subtype}), do: [spec_for_type(subtype)]
+          spec, other_specs ->
+            {:|, [], [spec, other_specs]}
+        end)
+    end
+  end
 
-  defp spec_for_type({:custom, _, _, _}), do: spec_for_type(:any)
+  def spec_for_type({:list, subtype}, _opts), do: [spec_for_type(subtype, [])]
 
-  defp spec_for_type({:tuple, subtypes}) do
+  def spec_for_type({:custom, _, _, _}, _opts), do: spec_for_type(:any, [])
+
+  def spec_for_type({:tuple, subtypes}, _opts) do
     subtypes
-    |> Enum.map(&spec_for_type/1)
+    |> Enum.map(&spec_for_type(&1, []))
     |> List.to_tuple()
   end
 
-  defp spec_for_type(:string),
+  def spec_for_type(:string, _opts),
     do: {{:., [], [{:__aliases__, [alias: false], [:String]}, :t]}, [], []}
 
-  defp spec_for_type(:literal) do
+  def spec_for_type(:literal, _opts) do
     {:any, [], Elixir}
   end
 
-  defp spec_for_type(terminal)
-       when terminal in ~w[any map atom string boolean integer non_neg_integer pos_integer float timeout pid reference mfa]a,
-       do: {terminal, [], Elixir}
+  def spec_for_type(terminal, _opts)
+      when terminal in ~w[any map atom string boolean integer non_neg_integer pos_integer float timeout pid reference mfa]a,
+      do: {terminal, [], Elixir}
 
-  defp spec_for_type(atom) when is_atom(atom), do: atom
-  defp spec_for_type(number) when is_number(number), do: number
-  defp spec_for_type(string) when is_binary(string), do: spec_for_type(:string)
+  def spec_for_type(atom, _opts) when is_atom(atom), do: atom
+  def spec_for_type(number, _opts) when is_number(number), do: number
+  def spec_for_type(string, _opts) when is_binary(string), do: spec_for_type(:string, [])
 
-  defp spec_for_type({mod, arg}) when is_atom(mod) and is_list(arg),
+  def spec_for_type({:one_of, options}, opts), do: spec_for_type({:in, options}, opts)
+
+  def spec_for_type({mod, arg}, _opts) when is_atom(mod) and is_list(arg),
     do: {{:module, [], Elixir}, {:list, [], Elixir}}
 
-  defp spec_for_type(tuple) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> Enum.map(&spec_for_type/1) |> List.to_tuple()
+  def spec_for_type(tuple, _opts) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&spec_for_type(&1, [])) |> List.to_tuple()
 
-  defp spec_for_type([]), do: []
-  defp spec_for_type([type]), do: [spec_for_type(type)]
+  def spec_for_type([], _), do: []
+  def spec_for_type([type], opts), do: [spec_for_type(type, opts)]
 end
