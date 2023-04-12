@@ -72,7 +72,7 @@ defmodule Spark.Dsl.Entity do
           deprecations: Keyword.t(String.t()),
           describe: String.t(),
           snippet: String.t(),
-          args: [atom],
+          args: [atom | {:optional, atom} | {:optional, atom, any}],
           links: Keyword.t([String.t()]) | nil,
           hide: [atom],
           modules: [atom],
