@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.9](https://github.com/ash-project/spark/compare/v1.0.8...v1.0.9) (2023-04-21)
+
+
+
+
+### Bug Fixes:
+
+* correct args spec in `Spark.Dsl.Entity.t`. (#31)
+
+### Improvements:
+
+* add identifier-based entity replacement
+
+* add `imports` to extensions
+
 ## [v1.0.8](https://github.com/ash-project/spark/compare/v1.0.7...v1.0.8) (2023-04-11)
 
 
