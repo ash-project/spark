@@ -167,7 +167,18 @@ defmodule Spark.Dsl.Transformer do
            ),
          opts <- Keyword.merge(opts, after_validate_auto) do
       result = struct(struct(entity.target, opts), entities)
-      Spark.Dsl.Entity.transform(entity.transform, result)
+
+      case Spark.Dsl.Entity.transform(entity.transform, result) do
+        {:ok, built} ->
+          if entity.identifier do
+            {:ok, Map.put(built, :__identifier__, Map.get(built, entity.identifier))}
+          else
+            {:ok, built}
+          end
+
+        other ->
+          other
+      end
     else
       {:error, error} ->
         {:error, error}
@@ -228,7 +239,13 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
-  def replace_entity(dsl_state, path, replacement, matcher) do
+  def replace_entity(dsl_state, path, replacement, matcher \\ nil) do
+    matcher =
+      matcher ||
+        fn record ->
+          record.__identifier__ == replacement.__identifier__
+        end
+
     Map.update(dsl_state, path, %{entities: [replacement], opts: []}, fn config ->
       Map.update(config, :entities, [replacement], fn entities ->
         replace_match(entities, replacement, matcher)

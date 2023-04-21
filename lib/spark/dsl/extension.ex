@@ -111,6 +111,7 @@ defmodule Spark.Dsl.Extension do
   @type t :: module
 
   @callback sections() :: [Spark.Dsl.section()]
+  @callback module_imports() :: [module]
   @callback transformers() :: [module]
   @callback verifiers() :: [module]
   @callback explain(map) :: String.t() | nil
@@ -412,6 +413,7 @@ defmodule Spark.Dsl.Extension do
             transformers: opts[:transformers] || [],
             verifiers: opts[:verifiers] || [],
             dsl_patches: opts[:dsl_patches] || [],
+            imports: opts[:imports] || [],
             module_prefix: opts[:module_prefix]
           ],
           generated: true do
@@ -424,11 +426,14 @@ defmodule Spark.Dsl.Extension do
       @_transformers transformers
       @_verifiers verifiers
       @_dsl_patches dsl_patches
+      @_imports imports
 
       @doc false
       def sections, do: set_docs(@_sections)
       @doc false
       def verifiers, do: [Spark.Dsl.Verifiers.VerifyEntityUniqueness | @_verifiers]
+      @doc false
+      def module_imports, do: @_imports
       @doc false
       def module_prefix, do: unquote(module_prefix) || __MODULE__
       @doc false
@@ -504,7 +509,20 @@ defmodule Spark.Dsl.Extension do
         end
       end
 
-    [body | imports]
+    configured_imports =
+      extensions
+      |> Kernel.||([])
+      |> Enum.flat_map(fn extension ->
+        extension = Macro.expand_once(extension, __ENV__)
+        extension.module_imports()
+      end)
+      |> Enum.map(fn module ->
+        quote generated: true, location: :keep do
+          import unquote(module)
+        end
+      end)
+
+    [body | imports ++ configured_imports]
   end
 
   @doc false
