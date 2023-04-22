@@ -52,9 +52,22 @@ defmodule Spark.Test.TopLevel do
       ]
     }
 
+    @nested_section %Spark.Dsl.Section{
+      name: :nested_section,
+      schema: [
+        bar: [
+          type: :integer,
+          doc: "Some documentation"
+        ]
+      ]
+    }
+
     @steps %Spark.Dsl.Section{
       name: :steps,
       top_level?: true,
+      sections: [
+        @nested_section
+      ],
       schema: [
         foo: [
           type: :integer,
