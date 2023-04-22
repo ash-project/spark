@@ -11,7 +11,6 @@ defmodule Spark.TopLevelTest do
 
       step :foo do
         step(:bar)
-        # get nested stuff working
       end
     end
 
