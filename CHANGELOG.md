@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.0](https://github.com/ash-project/spark/compare/v1.0.9...v1.1.0) (2023-04-22)
+
+
+
+
+### Features:
+
+* top level DSLs!
+
+### Improvements:
+
+* give every dsl entity a unique identifier
+
+* support top level sections in elixir_sense plugin
+
 ## [v1.0.9](https://github.com/ash-project/spark/compare/v1.0.8...v1.0.9) (2023-04-21)
 
 
