@@ -563,7 +563,8 @@ defmodule Spark.Dsl.Extension do
               ]
             end
 
-          opts_import ++ section_imports ++ entity_imports ++ configured_imports
+          opts_import ++
+            section_imports ++ entity_imports ++ configured_imports
         end)
       end)
 

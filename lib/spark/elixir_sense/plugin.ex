@@ -465,14 +465,25 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  defp get_constructors(extensions, [], hint, _type) do
+  defp get_constructors(extensions, [], hint, type) do
     Enum.flat_map(
       extensions,
       fn extension ->
         try do
-          Enum.filter(apply_dsl_patches(extension.sections(), extensions), fn section ->
-            apply(Matcher, :match?, [to_string(section.name), hint])
+          top_level_constructors =
+            extension.sections()
+            |> Enum.filter(& &1.top_level?)
+            |> Enum.flat_map(fn section ->
+              do_find_constructors(section, [], hint, type)
+            end)
+
+          extension.sections()
+          |> apply_dsl_patches(extensions)
+          |> Enum.filter(fn section ->
+            !section.top_level? &&
+              apply(Matcher, :match?, [to_string(section.name), hint])
           end)
+          |> Enum.concat(top_level_constructors)
         rescue
           _ ->
             []
@@ -482,23 +493,36 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp get_constructors(extensions, [first | rest], hint, type) do
-    Enum.flat_map(
-      extensions,
-      fn extension ->
-        try do
-          Enum.flat_map(apply_dsl_patches(extension.sections(), extensions), fn section ->
-            if section.name == first do
-              do_find_constructors(section, rest, hint, type)
-            else
-              []
+    extensions
+    |> Enum.flat_map(& &1.sections())
+    |> Enum.filter(& &1.top_level?)
+    |> Enum.find(fn section ->
+      Enum.any?(section.sections, &(&1.name == first)) ||
+        Enum.any?(section.entities, &(&1.name == first))
+    end)
+    |> case do
+      nil ->
+        Enum.flat_map(
+          extensions,
+          fn extension ->
+            try do
+              Enum.flat_map(apply_dsl_patches(extension.sections(), extensions), fn section ->
+                if section.name == first do
+                  do_find_constructors(section, rest, hint, type)
+                else
+                  []
+                end
+              end)
+            rescue
+              _ ->
+                []
             end
-          end)
-        rescue
-          _ ->
-            []
-        end
-      end
-    )
+          end
+        )
+
+      top_level_section ->
+        do_find_constructors(top_level_section, [first | rest], hint, type)
+    end
   end
 
   defp apply_dsl_patches(sections_or_entities, extensions, path \\ [])
