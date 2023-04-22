@@ -420,6 +420,41 @@ defmodule Spark.Dsl do
             bind_quoted: [dsl: __MODULE__, parent: parent, fragments: opts[:fragments]] do
         require Spark.Dsl.Extension
 
+        for extension <- @extensions do
+          for section <- extension.sections() do
+            if section.top_level? do
+              current_config =
+                Process.get(
+                  {__MODULE__, :spark, [section.name]},
+                  %{entities: [], opts: []}
+                )
+
+              opts =
+                case Spark.OptionsHelpers.validate(
+                       current_config.opts,
+                       Map.get(section, :schema, [])
+                     ) do
+                  {:ok, opts} ->
+                    opts
+
+                  {:error, error} ->
+                    raise Spark.Error.DslError,
+                      module: __MODULE__,
+                      message: error,
+                      path: [section.name]
+                end
+
+              Process.put(
+                {__MODULE__, :spark, [section.name]},
+                %{
+                  entities: current_config.entities,
+                  opts: opts
+                }
+              )
+            end
+          end
+        end
+
         Module.register_attribute(__MODULE__, :spark_is, persist: true)
         Module.put_attribute(__MODULE__, :spark_is, @spark_is)
 

@@ -18,6 +18,9 @@ defmodule Spark.Dsl.Section do
   builders for those options, so that they may be configured. They are retrieved with
   `Spark.Dsl.Extension.get_opt/4`.
 
+  To create a section that is available at the top level (i.e not  nested inside of its own name), use
+  `top_level?: true`. Remember, however, that this has no effect on sections nested inside of other sections.
+
   For a full example, see `Spark.Dsl.Extension`.
   """
   defstruct [
@@ -29,6 +32,7 @@ defmodule Spark.Dsl.Section do
     links: nil,
     examples: [],
     modules: [],
+    top_level?: false,
     no_depend_modules: [],
     auto_set_fields: [],
     deprecations: [],
@@ -50,6 +54,7 @@ defmodule Spark.Dsl.Section do
           schema: OptionsHelpers.schema(),
           describe: String.t(),
           snippet: String.t(),
+          top_level?: boolean(),
           links: nil | Keyword.t([String.t()]),
           examples: [String.t()],
           modules: [atom],

@@ -501,6 +501,7 @@ defmodule Spark.Dsl.Extension do
 
         only_sections =
           extension.sections()
+          |> Enum.reject(& &1.top_level?)
           |> Enum.map(&{&1.name, 1})
 
         quote generated: true, location: :keep do
@@ -508,6 +509,63 @@ defmodule Spark.Dsl.Extension do
           import unquote(extension), only: unquote(only_sections)
         end
       end
+
+    top_level_imports =
+      Enum.flat_map(extensions || [], fn extension ->
+        extension = Macro.expand_once(extension, __ENV__)
+
+        extension.sections()
+        |> Enum.filter(& &1.top_level?)
+        |> Enum.flat_map(fn section ->
+          section_mod_name =
+            Spark.Dsl.Extension.section_mod_name(extension.module_prefix(), [], section)
+
+          configured_imports =
+            for module <- section.imports do
+              quote generated: true do
+                import unquote(module)
+              end
+            end
+
+          entity_imports =
+            for entity <- section.entities do
+              module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
+
+              quote generated: true do
+                import unquote(module), only: :macros
+              end
+            end
+
+          section_imports =
+            for nested_section <- section.sections do
+              module =
+                Spark.Dsl.Extension.section_mod_name(
+                  extension.module_prefix(),
+                  [section.name],
+                  nested_section
+                )
+
+              quote generated: true do
+                import unquote(module), only: :macros
+              end
+            end
+
+          opts_import =
+            if Map.get(section, :schema, []) == [] do
+              []
+            else
+              opts_module = Module.concat([section_mod_name, Options])
+
+              [
+                quote generated: true do
+                  import unquote(opts_module)
+                end
+              ]
+            end
+
+          opts_import ++ section_imports ++ entity_imports ++ configured_imports
+        end)
+      end)
 
     configured_imports =
       extensions
@@ -522,7 +580,7 @@ defmodule Spark.Dsl.Extension do
         end
       end)
 
-    [body | imports ++ configured_imports]
+    [body | imports ++ configured_imports ++ top_level_imports]
   end
 
   @doc false
@@ -774,148 +832,150 @@ defmodule Spark.Dsl.Extension do
       # This macro argument is only called `body` so that it looks nicer
       # in the DSL docs
 
-      @doc false
-      defmacro unquote(section.name)(body) do
-        opts_module = unquote(opts_module)
-        section_path = unquote(path ++ [section.name])
-        section = unquote(Macro.escape(section))
-        unimports = unquote(Macro.escape(unimports))
-        unimport_modules = unquote(Macro.escape(unimport_modules))
+      unless section.top_level? && path == [] do
+        @doc false
+        defmacro unquote(section.name)(body) do
+          opts_module = unquote(opts_module)
+          section_path = unquote(path ++ [section.name])
+          section = unquote(Macro.escape(section))
+          unimports = unquote(Macro.escape(unimports))
+          unimport_modules = unquote(Macro.escape(unimport_modules))
 
-        configured_imports =
-          for module <- unquote(section.imports) do
-            quote generated: true do
-              import unquote(module)
-            end
-          end
-
-        entity_imports =
-          for module <- unquote(entity_modules) do
-            quote generated: true do
-              import unquote(module), only: :macros
-            end
-          end
-
-        section_imports =
-          for module <- unquote(section_modules) do
-            quote generated: true do
-              import unquote(module), only: :macros
-            end
-          end
-
-        opts_import =
-          if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
-            []
-          else
-            [
+          configured_imports =
+            for module <- unquote(section.imports) do
               quote generated: true do
-                import unquote(opts_module)
+                import unquote(module)
               end
-            ]
-          end
-
-        configured_unimports =
-          for module <- unquote(section.imports) do
-            quote generated: true do
-              import unquote(module), only: []
             end
-          end
 
-        entity_unimports =
-          for module <- unquote(unimport_modules) do
-            quote generated: true do
-              import unquote(module), only: []
-            end
-          end
-
-        section_unimports =
-          for module <- unquote(section_modules) do
-            quote generated: true do
-              import unquote(module), only: []
-            end
-          end
-
-        opts_unimport =
-          if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
-            []
-          else
-            [
+          entity_imports =
+            for module <- unquote(entity_modules) do
               quote generated: true do
-                import unquote(opts_module), only: []
+                import unquote(module), only: :macros
               end
-            ]
-          end
-
-        entity_modules = unquote(entity_modules)
-
-        patch_modules =
-          __CALLER__.module
-          |> Module.get_attribute(:extensions, [])
-          |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
-          |> Enum.reject(&(&1 in entity_modules))
-
-        patch_module_imports =
-          Enum.map(patch_modules, fn patch_module ->
-            quote do
-              import unquote(patch_module), only: :macros
             end
-          end)
 
-        patch_module_unimports =
-          Enum.map(patch_modules, fn patch_module ->
-            quote do
-              import unquote(patch_module), only: []
+          section_imports =
+            for module <- unquote(section_modules) do
+              quote generated: true do
+                import unquote(module), only: :macros
+              end
             end
-          end)
 
-        entity_imports ++
-          section_imports ++
-          opts_import ++
-          configured_imports ++
-          patch_module_imports ++
-          unimports ++
-          [
-            quote generated: true do
-              unquote(body[:do])
-
-              current_config =
-                Process.get(
-                  {__MODULE__, :spark, unquote(section_path)},
-                  %{entities: [], opts: []}
-                )
-
-              opts =
-                case Spark.OptionsHelpers.validate(
-                       current_config.opts,
-                       Map.get(unquote(Macro.escape(section)), :schema, [])
-                     ) do
-                  {:ok, opts} ->
-                    opts
-
-                  {:error, error} ->
-                    raise Spark.Error.DslError,
-                      module: __MODULE__,
-                      message: error,
-                      path: unquote(section_path)
+          opts_import =
+            if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
+              []
+            else
+              [
+                quote generated: true do
+                  import unquote(opts_module)
                 end
-
-              Process.put(
-                {__MODULE__, :spark, unquote(section_path)},
-                %{
-                  entities: current_config.entities,
-                  opts: opts
-                }
-              )
+              ]
             end
-          ] ++
-          configured_unimports ++
-          patch_module_unimports ++
-          opts_unimport ++ entity_unimports ++ section_unimports
+
+          configured_unimports =
+            for module <- unquote(section.imports) do
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          entity_unimports =
+            for module <- unquote(unimport_modules) do
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          section_unimports =
+            for module <- unquote(section_modules) do
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          opts_unimport =
+            if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
+              []
+            else
+              [
+                quote generated: true do
+                  import unquote(opts_module), only: []
+                end
+              ]
+            end
+
+          entity_modules = unquote(entity_modules)
+
+          patch_modules =
+            __CALLER__.module
+            |> Module.get_attribute(:extensions, [])
+            |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
+            |> Enum.reject(&(&1 in entity_modules))
+
+          patch_module_imports =
+            Enum.map(patch_modules, fn patch_module ->
+              quote do
+                import unquote(patch_module), only: :macros
+              end
+            end)
+
+          patch_module_unimports =
+            Enum.map(patch_modules, fn patch_module ->
+              quote do
+                import unquote(patch_module), only: []
+              end
+            end)
+
+          entity_imports ++
+            section_imports ++
+            opts_import ++
+            configured_imports ++
+            patch_module_imports ++
+            unimports ++
+            [
+              quote generated: true do
+                unquote(body[:do])
+
+                current_config =
+                  Process.get(
+                    {__MODULE__, :spark, unquote(section_path)},
+                    %{entities: [], opts: []}
+                  )
+
+                opts =
+                  case Spark.OptionsHelpers.validate(
+                         current_config.opts,
+                         Map.get(unquote(Macro.escape(section)), :schema, [])
+                       ) do
+                    {:ok, opts} ->
+                      opts
+
+                    {:error, error} ->
+                      raise Spark.Error.DslError,
+                        module: __MODULE__,
+                        message: error,
+                        path: unquote(section_path)
+                  end
+
+                Process.put(
+                  {__MODULE__, :spark, unquote(section_path)},
+                  %{
+                    entities: current_config.entities,
+                    opts: opts
+                  }
+                )
+              end
+            ] ++
+            configured_unimports ++
+            patch_module_unimports ++
+            opts_unimport ++ entity_unimports ++ section_unimports
+        end
       end
     end
   end
 
-  defp entity_mod_name(mod, nested_entity_path, section_path, entity) do
+  def entity_mod_name(mod, nested_entity_path, section_path, entity) do
     nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
 
@@ -930,7 +990,8 @@ defmodule Spark.Dsl.Extension do
     Module.concat(mod_parts)
   end
 
-  defp section_mod_name(mod, path, section) do
+  @doc false
+  def section_mod_name(mod, path, section) do
     nested_mod_name =
       path
       |> Enum.drop(1)
