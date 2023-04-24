@@ -427,11 +427,9 @@ defmodule Spark.ElixirSense.Plugin do
         {_, list} = config[:type]
 
         if is_nil(config[:default]) do
-          IO.inspect("here1")
           {_, list} = config[:type]
           inspect(Enum.at(list, 0))
         else
-          IO.inspect("here2")
           list |> Enum.reject(&(&1 == config[:default])) |> Enum.at(0) |> inspect()
         end
 

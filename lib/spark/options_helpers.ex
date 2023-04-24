@@ -145,7 +145,7 @@ defmodule Spark.OptionsHelpers do
   end
 
   defp document_values(opts) do
-    case opts[:type] |> IO.inspect() do
+    case opts[:type] do
       {in_type, values} when in_type in [:in, :one_of] ->
         values = Enum.map_join(values, ", ", &inspect/1)
 
