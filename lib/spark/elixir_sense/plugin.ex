@@ -411,17 +411,13 @@ defmodule Spark.ElixirSense.Plugin do
       config[:type] == :string ->
         "\"$0\""
 
-      match?(
-        {list_type, {in_type, _list}}
-        when list_type in [:wrap_list, :list] and in_type == [:in, :one_of],
-        config[:type]
-      ) ->
+      match?({:list, _}, config[:type]) ->
         {_, inner_type} = config[:type]
         "[#{default_snippet(type: inner_type)}]"
 
-      match?({list_type, _} when list_type in [:wrap_list, :list], config[:type]) ->
+      match?({:wrap_list, _}, config[:type]) ->
         {_, inner_type} = config[:type]
-        "[#{default_snippet(type: inner_type)}]"
+        default_snippet(type: inner_type)
 
       match?({in_type, _} when in_type in [:in, :one_of], config[:type]) ->
         {_, list} = config[:type]

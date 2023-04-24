@@ -54,11 +54,6 @@ defmodule Spark.Test.Recursive do
 
     @steps %Spark.Dsl.Section{
       name: :steps,
-      schema: [
-        thing: [
-          type: {:in, [1, 2, 3]}
-        ]
-      ],
       entities: [@step, @special_step, @atom]
     }
 
