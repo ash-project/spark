@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.1](https://github.com/ash-project/spark/compare/v1.1.0...v1.1.1) (2023-04-24)
+
+
+
+
+### Improvements:
+
+* better snippets, `:wrap_list` type
+
 ## [v1.1.0](https://github.com/ash-project/spark/compare/v1.0.9...v1.1.0) (2023-04-22)
 
 
