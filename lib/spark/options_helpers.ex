@@ -21,6 +21,7 @@ defmodule Spark.OptionsHelpers do
   - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
   - `{:literal, value}` -> exactly the value specified.
   - `:quoted` -> retains the quoted value of the code provided to the option
+  - `{:wrap_list, type}` -> Allows a single value or a list of values.
   """
 
   @typedoc """
@@ -40,6 +41,7 @@ defmodule Spark.OptionsHelpers do
           | {:spark_type, module, builtin_function :: atom}
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
           | {:struct, module}
+          | {:wrap_list, type}
           | :literal
           | {:literal, any}
           | :quoted
@@ -129,13 +131,43 @@ defmodule Spark.OptionsHelpers do
     end)
     |> sanitize_schema()
     |> Enum.map(fn {key, opts} ->
-      if opts[:doc] do
-        {key, Keyword.update!(opts, :doc, &String.replace(&1, "\n\n", "  \n"))}
-      else
-        {key, opts}
-      end
+      {key, update_key_docs(opts)}
     end)
     |> NimbleOptions.docs()
+  end
+
+  @doc false
+  def update_key_docs(opts) do
+    opts
+    |> Keyword.put_new(:doc, "")
+    |> Keyword.update!(:doc, &String.replace(&1, "\n\n", "  \n"))
+    |> document_values()
+  end
+
+  defp document_values(opts) do
+    case opts[:type] |> IO.inspect() do
+      {in_type, values} when in_type in [:in, :one_of] ->
+        values = Enum.map_join(values, ", ", &inspect/1)
+
+        Keyword.update!(
+          opts,
+          :doc,
+          &"#{&1} Valid values are #{values}"
+        )
+
+      {list_type, {in_type, values}}
+      when in_type in [:in, :one_of] and list_type in [:list, :wrap_list] ->
+        values = Enum.map_join(values, ", ", &inspect/1)
+
+        Keyword.update!(
+          opts,
+          :doc,
+          &"#{&1} Valid values are #{values}"
+        )
+
+      _ ->
+        opts
+    end
   end
 
   @non_nimble_options [:hide, :as, :snippet, :links]
@@ -176,13 +208,16 @@ defmodule Spark.OptionsHelpers do
         {:or, sanitize_type(subtypes, key)}
 
       {:tagged_tuple, tag, type} ->
-        {:custom, __MODULE__, :tagged_tuple, [key, type, tag]}
+        {:custom, __MODULE__, :tagged_tuple, [key, sanitize_type(type, key), tag]}
 
       {:struct, struct} ->
         {:custom, __MODULE__, :struct, [struct]}
 
       {:list, values} ->
         {:list, sanitize_type(values, key)}
+
+      {:wrap_list, types} ->
+        {:custom, __MODULE__, :wrap_list, [key, sanitize_type(types, key)]}
 
       :quoted ->
         :any
@@ -233,6 +268,28 @@ defmodule Spark.OptionsHelpers do
 
   def literal_value(value, value), do: {:ok, value}
   def literal_value(_, value), do: {:error, "is not #{inspect(value)}"}
+
+  def wrap_list(value, key, type) when not is_list(value) do
+    wrap_list(List.wrap(value), key, type)
+  end
+
+  def wrap_list(values, key, type) do
+    case Spark.OptionsHelpers.validate(
+           values,
+           [
+             {key,
+              [
+                type: {:list, type}
+              ]}
+           ]
+         ) do
+      {:ok, opts} ->
+        {:ok, opts[key]}
+
+      {:error, %NimbleOptions.ValidationError{message: message}} ->
+        {:error, message}
+    end
+  end
 
   def tagged_tuple({tag, value}, key, type, tag) do
     case Spark.OptionsHelpers.validate(

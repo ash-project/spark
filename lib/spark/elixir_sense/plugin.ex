@@ -288,6 +288,8 @@ defmodule Spark.ElixirSense.Plugin do
           "#{key} #{snippet}"
       end
 
+    config = Spark.OptionsHelpers.update_key_docs(config)
+
     %{
       type: :generic,
       kind: :function,
@@ -409,34 +411,67 @@ defmodule Spark.ElixirSense.Plugin do
       config[:type] == :string ->
         "\"$0\""
 
-      match?({:list, {:in, _list}}, config[:type]) ->
-        if config[:default] do
-          inspect(config[:default])
-        else
-          "$0"
-        end
+      match?(
+        {list_type, {in_type, _list}}
+        when list_type in [:wrap_list, :list] and in_type == [:in, :one_of],
+        config[:type]
+      ) ->
+        {_, inner_type} = config[:type]
+        "[#{default_snippet(type: inner_type)}]"
 
-      match?({:list, _}, config[:type]) ->
-        "[$0]"
+      match?({list_type, _} when list_type in [:wrap_list, :list], config[:type]) ->
+        {_, inner_type} = config[:type]
+        "[#{default_snippet(type: inner_type)}]"
 
-      match?({:in, _}, config[:type]) ->
-        if config[:default] do
-          inspect(config[:default])
-        else
-          {:in, list} = config[:type]
+      match?({in_type, _} when in_type in [:in, :one_of], config[:type]) ->
+        {_, list} = config[:type]
+
+        if is_nil(config[:default]) do
+          IO.inspect("here1")
+          {_, list} = config[:type]
           inspect(Enum.at(list, 0))
+        else
+          IO.inspect("here2")
+          list |> Enum.reject(&(&1 == config[:default])) |> Enum.at(0) |> inspect()
         end
 
-      match?({:one_of, _}, config[:type]) ->
-        if config[:default] do
-          inspect(config[:default])
-        else
-          {:one_of, list} = config[:type]
-          inspect(Enum.at(list, 0))
-        end
+      match?({:tagged_tuple, _, _}, config[:type]) ->
+        {:tagged_tuple, tag, inner_type} = config[:type]
+        "{:#{tag}, #{default_snippet(inner_type)}}"
 
       config[:type] == :atom ->
         ":$0"
+
+      match?({:mfa_or_fun, _}, config[:type]) ->
+        {:mfa_or_fun, arity} = config[:type]
+        default_snippet(type: {:or, [{:fun, arity}, :mfa]})
+
+      match?({:literal, _}, config[:type]) ->
+        {:literal, value} = config[:type]
+        inspect(value)
+
+      match?({:fun, 0}, config[:type]) ->
+        """
+        fn ->
+          ${0:body}
+        end
+        """
+
+      match?({:fun, _}, config[:type]) ->
+        {:fun, arity} = config[:type]
+        args = Enum.map_join(0..(arity - 1), ", ", &"arg#{&1 + 1}")
+
+        """
+        fn #{args} ->
+          ${#{arity}:body}
+        end
+        """
+
+      match?(:map, config[:type]) || match?({:map, _, _}, config[:type]) ->
+        "%{${1:key} => ${2:value}}"
+
+      match?(:keyword_list, config[:type]) ->
+        "[${1:key} => ${2:value}]"
 
       config[:type] == :mfa ->
         "{${1:module}, :${2:function}, [${3:args}]}"

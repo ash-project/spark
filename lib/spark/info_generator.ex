@@ -325,7 +325,8 @@ defmodule Spark.InfoGenerator do
     end
   end
 
-  def spec_for_type({:list, subtype}, _opts), do: [spec_for_type(subtype, [])]
+  def spec_for_type({type, subtype}, _opts) when type in [:list, :wrap_list],
+    do: [spec_for_type(subtype, [])]
 
   def spec_for_type({:custom, _, _, _}, _opts), do: spec_for_type(:any, [])
 
