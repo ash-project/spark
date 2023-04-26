@@ -638,7 +638,14 @@ defmodule Spark.Dsl.Extension do
                           spark_dsl_config,
                           __ENV__
                         )
+                        |> Spark.Dsl.Extension.await_tasks()
     end
+  end
+
+  @doc false
+  def await_tasks(dsl) do
+    Task.await_many(dsl[:persist][:spark_compile_tasks] || [], :infinity)
+    %{dsl | persist: Map.delete(dsl.persist, :spark_compile_tasks)}
   end
 
   def run_transformers(mod, transformers, spark_dsl_config, env) do

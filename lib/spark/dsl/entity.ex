@@ -95,7 +95,13 @@ defmodule Spark.Dsl.Entity do
   end
 
   def build(
-        %{target: target, schema: schema, auto_set_fields: auto_set_fields, transform: transform},
+        %{
+          target: target,
+          schema: schema,
+          auto_set_fields: auto_set_fields,
+          transform: transform,
+          identifier: identifier
+        },
         opts,
         nested_entities
       ) do
@@ -107,8 +113,16 @@ defmodule Spark.Dsl.Entity do
          opts <- Keyword.merge(opts, after_validate_auto),
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
          built <- struct(target, opts),
-         built <- struct(built, nested_entities) do
-      transform(transform, built)
+         built <- struct(built, nested_entities),
+         {:ok, built} <- transform(transform, built) do
+      identifier =
+        if identifier do
+          Map.get(built, identifier)
+        else
+          System.unique_integer()
+        end
+
+      {:ok, Map.put(built, :__identifier__, identifier)}
     end
   end
 

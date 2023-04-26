@@ -46,6 +46,26 @@ defmodule Spark.Dsl.Transformer do
   end
 
   @doc """
+  Runs the function in an async compiler.
+
+  Use this for compiling new modules and having them compiled
+  efficiently asynchronously.
+  """
+  def async_compile(dsl, fun) do
+    task =
+      case :erlang.get(:elixir_compiler_info) do
+        :undefined ->
+          Task.async(fun)
+
+        _ ->
+          Kernel.ParallelCompiler.async(fun)
+      end
+
+    tasks = get_persisted(dsl, :spark_compile_tasks, [])
+    persist(dsl, :spark_compile_tasks, [task | tasks])
+  end
+
+  @doc """
   Add a quoted expression to be evaluated in the DSL module's context.
 
   Use this *extremely sparingly*. It should almost never be necessary, unless building certain
