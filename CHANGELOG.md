@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.3](https://github.com/ash-project/spark/compare/v1.1.2...v1.1.3) (2023-04-26)
+
+
+
+
+### Improvements:
+
+* `Transformer.async_compile/2`
+
 ## [v1.1.2](https://github.com/ash-project/spark/compare/v1.1.1...v1.1.2) (2023-04-24)
 
 
