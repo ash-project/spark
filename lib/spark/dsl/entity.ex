@@ -116,12 +116,12 @@ defmodule Spark.Dsl.Entity do
          built <- struct(built, nested_entities),
          {:ok, built} <- transform(transform, built) do
       case identifier do
+        nil ->
+          {:ok, built}
+
         {:auto, :unique_integer} ->
           require_identifier!(built, identifier)
           {:ok, Map.put(built, :__identifier__, identifier)}
-
-        nil ->
-          {:ok, built}
 
         name ->
           require_identifier!(built, identifier)
