@@ -115,14 +115,27 @@ defmodule Spark.Dsl.Entity do
          built <- struct(target, opts),
          built <- struct(built, nested_entities),
          {:ok, built} <- transform(transform, built) do
-      identifier =
-        if identifier do
-          Map.get(built, identifier)
-        else
-          System.unique_integer()
-        end
+      case identifier do
+        {:auto, :unique_integer} ->
+          require_identifier!(built, identifier)
+          {:ok, Map.put(built, :__identifier__, identifier)}
 
-      {:ok, Map.put(built, :__identifier__, identifier)}
+        nil ->
+          {:ok, built}
+
+        name ->
+          require_identifier!(built, identifier)
+          {:ok, Map.put(built, :__identifier__, Map.get(built, identifier))}
+      end
+    end
+  end
+
+  @doc false
+  def require_identifier!(struct, identifier) do
+    if Map.has_key?(struct, :__identifier__) do
+      %{struct | __identifier__: identifier}
+    else
+      raise "#{inspect(struct.__struct__)} must have the `__identifier__` field!"
     end
   end
 

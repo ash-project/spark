@@ -50,7 +50,7 @@ defmodule Spark.Test.Contact do
 
     defmodule Preset do
       @moduledoc false
-      defstruct [:name, :contacter, :default_message, special?: false]
+      defstruct [:name, :contacter, :default_message, :__identifier__, special?: false]
     end
 
     @preset_with_fn_arg %Spark.Dsl.Entity{
