@@ -125,7 +125,7 @@ defmodule Spark.Dsl.Entity do
 
         name ->
           require_identifier!(built, identifier)
-          {:ok, Map.put(built, :__identifier__, Map.get(built, identifier))}
+          {:ok, Map.put(built, :__identifier__, Map.get(built, name))}
       end
     end
   end
