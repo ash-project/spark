@@ -658,12 +658,8 @@ defmodule Spark.Dsl.Extension do
             reraise %{e | module: mod}, __STACKTRACE__
 
           e ->
-            if Exception.exception?(e) do
-              reraise e, __STACKTRACE__
-            else
-              reraise "Exception in transformer #{inspect(transformer)} on #{inspect(mod)}: \n\n#{Exception.message(e)}",
-                      __STACKTRACE__
-            end
+            reraise "Exception in transformer #{inspect(transformer)} on #{inspect(mod)}: \n\n#{Exception.message(e)}",
+                    __STACKTRACE__
         end
 
       case result do
