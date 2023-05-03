@@ -110,11 +110,7 @@ defmodule Spark.DslTest do
         use Spark.Test.Contact
 
         presets do
-          preset :catchphrase do
-            default_message("ghostbusters")
-
-            contacter(&do_contact/1)
-          end
+          preset(:catchphrase, contacter: &do_contact/1, default_message: "ghostbusters")
         end
 
         defp do_contact(message) do

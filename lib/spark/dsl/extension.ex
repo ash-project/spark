@@ -1422,6 +1422,23 @@ defmodule Spark.Dsl.Extension do
               |> Spark.Dsl.Extension.escape_quoted(entity_schema)
               |> Spark.Dsl.Extension.shuffle_opts_to_end(unquote(Macro.escape(entity.args)), opts)
 
+            if not Keyword.keyword?(opts) do
+              raise ArgumentError,
+                    "Expected an options list in #{entity.name} got #{Macro.to_string(opts)}"
+            end
+
+            {opts, opt_funs} =
+              Enum.reduce(opts, {[], []}, fn {key, value}, {keyword, opt_funs} ->
+                {value, function} = Spark.CodeHelpers.lift_functions(value, key, __CALLER__)
+                keyword = Keyword.put(keyword, key, value)
+
+                if function do
+                  {keyword, [function | opt_funs]}
+                else
+                  {keyword, opt_funs}
+                end
+              end)
+
             {arg_values, funs} =
               args_without_opts
               |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
@@ -1486,6 +1503,7 @@ defmodule Spark.Dsl.Extension do
               unimports ++
                 imports ++
                 funs ++
+                opt_funs ++
                 [
                   quote generated: true do
                     section_path = unquote(section_path)

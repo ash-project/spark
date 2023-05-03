@@ -68,8 +68,8 @@ defmodule Spark.CodeHelpers do
      end}
   end
 
-  # Lift function of the `&function(&1, args)` variety
-  def lift_functions({:&, _, [{name, _, fn_args}]} = value, key, caller) when is_atom(name) do
+  def lift_functions({:&, _, [{name, _, fn_args}]} = value, key, caller)
+      when is_atom(name) and name != :& do
     fn_args = generate_captured_arguments(fn_args, caller)
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
@@ -93,6 +93,23 @@ defmodule Spark.CodeHelpers do
       )
       when is_atom(name) do
     fn_args = generate_captured_arguments(fn_args, caller)
+    fn_name = generate_unique_function_name(value, key)
+    function = generate_captured_function_caller(fn_name, fn_args, caller)
+
+    {function,
+     quote generated: true do
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+         @doc false
+         def unquote(fn_name)(unquote_splicing(fn_args)) do
+           unquote(value).(unquote_splicing(fn_args))
+         end
+       end
+     end}
+  end
+
+  # Lift functions of the `&(&1 + &2)` variety
+  def lift_functions({:&, [line: 113], [body]} = value, key, caller) do
+    fn_args = generate_captured_arguments(body, caller)
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
 
