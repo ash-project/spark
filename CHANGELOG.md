@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.8](https://github.com/ash-project/spark/compare/v1.1.7...v1.1.8) (2023-05-03)
+
+
+
+
+### Bug Fixes:
+
+* better behavior with latest elixirls release
+
 ## [v1.1.7](https://github.com/ash-project/spark/compare/v1.1.6...v1.1.7) (2023-05-03)
 
 
