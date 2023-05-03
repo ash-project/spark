@@ -111,6 +111,7 @@ defmodule Spark.Dsl do
             parent_opts: opts,
             parent: __CALLER__.module
           ],
+          location: :keep,
           generated: true do
       require Spark.Dsl.Extension
       @dialyzer {:nowarn_function, handle_opts: 1, handle_before_compile: 1}
@@ -216,10 +217,15 @@ defmodule Spark.Dsl do
 
         extensions = Enum.uniq(extensions ++ fragment_extensions)
 
-        Module.put_attribute(__CALLER__.module, :extensions, extensions)
+        if :elixir_module.mode(__CALLER__.module) == :all do
+          Module.put_attribute(__CALLER__.module, :extensions, extensions)
+        end
 
         body =
-          quote generated: true do
+          quote generated: true, location: :keep do
+            Module.register_attribute(__MODULE__, :extensions, persist: true)
+            @extensions unquote(extensions)
+
             opts =
               unquote(opts)
               |> Spark.OptionsHelpers.validate!(unquote(their_opt_schema))

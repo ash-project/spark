@@ -32,11 +32,23 @@ defmodule Spark.ElixirSense.Plugin do
     opts = add_module_store(opts)
     option = info.option || get_option(opts.cursor_context.text_before)
 
-    if option do
-      get_suggestions(hint, opts, [function_call], {:value, option})
-    else
-      get_suggestions(hint, opts, [function_call], {:arg, arg_index})
-    end
+    {path, type} =
+      if function_call == :use || option == :do || !info.cursor_at_option do
+        {[], nil}
+      else
+        type =
+          case option do
+            nil ->
+              {:arg, arg_index}
+
+            option ->
+              {:value, option}
+          end
+
+        {[function_call], type}
+      end
+
+    get_suggestions(hint, opts, path, type)
   end
 
   def suggestions(hint, opts) do
@@ -733,7 +745,7 @@ defmodule Spark.ElixirSense.Plugin do
            opts.buffer_metadata.lines_to_env[earliest_line] do
       get_scope_path(opts, scopes_to_lines, next_env, [func | path])
     else
-      _ ->
+      _other ->
         path
     end
   end
