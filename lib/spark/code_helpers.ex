@@ -108,7 +108,7 @@ defmodule Spark.CodeHelpers do
   end
 
   # Lift functions of the `&(&1 + &2)` variety
-  def lift_functions({:&, [line: 113], [body]} = value, key, caller) do
+  def lift_functions({:&, _, [body]} = value, key, caller) do
     fn_args = generate_captured_arguments(body, caller)
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
