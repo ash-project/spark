@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.6](https://github.com/ash-project/spark/compare/v1.1.5...v1.1.6) (2023-05-03)
+
+
+
+
+### Bug Fixes:
+
+* handle more anonymous function types in DSLs
+
 ## [v1.1.5](https://github.com/ash-project/spark/compare/v1.1.4...v1.1.5) (2023-05-01)
 
 
