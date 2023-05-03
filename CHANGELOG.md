@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.7](https://github.com/ash-project/spark/compare/v1.1.6...v1.1.7) (2023-05-03)
+
+
+
+
+### Bug Fixes:
+
+* remove hardcoded line number
+
 ## [v1.1.6](https://github.com/ash-project/spark/compare/v1.1.5...v1.1.6) (2023-05-03)
 
 
