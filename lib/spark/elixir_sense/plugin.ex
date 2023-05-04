@@ -512,7 +512,8 @@ defmodule Spark.ElixirSense.Plugin do
       fn extension ->
         try do
           top_level_constructors =
-            extension.sections()
+            extension
+            |> sections()
             |> Enum.filter(& &1.top_level?)
             |> Enum.flat_map(fn section ->
               do_find_constructors(section, [], hint, type)
@@ -535,7 +536,7 @@ defmodule Spark.ElixirSense.Plugin do
 
   defp get_constructors(extensions, [first | rest], hint, type) do
     extensions
-    |> Enum.flat_map(& &1.sections())
+    |> Enum.flat_map(&sections/1)
     |> Enum.filter(& &1.top_level?)
     |> Enum.find(fn section ->
       Enum.any?(section.sections, &(&1.name == first)) ||
@@ -547,7 +548,7 @@ defmodule Spark.ElixirSense.Plugin do
           extensions,
           fn extension ->
             try do
-              Enum.flat_map(apply_dsl_patches(extension.sections(), extensions), fn section ->
+              Enum.flat_map(apply_dsl_patches(sections(extension), extensions), fn section ->
                 if section.name == first do
                   do_find_constructors(section, rest, hint, type)
                 else
@@ -580,7 +581,8 @@ defmodule Spark.ElixirSense.Plugin do
 
     new_entities =
       Enum.flat_map(extensions, fn extension ->
-        extension.dsl_patches()
+        extension
+        |> dsl_patches()
         |> Enum.flat_map(fn
           %Spark.Dsl.Patch.AddEntity{section_path: ^section_path_matcher, entity: entity} ->
             [entity]
@@ -789,5 +791,19 @@ defmodule Spark.ElixirSense.Plugin do
           false
       end
     end)
+  end
+
+  defp sections(extension) do
+    extension.sections()
+  rescue
+    _ ->
+      []
+  end
+
+  defp dsl_patches(extension) do
+    extension.dsl_patches()
+  rescue
+    _ ->
+      []
   end
 end
