@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.9](https://github.com/ash-project/spark/compare/v1.1.8...v1.1.9) (2023-05-04)
+
+
+
+
+### Bug Fixes:
+
+* handle extensions with no sections
+
 ## [v1.1.8](https://github.com/ash-project/spark/compare/v1.1.7...v1.1.8) (2023-05-03)
 
 
