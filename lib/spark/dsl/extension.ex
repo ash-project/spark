@@ -499,8 +499,15 @@ defmodule Spark.Dsl.Extension do
       for extension <- extensions || [] do
         extension = Macro.expand_once(extension, __ENV__)
 
+        sections =
+          try do
+            extension.sections()
+          rescue
+            _ -> []
+          end
+
         only_sections =
-          extension.sections()
+          sections
           |> Enum.reject(& &1.top_level?)
           |> Enum.map(&{&1.name, 1})
 
@@ -514,7 +521,15 @@ defmodule Spark.Dsl.Extension do
       Enum.flat_map(extensions || [], fn extension ->
         extension = Macro.expand_once(extension, __ENV__)
 
-        extension.sections()
+        sections =
+          try do
+            extension.sections()
+          rescue
+            _ ->
+              []
+          end
+
+        sections
         |> Enum.filter(& &1.top_level?)
         |> Enum.flat_map(fn section ->
           section_mod_name =
@@ -2041,6 +2056,9 @@ defmodule Spark.Dsl.Extension do
     |> Enum.flat_map(& &1.sections())
     |> get_section_at_path(section_path, %{})
     |> Map.get(:patchable?, false)
+  rescue
+    _ ->
+      false
   end
 
   defp get_section_at_path(sections, [name], default) do
