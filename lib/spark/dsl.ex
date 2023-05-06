@@ -127,20 +127,28 @@ defmodule Spark.Dsl do
 
       @behaviour Spark.Dsl
 
+      @doc false
       def init(opts), do: {:ok, opts}
 
+      @doc false
       def explain(_, _), do: nil
 
+      @doc false
       def default_extensions, do: @spark_default_extensions
+      @doc false
       def default_extension_kinds, do: List.wrap(unquote(parent_opts[:default_extensions]))
+      @doc false
       def many_extension_kinds, do: List.wrap(unquote(parent_opts[:many_extension_kinds]))
+      @doc false
       def single_extension_kinds, do: List.wrap(unquote(parent_opts[:single_extension_kinds]))
 
+      @doc false
       def handle_opts(opts) do
         quote do
         end
       end
 
+      @doc false
       def handle_before_compile(opts) do
         quote do
         end
