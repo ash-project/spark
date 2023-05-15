@@ -1719,7 +1719,7 @@ defmodule Spark.Dsl.Extension do
             ] do
         @moduledoc false
 
-        for {key, config} <- entity.schema do
+        for {key, config} <- entity.schema, key not in (entity.args || []) do
           defmacro unquote(key)(value) do
             key = unquote(key)
             modules = unquote(entity.modules)
