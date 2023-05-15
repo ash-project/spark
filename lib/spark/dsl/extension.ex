@@ -1719,7 +1719,7 @@ defmodule Spark.Dsl.Extension do
             ] do
         @moduledoc false
 
-        for {key, config} <- entity.schema, key not in (entity.args || []) do
+        for {key, config} <- entity.schema, !Spark.Dsl.Extension.has_arg?(key, entity.args) do
           defmacro unquote(key)(value) do
             key = unquote(key)
             modules = unquote(entity.modules)
@@ -1814,6 +1814,19 @@ defmodule Spark.Dsl.Extension do
         Keyword.put(current_opts, key, value)
       )
     end
+  end
+
+  @doc false
+  def has_arg?(key, args) do
+    Enum.any?(args, fn arg when is_atom(arg) ->
+      arg == key
+
+     {:optional, arg} ->
+      arg == key
+
+    {:optional, arg, _} ->
+      arg == key
+    end)
   end
 
   @doc false
