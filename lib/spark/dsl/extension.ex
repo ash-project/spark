@@ -1818,14 +1818,15 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   def has_arg?(key, args) do
-    Enum.any?(args, fn arg when is_atom(arg) ->
-      arg == key
+    Enum.any?(args, fn
+      arg when is_atom(arg) ->
+        arg == key
 
-     {:optional, arg} ->
-      arg == key
+      {:optional, arg} ->
+        arg == key
 
-    {:optional, arg, _} ->
-      arg == key
+      {:optional, arg, _} ->
+        arg == key
     end)
   end
 
