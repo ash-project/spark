@@ -93,7 +93,6 @@ defmodule Spark.MixProject do
       groups_for_extras: groups_for_extras(),
       groups_for_modules: [
         "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers)/,
-        Documentation: [Spark.DocIndex],
         Errors: [Spark.Error.DslError],
         Internals: ~r/.*/
       ]
