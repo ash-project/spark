@@ -132,7 +132,7 @@ defmodule Spark.Dsl.Extension do
             _ ->
               reraise ArgumentError,
                       """
-                      No such entity #{inspect(resource)} found.
+                      `#{inspect(resource)}` is not a Spark DSL module.
                       """,
                       __STACKTRACE__
           end
