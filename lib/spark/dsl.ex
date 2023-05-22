@@ -279,7 +279,7 @@ defmodule Spark.Dsl do
                         |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
 
                       {:error, error} ->
-                        if Exception.exception?(error) do
+                        if is_exception(error) do
                           raise error
                         else
                           raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
@@ -407,7 +407,7 @@ defmodule Spark.Dsl do
                   |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
 
                 {:error, error} ->
-                  if Exception.exception?(error) do
+                  if is_exception(error) do
                     raise error
                   else
                     raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
