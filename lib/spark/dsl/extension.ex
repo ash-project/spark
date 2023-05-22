@@ -704,7 +704,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   defp raise_transformer_error(transformer, error) do
-    if Exception.exception?(error) do
+    if is_exception(error) do
       raise error
     else
       raise "Error while running transformer #{inspect(transformer)}: #{inspect(error)}"
@@ -1630,7 +1630,7 @@ defmodule Spark.Dsl.Extension do
 
                           message =
                             cond do
-                              Exception.exception?(error) ->
+                              is_exception(error) ->
                                 Exception.message(error)
 
                               is_binary(error) ->
