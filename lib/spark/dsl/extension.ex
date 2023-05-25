@@ -959,7 +959,7 @@ defmodule Spark.Dsl.Extension do
                 current_config =
                   Process.get(
                     {__MODULE__, :spark, unquote(section_path)},
-                    %{entities: [], opts: []}
+                    %{entities: [], opts: [], explicit_keys: []}
                   )
 
                 opts =
@@ -981,7 +981,8 @@ defmodule Spark.Dsl.Extension do
                   {__MODULE__, :spark, unquote(section_path)},
                   %{
                     entities: current_config.entities,
-                    opts: opts
+                    opts: opts,
+                    explicit_keys: current_config.explicit_keys
                   }
                 )
               end
@@ -1258,7 +1259,7 @@ defmodule Spark.Dsl.Extension do
       current_config =
         Process.get(
           {__MODULE__, :spark, section_path},
-          %{entities: [], opts: []}
+          %{entities: [], opts: [], explicit_keys: []}
         )
 
       Process.put(
@@ -1581,7 +1582,7 @@ defmodule Spark.Dsl.Extension do
                     current_config =
                       Process.get(
                         {__MODULE__, :spark, section_path ++ nested_entity_path},
-                        %{entities: [], opts: []}
+                        %{entities: [], opts: [], explicit_keys: []}
                       )
 
                     import unquote(options_mod_name), only: []
@@ -1646,7 +1647,7 @@ defmodule Spark.Dsl.Extension do
                             path: section_path ++ additional_path
                       end
 
-                    new_config = %{current_config | entities: current_config.entities ++ [built]}
+                    new_config = %{current_config | entities: current_config.entities ++ [built], explicit_keys: current_config.explicit_keys ++ [Keyword.keys(opts)]}
 
                     unless {extension, section_path} in current_sections do
                       Process.put({__MODULE__, :spark_sections}, [
