@@ -10,13 +10,17 @@ defmodule Spark.Dsl.Extension do
   The example at the bottom shows how you might build a (not very contextually
   relevant) DSL extension that would be used like so:
 
+     defmodule MyApp.Vehicle do
+        use Spark.Dsl
+     end
+
       defmodule MyApp.MyResource do
-        use Ash.Resource,
+        use MyApp.Vehicle,
           extensions: [MyApp.CarExtension]
 
         cars do
-          car :mazda, "6", trim: :touring
-          car :toyota, "corolla"
+          car :ford, :focus, trim: :sedan
+          car :toyota, :corolla
         end
       end
 
@@ -46,7 +50,7 @@ defmodule Spark.Dsl.Extension do
           name: :car,
           describe: "Adds a car",
           examples: [
-            "car :mazda, \"6\""
+            "car :ford, :focus"
           ],
           target: MyApp.Car,
           args: [:make, :model],
