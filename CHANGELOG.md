@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.12](https://github.com/ash-project/spark/compare/v1.1.11...v1.1.12) (2023-05-30)
+
+
+
+
+### Bug Fixes:
+
+* swap `Exception.exception?` for `Kernel.is_exception` (#36)
+
+* don't support args in entity builders
+
+* don't support builders for args
+
+### Improvements:
+
+* add `singleton_entity_keys` option
+
+* moderately more helpful error message when introspecting a non Spark module. (#35)
+
+* remove doc index
+
 ## [v1.1.11](https://github.com/ash-project/spark/compare/v1.1.10...v1.1.11) (2023-05-10)
 
 
