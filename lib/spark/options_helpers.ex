@@ -18,6 +18,7 @@ defmodule Spark.OptionsHelpers do
   - `{:mfa_or_fun, arity}` - expects a function or MFA of a corresponding arity.
   - `{:spark_type, module, builtin_function}` - a behaviour that defines `builtin_function/0` that returns a list of atoms that map to built in variations of that thing.
   - `{:spark_type, module, builtin_function, templates}` - same as the above, but includes additional templates for elixir_sense autocomplete
+  - `:fun` - a function of any arity
   - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
   - `{:literal, value}` -> exactly the value specified.
   - `:quoted` -> retains the quoted value of the code provided to the option
@@ -41,6 +42,7 @@ defmodule Spark.OptionsHelpers do
           | {:spark_type, module, builtin_function :: atom}
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
           | {:struct, module}
+          | :fun
           | {:wrap_list, type}
           | :literal
           | {:literal, any}
@@ -243,6 +245,9 @@ defmodule Spark.OptionsHelpers do
       {:mfa_or_fun, arity} ->
         {:custom, __MODULE__, :mfa_or_fun, [arity]}
 
+      :fun ->
+        {:custom, __MODULE__, :fun, []}
+
       {:spark_type, _, _} ->
         :any
 
@@ -406,6 +411,10 @@ defmodule Spark.OptionsHelpers do
       do: {:ok, {module, function, args}}
 
   def mfa_or_fun(value, _), do: {:ok, value}
+
+  def fun(value) when is_function(value), do: {:ok, value}
+
+  def fun(other), do: {:error, "Expected a function, got: #{inspect(other)}"}
 
   def make_required!(options, field) do
     Keyword.update!(options, field, &Keyword.put(&1, :required, true))
