@@ -42,6 +42,7 @@ defmodule Spark.Dsl.Entity do
     :recursive_as,
     examples: [],
     entities: [],
+    singleton_entity_keys: [],
     deprecations: [],
     describe: "",
     snippet: "",
@@ -70,6 +71,7 @@ defmodule Spark.Dsl.Entity do
           examples: [String.t()],
           imports: [module],
           entities: Keyword.t(t),
+          singleton_entity_keys: [atom],
           deprecations: Keyword.t(String.t()),
           describe: String.t(),
           snippet: String.t(),
@@ -101,7 +103,8 @@ defmodule Spark.Dsl.Entity do
           schema: schema,
           auto_set_fields: auto_set_fields,
           transform: transform,
-          identifier: identifier
+          identifier: identifier,
+          singleton_entity_keys: singleton_entity_keys
         },
         opts,
         nested_entities
@@ -115,6 +118,7 @@ defmodule Spark.Dsl.Entity do
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
          built <- struct(target, opts),
          built <- struct(built, nested_entities),
+         {:ok, built} <- validate_singleton_entity_keys(built, singleton_entity_keys),
          {:ok, built} <- transform(transform, built) do
       case identifier do
         nil ->
@@ -128,6 +132,24 @@ defmodule Spark.Dsl.Entity do
           require_identifier!(built, identifier)
           {:ok, Map.put(built, :__identifier__, Map.get(built, name))}
       end
+    end
+  end
+
+  defp validate_singleton_entity_keys(entity, []), do: {:ok, entity}
+
+  defp validate_singleton_entity_keys(entity, [key | rest]) do
+    case Map.get(entity, key) do
+      nil ->
+        validate_singleton_entity_keys(entity, rest)
+
+      [] ->
+        validate_singleton_entity_keys(Map.put(entity, key, nil), rest)
+
+      [nested_entity] ->
+        validate_singleton_entity_keys(Map.put(entity, key, nested_entity), rest)
+
+      entities ->
+        {:error, "Expected a single #{key}, got #{Enum.count(entities)}"}
     end
   end
 

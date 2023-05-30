@@ -50,8 +50,31 @@ defmodule Spark.Test.Contact do
 
     defmodule Preset do
       @moduledoc false
-      defstruct [:name, :contacter, :default_message, :__identifier__, special?: false]
+      defstruct [
+        :name,
+        :contacter,
+        :default_message,
+        :singleton,
+        :__identifier__,
+        special?: false
+      ]
     end
+
+    defmodule Singleton do
+      @moduledoc false
+      defstruct [:value]
+    end
+
+    @singleton %Spark.Dsl.Entity{
+      name: :singleton,
+      args: [:value],
+      target: Singleton,
+      schema: [
+        value: [
+          type: :any
+        ]
+      ]
+    }
 
     @preset_with_fn_arg %Spark.Dsl.Entity{
       name: :preset_with_fn_arg,
@@ -77,6 +100,10 @@ defmodule Spark.Test.Contact do
       args: [:name],
       target: Preset,
       identifier: :name,
+      entities: [
+        singleton: [@singleton]
+      ],
+      singleton_entity_keys: [:singleton],
       schema: [
         name: [
           type: :atom

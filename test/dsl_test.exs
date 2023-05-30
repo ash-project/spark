@@ -247,6 +247,36 @@ defmodule Spark.DslTest do
                    end
     end
 
+    test "singleton entities are validated" do
+      assert_raise Spark.Error.DslError, ~r/Expected a single singleton, got 2/, fn ->
+        defmodule RickSanchez do
+          use Spark.Test.Contact
+
+          presets do
+            preset :foo do
+              singleton(:bar)
+              singleton(:baz)
+            end
+          end
+        end
+      end
+    end
+
+    test "singleton entities are unwrapped" do
+      defmodule MortySanchez do
+        use Spark.Test.Contact
+
+        presets do
+          preset :foo do
+            singleton(:bar)
+          end
+        end
+      end
+
+      assert [%{singleton: %Spark.Test.Contact.Dsl.Singleton{value: :bar}}] =
+               Spark.Test.Contact.Info.presets(MortySanchez)
+    end
+
     test "extensions honor identifiers when adding entities to other entities extensions" do
       assert_raise Spark.Error.DslError,
                    ~r/Got duplicate Spark.Test.Contact.Dsl.Preset: foo/,
