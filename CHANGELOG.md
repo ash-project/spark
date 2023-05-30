@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.13](https://github.com/ash-project/spark/compare/v1.1.12...v1.1.13) (2023-05-30)
+
+
+
+
+### Improvements:
+
+* add `:fun` options type
+
 ## [v1.1.12](https://github.com/ash-project/spark/compare/v1.1.11...v1.1.12) (2023-05-30)
 
 
