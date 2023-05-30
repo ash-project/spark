@@ -25,7 +25,8 @@ defmodule Spark.Dsl.Entity do
   `transform` is a function that takes a created struct and can alter it. This happens immediately
   after handling the DSL options, and can be useful for setting field values on a struct based on
   other values in that struct. If you need things that aren't contained in that struct, use an
-  `Spark.Dsl.Transformer`.
+  `Spark.Dsl.Transformer`. This function returns `{:ok, new_entity}` or `{:error, error}`, so this can
+  also be used to validate the entity.
 
   `entities` allows you to specify a keyword list of nested entities. Nested entities are stored
   on the struct in the corresponding key, and are used in the same way entities are otherwise.
