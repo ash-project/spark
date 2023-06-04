@@ -36,6 +36,30 @@ defmodule Spark.Dsl.Entity do
 
   `identifier` expresses that a given entity is unique by that field, validated by the DSL.
 
+  ## Example
+
+  ```elixir
+  @my_entity %Spark.Dsl.Entity{
+    name: :my_entity,
+    target: MyStruct,
+    schema: [my_field: [type: :atom, required: false]]
+  }
+  ```
+
+  Once compiled by Spark, entities can be invoked with a keyword list:
+  
+  ```elixir
+  my_entity my_field: :value
+  ```
+
+  Or with a do block:
+  
+  ```elixir
+  my_entity do
+    my_field :value
+  end
+  ```
+
   For a full example, see `Spark.Dsl.Extension`.
   """
   defstruct [
@@ -65,27 +89,89 @@ defmodule Spark.Dsl.Entity do
     Dsl.Entity,
     OptionsHelpers
   }
+  @typedoc """
+  Defines the struct that will be built from this entity definition.
+
+  The struct will need to have fields for all [`entities`](#t:entities/0), `t:schema/0` fields, and `t:auto_set_fields/0`.
+  """
+  @type target :: module() | nil
+
+  @typedoc """
+  A keyword list of nested entities.
+  """
+  @type entities :: Keyword.t(t)
+
+  @typedoc """
+  Specifies a function that will run on the target struct after building.
+
+  ```elixir
+  @my_entity %Spark.Dsl.Entity{
+    name: :my_entity,
+    target: MyEntity,
+    schema: [
+      my_field: [type: :list, required: true]
+    ],
+    transform: {MyModule, :max_three_items, []}
+  }
+
+  def max_three_items(my_entity) do
+    if length(my_entity.my_field) > 3 do
+      {:error, "Can't have more than three items"}
+    else
+      {:ok, my_entity}
+    end
+  end
+  ```
+  """
+  @type transform :: {module(), function :: atom(), args :: [any()]} | nil
+
+  @typedoc """
+  Specifies positional arguments for an Entity.
+
+  An entity declared like this:
+
+  ```elixir
+  @entity %Spark.Dsl.Entity{
+    name: :entity,
+    target: Entity,
+    schema: [
+      positional: [type: :atom, required: true],
+      other: [type: :atom, required: false],
+    ],
+    args: [:positional]
+  }
+  ```
+
+  Can be instantiated like this:
+  
+  ```elixir
+  entity :positional_argument do
+    other :other_argument
+  end
+  ``` 
+  """
+  @type args :: [atom | {:optional, atom} | {:optional, atom, any}]
 
   @type t :: %Entity{
-          name: atom | nil,
-          target: module | nil,
-          transform: mfa | nil,
-          recursive_as: atom | nil,
-          examples: [String.t()],
-          imports: [module],
-          entities: Keyword.t(t),
-          singleton_entity_keys: [atom],
+          args: args(),
+          auto_set_fields: Keyword.t(any),
           deprecations: Keyword.t(String.t()),
           describe: String.t(),
-          snippet: String.t(),
-          args: [atom | {:optional, atom} | {:optional, atom, any}],
-          links: Keyword.t([String.t()]) | nil,
+          docs: String.t(),
+          entities: entities(),
+          examples: [String.t()],
           hide: [atom],
+          imports: [module],
+          links: Keyword.t([String.t()]) | nil,
           modules: [atom],
+          name: atom | nil,
           no_depend_modules: [atom],
+          recursive_as: atom | nil,
           schema: OptionsHelpers.schema(),
-          auto_set_fields: Keyword.t(any),
-          docs: String.t()
+          singleton_entity_keys: [atom],
+          snippet: String.t(),
+          target: target(),
+          transform: transform(),
         }
 
   def arg_names(entity) do
