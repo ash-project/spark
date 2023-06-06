@@ -47,13 +47,13 @@ defmodule Spark.Dsl.Entity do
   ```
 
   Once compiled by Spark, entities can be invoked with a keyword list:
-  
+
   ```elixir
   my_entity my_field: :value
   ```
 
   Or with a do block:
-  
+
   ```elixir
   my_entity do
     my_field :value
@@ -89,6 +89,7 @@ defmodule Spark.Dsl.Entity do
     Dsl.Entity,
     OptionsHelpers
   }
+
   @typedoc """
   Defines the struct that will be built from this entity definition.
 
@@ -143,7 +144,7 @@ defmodule Spark.Dsl.Entity do
   ```
 
   Can be instantiated like this:
-  
+
   ```elixir
   entity :positional_argument do
     other :other_argument
@@ -152,26 +153,63 @@ defmodule Spark.Dsl.Entity do
   """
   @type args :: [atom | {:optional, atom} | {:optional, atom, any}]
 
+  @typedoc """
+  Set the provided key value pairs in the produced struct. These fields do not need to be included in the Entity's schema.
+  """
+  @type auto_set_fields :: Keyword.t(any)
+
+  @type deprecations :: Keyword.t(String.t())
+
+  # Using type id() since identifier is a reserved type.
+  @type id :: term()
+
+  @type imports :: [module()]
+
+  @type name :: atom | nil
+
+  @typedoc """
+  Internal field. Not set by user.
+  """
+  @type docs :: String.t()
+  @type describe :: String.t()
+
+  @type examples :: [String.t()]
+
+  @type hide :: [atom()]
+
+  @type links :: Keyword.t([String.t()]) | nil
+
+  @type modules :: [atom]
+
+  @type no_depend_modules :: [atom]
+
+  @type recursive_as :: atom | nil
+
+  @type singleton_entity_keys :: [atom]
+
+  @type snippet :: String.t()
+
   @type t :: %Entity{
           args: args(),
-          auto_set_fields: Keyword.t(any),
-          deprecations: Keyword.t(String.t()),
-          describe: String.t(),
-          docs: String.t(),
+          auto_set_fields: auto_set_fields(),
+          deprecations: deprecations(),
+          describe: describe(),
+          docs: docs(),
           entities: entities(),
-          examples: [String.t()],
-          hide: [atom],
-          imports: [module],
-          links: Keyword.t([String.t()]) | nil,
-          modules: [atom],
-          name: atom | nil,
-          no_depend_modules: [atom],
-          recursive_as: atom | nil,
+          examples: examples(),
+          hide: hide(),
+          identifier: id(),
+          imports: imports(),
+          links: links(),
+          modules: modules(),
+          name: name(),
+          no_depend_modules: no_depend_modules(),
+          recursive_as: recursive_as(),
           schema: OptionsHelpers.schema(),
-          singleton_entity_keys: [atom],
-          snippet: String.t(),
+          singleton_entity_keys: singleton_entity_keys(),
+          snippet: snippet(),
           target: target(),
-          transform: transform(),
+          transform: transform()
         }
 
   def arg_names(entity) do
