@@ -36,6 +36,30 @@ defmodule Spark.Dsl.Entity do
 
   `identifier` expresses that a given entity is unique by that field, validated by the DSL.
 
+  ## Example
+
+  ```elixir
+  @my_entity %Spark.Dsl.Entity{
+    name: :my_entity,
+    target: MyStruct,
+    schema: [my_field: [type: :atom, required: false]]
+  }
+  ```
+
+  Once compiled by Spark, entities can be invoked with a keyword list:
+
+  ```elixir
+  my_entity my_field: :value
+  ```
+
+  Or with a do block:
+
+  ```elixir
+  my_entity do
+    my_field :value
+  end
+  ```
+
   For a full example, see `Spark.Dsl.Extension`.
   """
   defstruct [
@@ -66,26 +90,126 @@ defmodule Spark.Dsl.Entity do
     OptionsHelpers
   }
 
+  @typedoc """
+  Defines the struct that will be built from this entity definition.
+
+  The struct will need to have fields for all [`entities`](#t:entities/0), `t:schema/0` fields, and `t:auto_set_fields/0`.
+  """
+  @type target :: module() | nil
+
+  @typedoc """
+  A keyword list of nested entities.
+  """
+  @type entities :: Keyword.t(t)
+
+  @typedoc """
+  Specifies a function that will run on the target struct after building.
+
+  ```elixir
+  @my_entity %Spark.Dsl.Entity{
+    name: :my_entity,
+    target: MyEntity,
+    schema: [
+      my_field: [type: :list, required: true]
+    ],
+    transform: {MyModule, :max_three_items, []}
+  }
+
+  def max_three_items(my_entity) do
+    if length(my_entity.my_field) > 3 do
+      {:error, "Can't have more than three items"}
+    else
+      {:ok, my_entity}
+    end
+  end
+  ```
+  """
+  @type transform :: {module(), function :: atom(), args :: [any()]} | nil
+
+  @typedoc """
+  Specifies positional arguments for an Entity.
+
+  An entity declared like this:
+
+  ```elixir
+  @entity %Spark.Dsl.Entity{
+    name: :entity,
+    target: Entity,
+    schema: [
+      positional: [type: :atom, required: true],
+      other: [type: :atom, required: false],
+    ],
+    args: [:positional]
+  }
+  ```
+
+  Can be instantiated like this:
+
+  ```elixir
+  entity :positional_argument do
+    other :other_argument
+  end
+  ``` 
+  """
+  @type args :: [atom | {:optional, atom} | {:optional, atom, any}]
+
+  @typedoc """
+  Set the provided key value pairs in the produced struct. These fields do not need to be included in the Entity's schema.
+  """
+  @type auto_set_fields :: Keyword.t(any)
+
+  @type deprecations :: Keyword.t(String.t())
+
+  # Using type id() since identifier is a reserved type.
+  @type id :: term()
+
+  @type imports :: [module()]
+
+  @type name :: atom | nil
+
+  @typedoc """
+  Internal field. Not set by user.
+  """
+  @type docs :: String.t()
+  @type describe :: String.t()
+
+  @type examples :: [String.t()]
+
+  @type hide :: [atom()]
+
+  @type links :: Keyword.t([String.t()]) | nil
+
+  @type modules :: [atom]
+
+  @type no_depend_modules :: [atom]
+
+  @type recursive_as :: atom | nil
+
+  @type singleton_entity_keys :: [atom]
+
+  @type snippet :: String.t()
+
   @type t :: %Entity{
-          name: atom | nil,
-          target: module | nil,
-          transform: mfa | nil,
-          recursive_as: atom | nil,
-          examples: [String.t()],
-          imports: [module],
-          entities: Keyword.t(t),
-          singleton_entity_keys: [atom],
-          deprecations: Keyword.t(String.t()),
-          describe: String.t(),
-          snippet: String.t(),
-          args: [atom | {:optional, atom} | {:optional, atom, any}],
-          links: Keyword.t([String.t()]) | nil,
-          hide: [atom],
-          modules: [atom],
-          no_depend_modules: [atom],
+          args: args(),
+          auto_set_fields: auto_set_fields(),
+          deprecations: deprecations(),
+          describe: describe(),
+          docs: docs(),
+          entities: entities(),
+          examples: examples(),
+          hide: hide(),
+          identifier: id(),
+          imports: imports(),
+          links: links(),
+          modules: modules(),
+          name: name(),
+          no_depend_modules: no_depend_modules(),
+          recursive_as: recursive_as(),
           schema: OptionsHelpers.schema(),
-          auto_set_fields: Keyword.t(any),
-          docs: String.t()
+          singleton_entity_keys: singleton_entity_keys(),
+          snippet: snippet(),
+          target: target(),
+          transform: transform()
         }
 
   def arg_names(entity) do
