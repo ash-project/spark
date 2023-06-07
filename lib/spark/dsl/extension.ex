@@ -1461,8 +1461,6 @@ defmodule Spark.Dsl.Extension do
             {arg_values, funs} =
               args_without_opts
               |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
-                type = entity_schema[key][:type]
-
                 Spark.Dsl.Extension.maybe_deprecated(
                   key,
                   entity_deprecations,
@@ -1485,7 +1483,12 @@ defmodule Spark.Dsl.Extension do
                 {arg_value, new_function} =
                   Spark.CodeHelpers.lift_functions(arg_value, key, __CALLER__)
 
-                {[arg_value | args], [new_function | funs]}
+                if is_nil(arg_value) &&
+                     Enum.any?(entity.args, &(elem(&1, 0) == :optional && elem(&1, 1) == key)) do
+                  {args, funs}
+                else
+                  {[arg_value | args], [new_function | funs]}
+                end
               end)
 
             arg_values = Enum.reverse(arg_values)
@@ -1564,7 +1567,13 @@ defmodule Spark.Dsl.Extension do
                     keyword_opts =
                       Keyword.merge(
                         unquote(Keyword.delete(opts, :do)),
-                        Enum.zip(unquote(entity_args), unquote(arg_values))
+                        Enum.zip(unquote(entity_args), unquote(arg_values)),
+                        fn key, _, _ ->
+                          raise Spark.Error.DslError,
+                            module: __MODULE__,
+                            message: "Multiple values for key `#{inspect(key)}`",
+                            path: nested_entity_path
+                        end
                       )
 
                     Process.put(
@@ -1723,7 +1732,8 @@ defmodule Spark.Dsl.Extension do
             ] do
         @moduledoc false
 
-        for {key, config} <- entity.schema, !Spark.Dsl.Extension.has_arg?(key, entity.args) do
+        for {key, config} <- entity.schema,
+            !Spark.Dsl.Extension.is_required_arg?(key, entity.args) do
           defmacro unquote(key)(value) do
             key = unquote(key)
             modules = unquote(entity.modules)
@@ -1813,6 +1823,13 @@ defmodule Spark.Dsl.Extension do
 
       current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
+      if Keyword.has_key?(current_opts, key) do
+        raise Spark.Error.DslError,
+          module: __MODULE__,
+          message: "Multiple values for key `#{inspect(key)}`",
+          path: nested_entity_path
+      end
+
       Process.put(
         {:builder_opts, nested_entity_path},
         Keyword.put(current_opts, key, value)
@@ -1821,17 +1838,8 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def has_arg?(key, args) do
-    Enum.any?(args, fn
-      arg when is_atom(arg) ->
-        arg == key
-
-      {:optional, arg} ->
-        arg == key
-
-      {:optional, arg, _} ->
-        arg == key
-    end)
+  def is_required_arg?(key, args) do
+    key in args
   end
 
   @doc false

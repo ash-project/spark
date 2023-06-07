@@ -9,7 +9,8 @@ defmodule Spark.Error.DslError do
           path: [:atom]
         }
 
-  def message(%{module: module, message: message, path: nil}) do
+  def message(%{module: module, message: message, path: blank})
+      when is_nil(blank) or blank == [] do
     "[#{normalize_module_name(module)}]\n #{get_message(message)}"
   end
 
