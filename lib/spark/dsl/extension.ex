@@ -1484,7 +1484,10 @@ defmodule Spark.Dsl.Extension do
                   Spark.CodeHelpers.lift_functions(arg_value, key, __CALLER__)
 
                 if is_nil(arg_value) &&
-                     Enum.any?(entity.args, &(elem(&1, 0) == :optional && elem(&1, 1) == key)) do
+                     Enum.any?(
+                       entity.args,
+                       &(is_tuple(&1) && elem(&1, 0) == :optional && elem(&1, 1) == key)
+                     ) do
                   {args, funs}
                 else
                   {[arg_value | args], [new_function | funs]}
