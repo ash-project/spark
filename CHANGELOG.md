@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.14](https://github.com/ash-project/spark/compare/v1.1.13...v1.1.14) (2023-06-07)
+
+
+
+
+### Bug Fixes:
+
+* Spark.Dsl.Entity: Clobbering of optional arguments (#41)
+
 ## [v1.1.13](https://github.com/ash-project/spark/compare/v1.1.12...v1.1.13) (2023-05-30)
 
 
