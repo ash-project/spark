@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.15](https://github.com/ash-project/spark/compare/v1.1.14...v1.1.15) (2023-06-07)
+
+
+
+
+### Bug Fixes:
+
+* don't explode for non-tuple argument values. (#42)
+
 ## [v1.1.14](https://github.com/ash-project/spark/compare/v1.1.13...v1.1.14) (2023-06-07)
 
 
