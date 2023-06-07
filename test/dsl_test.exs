@@ -5,6 +5,7 @@ defmodule Spark.DslTest do
 
   test "defining an instance of the DSL works" do
     defmodule HanSolo do
+      @moduledoc false
       use Spark.Test.Contact
 
       personal_details do
@@ -25,6 +26,7 @@ defmodule Spark.DslTest do
   describe "anonymous functions in DSL" do
     test "creates a function and passes it to the default" do
       defmodule ObiWan do
+        @moduledoc false
         use Spark.Test.Contact
 
         contact do
@@ -43,6 +45,7 @@ defmodule Spark.DslTest do
 
     test "supports multiple function clauses" do
       defmodule Prequel do
+        @moduledoc false
         use Spark.Test.Contact
 
         contact do
@@ -69,6 +72,7 @@ defmodule Spark.DslTest do
 
     test "entities support functions in option setters" do
       defmodule PaulMcCartney do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -93,6 +97,7 @@ defmodule Spark.DslTest do
 
     test "entities can functions in args" do
       defmodule FredFlintstone do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -107,6 +112,7 @@ defmodule Spark.DslTest do
 
     test "entities support references to functions in option setters" do
       defmodule GhostBusters do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -129,6 +135,7 @@ defmodule Spark.DslTest do
 
     test "optional values with defaults are set" do
       defmodule BoBurnham do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -144,6 +151,7 @@ defmodule Spark.DslTest do
 
     test "optional values can be included without including all of them" do
       defmodule BugsBunny do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -158,6 +166,7 @@ defmodule Spark.DslTest do
 
     test "optional values can be included without including all of them even with a do block" do
       defmodule ElmerFudd do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -173,6 +182,7 @@ defmodule Spark.DslTest do
 
     test "all optional values can be included" do
       defmodule DaffyDuck do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -187,6 +197,7 @@ defmodule Spark.DslTest do
 
     test "quoted values are stored" do
       defmodule HarryPotter do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -207,6 +218,7 @@ defmodule Spark.DslTest do
     test "verifiers are run" do
       assert_raise Spark.Error.DslError, ~r/Cannot be gandalf/, fn ->
         defmodule Gandalf do
+          @moduledoc false
           use Spark.Test.Contact
 
           personal_details do
@@ -218,6 +230,7 @@ defmodule Spark.DslTest do
 
     test "extensions can add entities to other entities extensions" do
       defmodule MartyMcfly do
+        @moduledoc false
         use Spark.Test.Contact,
           extensions: [Spark.Test.ContactPatcher]
 
@@ -250,6 +263,7 @@ defmodule Spark.DslTest do
     test "singleton entities are validated" do
       assert_raise Spark.Error.DslError, ~r/Expected a single singleton, got 2/, fn ->
         defmodule RickSanchez do
+          @moduledoc false
           use Spark.Test.Contact
 
           presets do
@@ -264,6 +278,7 @@ defmodule Spark.DslTest do
 
     test "singleton entities are unwrapped" do
       defmodule MortySanchez do
+        @moduledoc false
         use Spark.Test.Contact
 
         presets do
@@ -282,6 +297,7 @@ defmodule Spark.DslTest do
                    ~r/Got duplicate Spark.Test.Contact.Dsl.Preset: foo/,
                    fn ->
                      defmodule Doc do
+                       @moduledoc false
                        use Spark.Test.Contact,
                          extensions: [Spark.Test.ContactPatcher]
 
@@ -294,6 +310,87 @@ defmodule Spark.DslTest do
                      assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
                      assert preset.name == :foo
                      assert special_preset.name == :foo
+                   end
+    end
+  end
+
+  describe "optional entity arguments" do
+    test "optional arguments can be supplied either as arguments or as dsl options" do
+      defmodule OptionEinstein do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional :einstein do
+            default_message("Woof!")
+          end
+        end
+      end
+
+      assert [%{name: :einstein, default_message: "Woof!"}] =
+               Spark.Test.Contact.Info.presets(OptionEinstein)
+    end
+
+    test "optional arguments can be supplied either as argument or as keyword arguments" do
+      defmodule KeywordEinstein do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_optional(:einstein, default_message: "Woof!")
+        end
+      end
+
+      assert [%{name: :einstein, default_message: "Woof!"}] =
+               Spark.Test.Contact.Info.presets(KeywordEinstein)
+    end
+
+    test "optional arguments cannot be supplied both as an argument and as an option" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Multiple values for key/,
+                   fn ->
+                     defmodule ArgAndOptionEinstein do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       presets do
+                         preset_with_optional :einstein, "Woof!" do
+                           default_message("Woof!")
+                         end
+                       end
+                     end
+                   end
+    end
+
+    test "optional arguments cannot be supplied both as an argument and as a keyword" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Multiple values for key/,
+                   fn ->
+                     defmodule ArgAndKeywordEinstein do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       presets do
+                         preset_with_optional(:einstein, "Woof!", default_message: "Woof!")
+                       end
+                     end
+                   end
+    end
+
+    test "optional arguments cannot be supplied both as a keyword and as an option" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Multiple values for key/,
+                   fn ->
+                     defmodule OptionAndKeywordEinstein do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       presets do
+                         preset_with_optional :einstein, default_message: "Woof!" do
+                           default_message("Woof!")
+                         end
+                       end
+                     end
                    end
     end
   end
