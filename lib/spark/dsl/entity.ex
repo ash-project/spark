@@ -149,7 +149,7 @@ defmodule Spark.Dsl.Entity do
   entity :positional_argument do
     other :other_argument
   end
-  ``` 
+  ```
   """
   @type args :: [atom | {:optional, atom} | {:optional, atom, any}]
 
@@ -252,12 +252,10 @@ defmodule Spark.Dsl.Entity do
           {:ok, built}
 
         {:auto, :unique_integer} ->
-          require_identifier!(built, identifier)
-          {:ok, Map.put(built, :__identifier__, identifier)}
+          {:ok, require_identifier!(built, identifier)}
 
         name ->
-          require_identifier!(built, identifier)
-          {:ok, Map.put(built, :__identifier__, Map.get(built, name))}
+          {:ok, require_identifier!(built, Map.get(built, name))}
       end
     end
   end

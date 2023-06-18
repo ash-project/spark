@@ -197,7 +197,7 @@ defmodule Spark.Dsl.Transformer do
               System.unique_integer()
             end
 
-          {:ok, Map.put(built, :__identifier__, identifier)}
+          {:ok, %{built | __identifier__: identifier}}
 
         other ->
           other
