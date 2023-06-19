@@ -72,6 +72,9 @@ defmodule Spark.Dsl.Section do
 
   @type sections :: [Section.t()]
 
+  @typedoc """
+  Internal field. Not set by user.
+  """
   @type docs :: String.t()
 
   @type patchable? :: boolean()
