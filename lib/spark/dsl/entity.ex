@@ -171,6 +171,11 @@ defmodule Spark.Dsl.Entity do
   Internal field. Not set by user.
   """
   @type docs :: String.t()
+  @typedoc """
+  User provided documentation.
+
+  Documentation provided in a `Entity`'s `describe` field will be included by `Spark` in any generated documentation that includes the `Entity`.
+  """
   @type describe :: String.t()
 
   @type examples :: [String.t()]
