@@ -229,27 +229,33 @@ defmodule Spark.InfoGenerator do
   end
 
   def spec_for_type(:keyword_list, opts) do
-    value_type =
-      opts[:keys]
-      |> Enum.map(fn {key, spec} ->
-        key_spec =
-          case key do
-            :* -> spec_for_type(:atom, [])
-            other -> other
-          end
+    if opts[:keys] do
+      value_type =
+        opts[:keys]
+        |> Enum.map(fn {key, spec} ->
+          key_spec =
+            case key do
+              :* -> spec_for_type(:atom, [])
+              other -> other
+            end
 
-        {key_spec, spec_for_type(spec[:type], spec)}
-      end)
-      |> Enum.uniq()
-      |> Enum.reduce(nil, fn
-        type, nil ->
-          type
+          {key_spec, spec_for_type(spec[:type], spec)}
+        end)
+        |> Enum.uniq()
+        |> Enum.reduce(nil, fn
+          type, nil ->
+            type
 
-        type, other_type ->
-          {:|, [], [type, other_type]}
-      end)
+          type, other_type ->
+            {:|, [], [type, other_type]}
+        end)
 
-    [value_type]
+      [value_type]
+    else
+      quote do
+        Keyword.t()
+      end
+    end
   end
 
   def spec_for_type({:literal, value}, _opts) when is_atom(value) or is_integer(value) do

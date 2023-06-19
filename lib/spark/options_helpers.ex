@@ -280,7 +280,7 @@ defmodule Spark.OptionsHelpers do
 
   def wrap_list(values, key, type) do
     case Spark.OptionsHelpers.validate(
-           values,
+           [{key, values}],
            [
              {key,
               [
