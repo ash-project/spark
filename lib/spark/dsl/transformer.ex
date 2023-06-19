@@ -190,14 +190,7 @@ defmodule Spark.Dsl.Transformer do
 
       case Spark.Dsl.Entity.transform(entity.transform, result) do
         {:ok, built} ->
-          identifier =
-            if entity.identifier do
-              Map.get(built, entity.identifier)
-            else
-              System.unique_integer()
-            end
-
-          {:ok, %{built | __identifier__: identifier}}
+          Spark.Dsl.Entity.maybe_apply_identifier(built, entity.identifier)
 
         other ->
           other

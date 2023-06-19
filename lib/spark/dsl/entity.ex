@@ -247,16 +247,7 @@ defmodule Spark.Dsl.Entity do
          built <- struct(built, nested_entities),
          {:ok, built} <- validate_singleton_entity_keys(built, singleton_entity_keys),
          {:ok, built} <- transform(transform, built) do
-      case identifier do
-        nil ->
-          {:ok, built}
-
-        {:auto, :unique_integer} ->
-          {:ok, require_identifier!(built, identifier)}
-
-        name ->
-          {:ok, require_identifier!(built, Map.get(built, name))}
-      end
+      maybe_apply_identifier(built, identifier)
     end
   end
 
@@ -278,14 +269,24 @@ defmodule Spark.Dsl.Entity do
     end
   end
 
-  @doc false
-  def require_identifier!(struct, identifier) do
-    if Map.has_key?(struct, :__identifier__) do
-      %{struct | __identifier__: identifier}
-    else
-      raise "#{inspect(struct.__struct__)} must have the `__identifier__` field!"
-    end
-  end
+  def maybe_apply_identifier(struct, nil), do: {:ok, struct}
+
+  def maybe_apply_identifier(struct, {:auto, :unique_integer})
+      when is_map_key(struct, :__identifier__),
+      do: {:ok, %{struct | __identifier__: System.unique_integer()}}
+
+  def maybe_apply_identifier(struct, {:auto, :unique_integer}),
+    do: raise("#{inspect(struct.__struct__)} must have the `__identifier__` field!")
+
+  def maybe_apply_identifier(struct, name)
+      when is_map_key(struct, :__identifier__) and is_map_key(struct, name),
+      do: {:ok, %{struct | __identifier__: Map.get(struct, name)}}
+
+  def maybe_apply_identifier(struct, name) when is_map_key(struct, :__identifier__),
+    do: raise("#{inspect(struct.__struct__)} does not have a field named `#{inspect(name)}`!")
+
+  def maybe_apply_identifier(struct, _name),
+    do: raise("#{inspect(struct.__struct__)} must have the `__identifier__` field!")
 
   def transform(nil, built), do: {:ok, built}
 
