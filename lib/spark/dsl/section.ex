@@ -55,7 +55,41 @@ defmodule Spark.Dsl.Section do
   @type describe :: String.t()
 
   @type snippet :: String.t()
+  @typedoc """
+  Determines whether a section can be declared directly in a module.
 
+  When `top_level?: true`, that Section's DSL can be declared outside of a `do` block in a module.
+
+  ## Example
+
+  A `Section` declared with `top_level?: true`:
+
+  ```elixir
+  @my_section %Spark.Dsl.Section{
+    top_level?: true,
+    name: :my_section,
+    schema: [my_field: [type: :atom, required: true]]
+  }
+  ```
+
+  Can be declared like this:
+
+  ```elixir
+  defmodule MyDslModule do
+    my_field :value
+  end
+  ```
+
+  With `top_level?: false`, the DSL section would need to be declared explicitly/:
+
+  ```elixir
+  defmodule MyDslModule do
+    my_section do
+      my_field :value
+    end
+  end
+  ```
+  """
   @type top_level?() :: boolean()
 
   @type links :: nil | Keyword.t([String.t()])
