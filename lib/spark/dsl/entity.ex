@@ -212,6 +212,7 @@ defmodule Spark.Dsl.Entity do
           transform: transform()
         }
 
+  @doc false
   def arg_names(entity) do
     entity.args
     |> Kernel.||([])
@@ -224,6 +225,7 @@ defmodule Spark.Dsl.Entity do
     end)
   end
 
+  @doc false
   def build(
         %{
           target: target,
@@ -269,6 +271,7 @@ defmodule Spark.Dsl.Entity do
     end
   end
 
+  @doc false
   def maybe_apply_identifier(struct, nil), do: {:ok, struct}
 
   def maybe_apply_identifier(struct, {:auto, :unique_integer})
@@ -288,6 +291,7 @@ defmodule Spark.Dsl.Entity do
   def maybe_apply_identifier(struct, _name),
     do: raise("#{inspect(struct.__struct__)} must have the `__identifier__` field!")
 
+  @doc false
   def transform(nil, built), do: {:ok, built}
 
   def transform({module, function, args}, built) do
