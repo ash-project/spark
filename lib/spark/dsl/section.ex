@@ -52,6 +52,11 @@ defmodule Spark.Dsl.Section do
 
   @type imports :: [module]
 
+  @typedoc """
+  User provided documentation.
+
+  Documentation provided in a `Section`'s `describe` field will be included by `Spark` in any generated documentation that includes the `Section`.
+  """
   @type describe :: String.t()
 
   @type snippet :: String.t()
