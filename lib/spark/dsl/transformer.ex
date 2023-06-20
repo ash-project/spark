@@ -259,7 +259,8 @@ defmodule Spark.Dsl.Transformer do
     matcher =
       matcher ||
         fn record ->
-          record.__struct__ == replacement.__struct__ and record.__identifier__ == replacement.__identifier__
+          record.__struct__ == replacement.__struct__ and
+            record.__identifier__ == replacement.__identifier__
         end
 
     Map.update(dsl_state, path, %{entities: [replacement], opts: []}, fn config ->
