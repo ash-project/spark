@@ -784,13 +784,73 @@ defmodule Spark.Dsl.Extension do
           end)
         end)
 
+      top_level_unimports =
+        sections
+        |> Enum.filter(& &1.top_level?)
+        |> Enum.flat_map(fn section ->
+          section_mod_name = Spark.Dsl.Extension.section_mod_name(module_prefix, [], section)
+
+          configured_unimports =
+            for module <- section.imports do
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          entity_unimports =
+            for entity <- section.entities do
+              module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
+
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          section_unimports =
+            for nested_section <- section.sections do
+              module =
+                Spark.Dsl.Extension.section_mod_name(
+                  module_prefix,
+                  [section.name],
+                  nested_section
+                )
+
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          opts_unimport =
+            if Map.get(section, :schema, []) == [] do
+              []
+            else
+              opts_module = Module.concat([section_mod_name, Options])
+
+              [
+                quote generated: true do
+                  import unquote(opts_module), only: []
+                end
+              ]
+            end
+
+          opts_unimport ++
+            section_unimports ++ entity_unimports ++ configured_unimports
+        end)
+
       Enum.each(sections, fn section ->
+        top_level_unimports =
+          if section.top_level? do
+            []
+          else
+            top_level_unimports
+          end
+
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
           Extension.build_section(
             agent_and_pid,
             extension,
             section,
-            all_recursive_entity_module_names,
+            all_recursive_entity_module_names ++ top_level_unimports,
             [],
             module_prefix
           )
