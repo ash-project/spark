@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.17](https://github.com/ash-project/spark/compare/v1.1.16...v1.1.17) (2023-06-20)
+
+
+
+
+### Bug Fixes:
+
+* nested entity paths contain their section?
+
+* handle two-deep recursive as nested entity unimports
+
+* fix imports around recursive_as entitites
+
+### Improvements:
+
+* unimport top level sections from non-top-level sections
+
 ## [v1.1.16](https://github.com/ash-project/spark/compare/v1.1.15...v1.1.16) (2023-06-20)
 
 
