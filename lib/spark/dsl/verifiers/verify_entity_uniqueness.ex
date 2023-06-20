@@ -78,7 +78,10 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
         nested_entity.identifier
       end)
       |> Enum.each(fn {key, nested_entity} ->
-        nested_entities_to_check = entity_to_check |> Map.get(key) |> List.wrap()
+        nested_entities_to_check =
+          entity_to_check
+          |> Map.get(key)
+          |> List.wrap()
 
         verify_nested_entity_uniqueness(
           module,
@@ -94,6 +97,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
   defp do_verify_entity_uniqueness(module, entity, section_path, dsl_state) do
     dsl_state
     |> Verifier.get_entities(section_path)
+    |> Enum.filter(&(&1.__struct__ == entity.target))
     |> unique_entities_or_error(entity.identifier, module, section_path)
   end
 
