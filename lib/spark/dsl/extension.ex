@@ -794,13 +794,19 @@ defmodule Spark.Dsl.Extension do
                 nested_entities
                 |> List.wrap()
                 |> Enum.map(fn nested_entity ->
+                  nested_entity_path = [key]
                   nested_entity_path =
-                    case entity.recursive_as do
-                      nil ->
-                        [key]
+                    if entity.recursive_as do
+                      [entity.recursive_as | nested_entity_path]
+                    else
+                      nested_entity_path
+                    end
 
-                      recursive_as ->
-                        [recursive_as, key]
+                  nested_entity_path =
+                    if nested_entity.recursive_as do
+                      nested_entity_path ++ [nested_entity.recursive_as]
+                    else
+                      nested_entity_path
                     end
 
                   nested_entity_mod_name =
