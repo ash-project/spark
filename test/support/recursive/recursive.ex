@@ -20,7 +20,7 @@ defmodule Spark.Test.Recursive do
       args: [:name],
       recursive_as: :steps,
       entities: [
-        steps: []
+        steps: [@atom]
       ],
       schema: [
         name: [
@@ -39,7 +39,7 @@ defmodule Spark.Test.Recursive do
       args: [:name],
       recursive_as: :steps,
       entities: [
-        steps: []
+        steps: [@atom]
       ],
       schema: [
         name: [
