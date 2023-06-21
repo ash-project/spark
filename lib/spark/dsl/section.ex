@@ -48,21 +48,91 @@ defmodule Spark.Dsl.Section do
     OptionsHelpers
   }
 
+  @type name :: atom()
+
+  @type imports :: [module]
+
+  @typedoc """
+  User provided documentation.
+
+  Documentation provided in a `Section`'s `describe` field will be included by `Spark` in any generated documentation that includes the `Section`.
+  """
+  @type describe :: String.t()
+
+  @type snippet :: String.t()
+  @typedoc """
+  Determines whether a section can be declared directly in a module.
+
+  When `top_level?: true`, that Section's DSL can be declared outside of a `do` block in a module.
+
+  ## Example
+
+  A `Section` declared with `top_level?: true`:
+
+  ```elixir
+  @my_section %Spark.Dsl.Section{
+    top_level?: true,
+    name: :my_section,
+    schema: [my_field: [type: :atom, required: true]]
+  }
+  ```
+
+  Can be declared like this:
+
+  ```elixir
+  defmodule MyDslModule do
+    my_field :value
+  end
+  ```
+
+  With `top_level?: false`, the DSL section would need to be declared explicitly/:
+
+  ```elixir
+  defmodule MyDslModule do
+    my_section do
+      my_field :value
+    end
+  end
+  ```
+  """
+  @type top_level?() :: boolean()
+
+  @type links :: nil | Keyword.t([String.t()])
+
+  @type examples() :: [String.t()]
+
+  @type modules :: [atom]
+
+  @type no_depend_modules() :: [atom]
+
+  @type auto_set_fields() :: Keyword.t(any)
+
+  @type entities :: [Entity.t()]
+
+  @type sections :: [Section.t()]
+
+  @typedoc """
+  Internal field. Not set by user.
+  """
+  @type docs :: String.t()
+
+  @type patchable? :: boolean()
+
   @type t :: %Section{
-          name: atom,
-          imports: [module],
+          name: name(),
+          imports: imports(),
           schema: OptionsHelpers.schema(),
-          describe: String.t(),
-          snippet: String.t(),
-          top_level?: boolean(),
-          links: nil | Keyword.t([String.t()]),
-          examples: [String.t()],
-          modules: [atom],
-          no_depend_modules: [atom],
-          auto_set_fields: Keyword.t(any),
-          entities: [Entity.t()],
-          sections: [Section.t()],
-          docs: String.t(),
-          patchable?: boolean
+          describe: describe(),
+          snippet: snippet(),
+          top_level?: top_level?(),
+          links: links(),
+          examples: examples(),
+          modules: modules(),
+          no_depend_modules: no_depend_modules(),
+          auto_set_fields: auto_set_fields(),
+          entities: entities(),
+          sections: sections(),
+          docs: docs(),
+          patchable?: patchable?()
         }
 end
