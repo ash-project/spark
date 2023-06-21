@@ -769,28 +769,118 @@ defmodule Spark.Dsl.Extension do
         |> Enum.flat_map(fn section ->
           section.entities
           |> Enum.filter(& &1.recursive_as)
-          |> Enum.map(fn entity ->
-            mod_name =
+          |> Enum.flat_map(fn entity ->
+            entity_mod_name =
               Module.concat([
                 module_prefix,
                 Macro.camelize(to_string(section.name)),
-                Macro.camelize(to_string(entity.name)),
+                Macro.camelize(to_string(entity.name))
+              ])
+
+            mod_name =
+              Module.concat([
+                entity_mod_name,
                 Options
               ])
 
-            quote generated: true do
-              import unquote(mod_name), only: []
-            end
+            opts_mod_unimport =
+              quote generated: true do
+                import unquote(mod_name), only: []
+              end
+
+            entity_mod_unimports =
+              entity.entities
+              |> Enum.flat_map(fn {key, nested_entities} ->
+                nested_entities
+                |> List.wrap()
+                |> Enum.map(fn nested_entity ->
+                  nested_entity_path = [section.name, key]
+
+                  nested_entity_mod_name =
+                    Spark.Dsl.Extension.entity_mod_name(
+                      entity_mod_name,
+                      nested_entity_path,
+                      [],
+                      nested_entity
+                    )
+
+                  quote do
+                    import unquote(nested_entity_mod_name), only: []
+                  end
+                end)
+              end)
+
+            [opts_mod_unimport | entity_mod_unimports]
           end)
         end)
 
+      top_level_unimports =
+        sections
+        |> Enum.filter(& &1.top_level?)
+        |> Enum.flat_map(fn section ->
+          section_mod_name = Spark.Dsl.Extension.section_mod_name(module_prefix, [], section)
+
+          configured_unimports =
+            for module <- section.imports do
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          entity_unimports =
+            for entity <- section.entities do
+              module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
+
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          section_unimports =
+            for nested_section <- section.sections do
+              module =
+                Spark.Dsl.Extension.section_mod_name(
+                  module_prefix,
+                  [section.name],
+                  nested_section
+                )
+
+              quote generated: true do
+                import unquote(module), only: []
+              end
+            end
+
+          opts_unimport =
+            if Map.get(section, :schema, []) == [] do
+              []
+            else
+              opts_module = Module.concat([section_mod_name, Options])
+
+              [
+                quote generated: true do
+                  import unquote(opts_module), only: []
+                end
+              ]
+            end
+
+          opts_unimport ++
+            section_unimports ++ entity_unimports ++ configured_unimports
+        end)
+
       Enum.each(sections, fn section ->
+        top_level_unimports =
+          if section.top_level? do
+            []
+          else
+            top_level_unimports
+          end
+
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
           Extension.build_section(
             agent_and_pid,
             extension,
             section,
-            all_recursive_entity_module_names,
+            all_recursive_entity_module_names ++ top_level_unimports,
             [],
             module_prefix
           )
@@ -998,6 +1088,7 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
+  @doc false
   def entity_mod_name(mod, nested_entity_path, section_path, entity) do
     nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
@@ -1083,24 +1174,12 @@ defmodule Spark.Dsl.Extension do
         }
 
         new_unimports =
-          if entity.recursive_as do
-            if opts_mod_name do
-              [
-                quote generated: true do
-                  import unquote(opts_mod_name), only: []
-                end
-              ]
-            else
-              []
-            end
-          else
-            unimports(
-              mod,
-              %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
-              path,
-              opts_mod_name
-            )
-          end
+          unimports(
+            mod,
+            %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
+            path,
+            opts_mod_name
+          )
 
         entity_mod =
           build_entity(

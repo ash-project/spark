@@ -5,6 +5,40 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.17](https://github.com/ash-project/spark/compare/v1.1.16...v1.1.17) (2023-06-20)
+
+
+
+
+### Bug Fixes:
+
+* nested entity paths contain their section?
+
+* handle two-deep recursive as nested entity unimports
+
+* fix imports around recursive_as entitites
+
+### Improvements:
+
+* unimport top level sections from non-top-level sections
+
+## [v1.1.16](https://github.com/ash-project/spark/compare/v1.1.15...v1.1.16) (2023-06-20)
+
+
+
+
+### Bug Fixes:
+
+* handle mixed lists of entities better
+
+* incorrect identity logic in `Transformer.build_entity/4`. (#44)
+
+* better typespec for keyword lists
+
+* wrap_list type fix behavior
+
+* Entity: don't ever use `Map.put/3` to set an entity's `__identifier__`. (#43)
+
 ## [v1.1.15](https://github.com/ash-project/spark/compare/v1.1.14...v1.1.15) (2023-06-07)
 
 
