@@ -255,6 +255,12 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
+  def replace_entities(dsl_state, path, replacement, replace_function) do
+    Map.update(dsl_state, path, %{entities: replacement, opts: []}, fn config ->
+      Map.update(config, :entities, replacement, replace_function)
+    end)
+  end
+
   def replace_entity(dsl_state, path, replacement, matcher \\ nil) do
     matcher =
       matcher ||
