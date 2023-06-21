@@ -3,6 +3,13 @@ defmodule Spark do
   Documentation for `Spark`.
   """
 
+  use Spark.Dsl,
+    default_extensions: [extensions: Spark.Dsl.Internal]
+
+  def load(dsl) do
+    Spark.Dsl.Extension.get_entities(dsl, [:top_level])
+  end
+
   @doc """
   Returns all modules that implement the specified behaviour for a given otp_app.
 
