@@ -4,26 +4,28 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
   alias Spark.Dsl.Transformer
 
   def transform(dsl) do
-    e_and_s = dsl |> Transformer.get_entities([:top_level])
+    updated_dsl =
+      Transformer.replace_entities(dsl, [:top_level], [], &substitute_entities_into_sections/1)
 
+    {:ok, updated_dsl}
+  end
+
+  defp substitute_entities_into_sections(entities_and_sections) do
     {entities, sections} =
-      Enum.reduce(e_and_s, {%{}, %{}}, fn e, acc ->
+      Enum.reduce(entities_and_sections, {%{}, []}, fn element, acc ->
         {entities, sections} = acc
 
-        case e do
+        case element do
           %Spark.Dsl.Entity{name: name} ->
-            {Map.put(entities, name, e), sections}
+            {Map.put(entities, name, element), sections}
 
-          %Spark.Dsl.Section{name: name} ->
-            {entities, Map.put(sections, name, e)}
+          %Spark.Dsl.Section{} ->
+            {entities, [element | sections]}
         end
       end)
 
-    sections =
-      for {_, section} <- sections do
-        Map.put(section, :entities, Enum.map(section.entities, &Map.get(entities, &1)))
-      end
-
-    {:ok, dsl |> put_in([[:top_level], :entities], sections)}
+    for section <- sections do
+      Map.put(section, :entities, Enum.map(section.entities, &Map.get(entities, &1)))
+    end
   end
 end
