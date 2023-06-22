@@ -105,7 +105,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
 
   defp unique_entities_or_error(entities_to_check, identifier, module, path) do
     entities_to_check
-    |> Enum.frequencies_by(&{Map.get(&1, identifier), &1.__struct__})
+    |> Enum.frequencies_by(&{get_identifier(&1, identifier), &1.__struct__})
     |> Enum.find_value(fn {key, value} ->
       if value > 1 do
         key
@@ -124,4 +124,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
           """
     end
   end
+
+  defp get_identifier(record, {:auto, _}), do: record.__identifier__
+  defp get_identifier(record, identifier), do: Map.get(record, identifier)
 end

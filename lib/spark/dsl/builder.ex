@@ -78,6 +78,72 @@ defmodule Spark.Dsl.Builder do
     end
   end
 
+  defmacro defbuilderp({func, _, [dsl_state | rest_args]}, do: body) do
+    def_head? = Enum.any?(rest_args, &match?({:\\, _, _}, &1))
+    rest_args_with_defaults = rest_args
+
+    rest_args =
+      Enum.map(rest_args, fn
+        {:\\, _, [expr, _default]} ->
+          expr
+
+        other ->
+          other
+      end)
+
+    quote generated: true,
+          location: :keep,
+          bind_quoted: [
+            def_head?: def_head?,
+            rest_args: Macro.escape(rest_args),
+            rest_args_with_defaults: Macro.escape(rest_args_with_defaults),
+            dsl_state: Macro.escape(dsl_state),
+            func: Macro.escape(func),
+            body: Macro.escape(body)
+          ] do
+      if def_head? do
+        defp unquote(func)(unquote(dsl_state), unquote_splicing(rest_args_with_defaults))
+      end
+
+      defp unquote(func)({:ok, unquote(dsl_state)}, unquote_splicing(rest_args)) do
+        case unquote(body) do
+          {:ok, result} ->
+            {:ok, result}
+
+          {:error, error} ->
+            {:error, error}
+
+          body ->
+            {:ok, body}
+        end
+      end
+
+      defp unquote(func)(
+            {:error, error},
+            unquote_splicing(
+              Enum.map(rest_args, fn _ ->
+                {:_, [], Elixir}
+              end)
+            )
+          ) do
+        {:error, error}
+      end
+
+      defp unquote(func)(unquote(dsl_state), unquote_splicing(rest_args)) do
+        case unquote(body) do
+          {:ok, result} ->
+            {:ok, result}
+
+          {:error, error} ->
+            {:error, error}
+
+          body ->
+            {:ok, body}
+        end
+      end
+    end
+  end
+
   @doc """
   Handles nested values that may be `{:ok, result}` or `{:error, term}`, returning any errors and unwrapping any ok values
 
