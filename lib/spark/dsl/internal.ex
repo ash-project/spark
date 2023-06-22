@@ -46,7 +46,11 @@ defmodule Spark.Dsl.Internal do
     target: Spark.Dsl.Entity,
     entities: [schema: [@schema]],
     singleton_entity_keys: [:schema],
-    schema: [name: [type: :atom, required: true], target: [type: :module, required: true]]
+    schema: [
+      name: [type: :atom, required: true],
+      target: [type: :module, required: true],
+      entities: [type: :keyword_list, required: false]
+    ]
   }
 
   @section %Spark.Dsl.Entity{

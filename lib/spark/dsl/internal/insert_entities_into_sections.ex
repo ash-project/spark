@@ -24,8 +24,43 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
         end
       end)
 
+    entities = handle_entities(entities)
+
     for section <- sections do
       Map.put(section, :entities, Enum.map(section.entities, &Map.get(entities, &1)))
     end
+  end
+
+  def handle_entity_children([], entities) do
+    {[], entities}
+  end
+
+  def handle_entity_children(keyword_list, entities) do
+    Enum.reduce(keyword_list, {[], entities}, fn {key, value}, {result_acc, entities} ->
+      {result, entities} = handle_entity_node(value, entities)
+      {result_acc ++ [{key, [result]}], entities}
+    end)
+  end
+
+  def handle_entity_node(entity, entities) do
+    case entity do
+      atom when is_atom(atom) ->
+        e = Map.get(entities, atom)
+        {result, entities} = handle_entity_children(Map.get(e, :entities), entities)
+        e = Map.put(e, :entities, result)
+        {e, Map.put(entities, e.name, e)}
+
+      entity ->
+        {result, entities} = handle_entity_children(Map.get(entity, :entities), entities)
+        entity = Map.put(entity, :entities, result)
+        {entity, Map.put(entities, entity.name, entity)}
+    end
+  end
+
+  def handle_entities(entity_map) do
+    Enum.reduce(entity_map, entity_map, fn {key, value}, state ->
+      {_, state} = handle_entity_node(value, state)
+      state
+    end)
   end
 end
