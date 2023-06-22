@@ -39,7 +39,8 @@ defmodule Spark.Dsl.Section do
     entities: [],
     sections: [],
     docs: "",
-    patchable?: false
+    patchable?: false,
+    referenced_as: nil,
   ]
 
   alias Spark.{
@@ -61,6 +62,7 @@ defmodule Spark.Dsl.Section do
           no_depend_modules: [atom],
           auto_set_fields: Keyword.t(any),
           entities: [Entity.t()],
+          referenced_as: atom() | nil,
           sections: [Section.t()],
           docs: String.t(),
           patchable?: boolean

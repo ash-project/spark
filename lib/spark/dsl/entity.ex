@@ -82,7 +82,8 @@ defmodule Spark.Dsl.Entity do
     no_depend_modules: [],
     schema: [],
     auto_set_fields: [],
-    docs: ""
+    docs: "",
+    referenced_as: nil,
   ]
 
   alias Spark.{
@@ -205,6 +206,7 @@ defmodule Spark.Dsl.Entity do
           name: name(),
           no_depend_modules: no_depend_modules(),
           recursive_as: recursive_as(),
+          referenced_as: atom() | nil,
           schema: OptionsHelpers.schema(),
           singleton_entity_keys: singleton_entity_keys(),
           snippet: snippet(),

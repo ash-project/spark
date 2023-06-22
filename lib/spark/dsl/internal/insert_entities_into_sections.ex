@@ -16,11 +16,11 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
         {entities, sections} = acc
 
         case element do
-          %Spark.Dsl.Entity{name: name} ->
-            {Map.put(entities, name, element), sections}
+          %Spark.Dsl.Entity{referenced_as: referenced_as} ->
+            {Map.put(entities, referenced_as, element), sections}
 
-          %Spark.Dsl.Section{name: name} ->
-            {entities, Map.put(sections, name, element)}
+          %Spark.Dsl.Section{referenced_as: referenced_as} ->
+            {entities, Map.put(sections, referenced_as, element)}
         end
       end)
 
@@ -52,12 +52,12 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
         e = Map.get(entities, atom)
         {result, entities} = handle_entity_children(Map.get(e, :entities), entities)
         e = Map.put(e, :entities, result)
-        {e, Map.put(entities, e.name, e)}
+        {e, Map.put(entities, e.referenced_as, e)}
 
       entity ->
         {result, entities} = handle_entity_children(Map.get(entity, :entities), entities)
         entity = Map.put(entity, :entities, result)
-        {entity, Map.put(entities, entity.name, entity)}
+        {entity, Map.put(entities, entity.referenced_as, entity)}
     end
   end
 
@@ -85,12 +85,12 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
         e = Map.get(sections, atom)
         {result, sections} = handle_section_children(Map.get(e, :sections), sections)
         e = Map.put(e, :sections, result)
-        {e, Map.put(sections, e.name, e)}
+        {e, Map.put(sections, e.referenced_as, e)}
 
       section ->
         {result, sections} = handle_section_children(Map.get(section, :sections), sections)
         section = Map.put(section, :sections, result)
-        {section, Map.put(sections, section.name, section)}
+        {section, Map.put(sections, section.referenced_as, section)}
     end
   end
 

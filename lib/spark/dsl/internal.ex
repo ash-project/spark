@@ -49,9 +49,19 @@ defmodule Spark.Dsl.Internal do
     schema: [
       name: [type: :atom, required: true],
       target: [type: :module, required: true],
-      entities: [type: :keyword_list, required: false]
-    ]
+      entities: [type: :keyword_list, required: false],
+      referenced_as: [type: :atom, required: false],
+    ],
+    transform: {Spark.Dsl.Internal, :entity, []},
   }
+
+  def entity(struct) do
+    updated_struct = case struct.referenced_as do
+      nil -> %{struct | referenced_as: struct.name}
+      _ -> struct
+    end
+   {:ok, updated_struct}
+  end
 
   @section %Spark.Dsl.Entity{
     name: :section,
@@ -59,9 +69,20 @@ defmodule Spark.Dsl.Internal do
     schema: [
       name: [type: :atom, required: true],
       entities: [type: {:list, :atom}, required: false],
-      sections: [type: {:list, :atom}, required: false]
-    ]
+      sections: [type: {:list, :atom}, required: false],
+      referenced_as: [type: :atom, required: false],
+    ],
+    transform: {Spark.Dsl.Internal, :section, []},
   }
+
+  def section(struct) do
+    updated_struct = case struct.referenced_as do
+      nil -> %{struct | referenced_as: struct.name}
+      _ -> struct
+    end
+   {:ok, updated_struct}
+  end
+
 
   @top_level %Spark.Dsl.Section{
     name: :top_level,
