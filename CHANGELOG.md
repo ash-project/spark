@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.18](https://github.com/ash-project/spark/compare/v1.1.17...v1.1.18) (2023-06-22)
+
+
+
+
+### Bug Fixes:
+
+* handle entity uniqueness properly
+
+### Improvements:
+
+* `defbuilderp`
+
 ## [v1.1.17](https://github.com/ash-project/spark/compare/v1.1.16...v1.1.17) (2023-06-20)
 
 
