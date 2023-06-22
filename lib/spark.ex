@@ -10,6 +10,19 @@ defmodule Spark do
     Spark.Dsl.Extension.get_entities(dsl, [:top_level])
   end
 
+  def load(dsl, chosen_sections) do
+    dsl_sections = Spark.Dsl.Extension.get_entities(dsl, [:top_level])
+
+    section_map =
+      for section <- dsl_sections, into: %{} do
+        {section.name, section}
+      end
+
+    for section <- chosen_sections do
+      Map.get(section_map, section)
+    end
+  end
+
   @doc """
   Returns all modules that implement the specified behaviour for a given otp_app.
 

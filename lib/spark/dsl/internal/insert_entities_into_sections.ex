@@ -12,23 +12,27 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
 
   defp substitute_entities_into_sections(entities_and_sections) do
     {entities, sections} =
-      Enum.reduce(entities_and_sections, {%{}, []}, fn element, acc ->
+      Enum.reduce(entities_and_sections, {%{}, %{}}, fn element, acc ->
         {entities, sections} = acc
 
         case element do
           %Spark.Dsl.Entity{name: name} ->
             {Map.put(entities, name, element), sections}
 
-          %Spark.Dsl.Section{} ->
-            {entities, [element | sections]}
+          %Spark.Dsl.Section{name: name} ->
+            {entities, Map.put(sections, name, element)}
         end
       end)
 
     entities = handle_entities(entities)
 
-    for section <- sections do
-      Map.put(section, :entities, Enum.map(section.entities, &Map.get(entities, &1)))
-    end
+    sections =
+      for {key, section} <- sections, into: %{} do
+        {key, Map.put(section, :entities, Enum.map(section.entities, &Map.get(entities, &1)))}
+      end
+
+    sections = handle_sections(sections)
+    for {_, section} <- sections, do: section
   end
 
   def handle_entity_children([], entities) do
@@ -58,8 +62,41 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
   end
 
   def handle_entities(entity_map) do
-    Enum.reduce(entity_map, entity_map, fn {key, value}, state ->
+    Enum.reduce(entity_map, entity_map, fn {_key, value}, state ->
       {_, state} = handle_entity_node(value, state)
+      state
+    end)
+  end
+
+  def handle_section_children([], sections) do
+    {[], sections}
+  end
+
+  def handle_section_children(list, sections) do
+    Enum.reduce(list, {[], sections}, fn value, {result_acc, sections} ->
+      {result, sections} = handle_section_node(value, sections)
+      {result_acc ++ [result], sections}
+    end)
+  end
+
+  def handle_section_node(section, sections) do
+    case section do
+      atom when is_atom(atom) ->
+        e = Map.get(sections, atom)
+        {result, sections} = handle_section_children(Map.get(e, :sections), sections)
+        e = Map.put(e, :sections, result)
+        {e, Map.put(sections, e.name, e)}
+
+      section ->
+        {result, sections} = handle_section_children(Map.get(section, :sections), sections)
+        section = Map.put(section, :sections, result)
+        {section, Map.put(sections, section.name, section)}
+    end
+  end
+
+  def handle_sections(section_map) do
+    Enum.reduce(section_map, section_map, fn {_key, value}, state ->
+      {_, state} = handle_section_node(value, state)
       state
     end)
   end

@@ -58,7 +58,8 @@ defmodule Spark.Dsl.Internal do
     target: Spark.Dsl.Section,
     schema: [
       name: [type: :atom, required: true],
-      entities: [type: {:list, :atom}, required: true]
+      entities: [type: {:list, :atom}, required: false],
+      sections: [type: {:list, :atom}, required: false]
     ]
   }
 
