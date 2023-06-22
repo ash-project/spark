@@ -119,13 +119,13 @@ defmodule Spark.Dsl.Builder do
       end
 
       defp unquote(func)(
-            {:error, error},
-            unquote_splicing(
-              Enum.map(rest_args, fn _ ->
-                {:_, [], Elixir}
-              end)
-            )
-          ) do
+             {:error, error},
+             unquote_splicing(
+               Enum.map(rest_args, fn _ ->
+                 {:_, [], Elixir}
+               end)
+             )
+           ) do
         {:error, error}
       end
 
