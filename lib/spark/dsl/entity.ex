@@ -83,7 +83,7 @@ defmodule Spark.Dsl.Entity do
     schema: [],
     auto_set_fields: [],
     docs: "",
-    referenced_as: nil,
+    referenced_as: nil
   ]
 
   alias Spark.{

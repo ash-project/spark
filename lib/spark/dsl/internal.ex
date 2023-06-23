@@ -47,20 +47,37 @@ defmodule Spark.Dsl.Internal do
     entities: [schema: [@schema]],
     singleton_entity_keys: [:schema],
     schema: [
-      name: [type: :atom, required: true],
-      target: [type: :module, required: true],
+      args: [type: :any, required: false],
+      auto_set_fields: [type: :keyword_list, required: false],
+      deprecations: [type: :any, required: false],
+      describe: [type: :string, required: false],
       entities: [type: :keyword_list, required: false],
+      examples: [type: :any, required: false],
+      hide: [type: :any, required: false],
+      identifier: [type: :any, required: false],
+      imports: [type: :any, required: false],
+      links: [type: :any, required: false],
+      modules: [type: :any, required: false],
+      name: [type: :atom, required: true],
+      no_depend_modules: [type: :any, required: false],
+      recursive_as: [type: :any, required: false],
       referenced_as: [type: :atom, required: false],
+      singleton_entity_keys: [type: :any, required: false],
+      snippet: [type: :any, required: false],
+      target: [type: :module, required: true],
+      transform: [type: :any, required: false]
     ],
-    transform: {Spark.Dsl.Internal, :entity, []},
+    transform: {Spark.Dsl.Internal, :entity, []}
   }
 
   def entity(struct) do
-    updated_struct = case struct.referenced_as do
-      nil -> %{struct | referenced_as: struct.name}
-      _ -> struct
-    end
-   {:ok, updated_struct}
+    updated_struct =
+      case struct.referenced_as do
+        nil -> %{struct | referenced_as: struct.name}
+        _ -> struct
+      end
+
+    {:ok, updated_struct}
   end
 
   @section %Spark.Dsl.Entity{
@@ -70,19 +87,20 @@ defmodule Spark.Dsl.Internal do
       name: [type: :atom, required: true],
       entities: [type: {:list, :atom}, required: false],
       sections: [type: {:list, :atom}, required: false],
-      referenced_as: [type: :atom, required: false],
+      referenced_as: [type: :atom, required: false]
     ],
-    transform: {Spark.Dsl.Internal, :section, []},
+    transform: {Spark.Dsl.Internal, :section, []}
   }
 
   def section(struct) do
-    updated_struct = case struct.referenced_as do
-      nil -> %{struct | referenced_as: struct.name}
-      _ -> struct
-    end
-   {:ok, updated_struct}
-  end
+    updated_struct =
+      case struct.referenced_as do
+        nil -> %{struct | referenced_as: struct.name}
+        _ -> struct
+      end
 
+    {:ok, updated_struct}
+  end
 
   @top_level %Spark.Dsl.Section{
     name: :top_level,

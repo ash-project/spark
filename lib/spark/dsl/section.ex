@@ -40,7 +40,7 @@ defmodule Spark.Dsl.Section do
     sections: [],
     docs: "",
     patchable?: false,
-    referenced_as: nil,
+    referenced_as: nil
   ]
 
   alias Spark.{
