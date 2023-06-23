@@ -83,11 +83,24 @@ defmodule Spark.Dsl.Internal do
   @section %Spark.Dsl.Entity{
     name: :section,
     target: Spark.Dsl.Section,
+    entities: [schema: [@schema]],
+    singleton_entity_keys: [:schema],
     schema: [
-      name: [type: :atom, required: true],
+      auto_set_fields: [type: :any, required: false],
+      deprecations: [type: :any, required: false],
+      describe: [type: :string, required: false],
       entities: [type: {:list, :atom}, required: false],
+      examples: [type: :any, required: false],
+      imports: [type: :any, required: false],
+      links: [type: :any, required: false],
+      modules: [type: :any, required: false],
+      name: [type: :atom, required: true],
+      no_depend_modules: [type: :any, required: false],
+      patchable?: [type: :any, required: false],
+      referenced_as: [type: :atom, required: false],
       sections: [type: {:list, :atom}, required: false],
-      referenced_as: [type: :atom, required: false]
+      snippet: [type: :any, required: false],
+      top_level?: [type: :boolean, required: false]
     ],
     transform: {Spark.Dsl.Internal, :section, []}
   }
@@ -96,6 +109,12 @@ defmodule Spark.Dsl.Internal do
     updated_struct =
       case struct.referenced_as do
         nil -> %{struct | referenced_as: struct.name}
+        _ -> struct
+      end
+
+    updated_struct =
+      case struct.schema do
+        nil -> %{updated_struct | schema: []}
         _ -> struct
       end
 
