@@ -953,6 +953,7 @@ defmodule Spark.Dsl.Extension do
           section = unquote(Macro.escape(section))
           unimports = unquote(Macro.escape(unimports))
           unimport_modules = unquote(Macro.escape(unimport_modules))
+          extension = unquote(extension)
 
           configured_imports =
             for module <- unquote(section.imports) do
@@ -1048,7 +1049,9 @@ defmodule Spark.Dsl.Extension do
             unimports ++
             [
               quote generated: true do
+                import unquote(extension), only: []
                 unquote(body[:do])
+                import unquote(extension)
 
                 current_config =
                   Process.get(
