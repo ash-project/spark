@@ -867,6 +867,9 @@ defmodule Spark.Dsl.Extension do
             section_unimports ++ entity_unimports ++ configured_unimports
         end)
 
+      sections_to_unimport_and_reimport =
+          Enum.map(sections, &{&1.name, 1})
+
       Enum.each(sections, fn section ->
         top_level_unimports =
           if section.top_level? do
@@ -874,11 +877,6 @@ defmodule Spark.Dsl.Extension do
           else
             top_level_unimports
           end
-
-        sections_to_unimport_and_reimport =
-          sections
-          |> Enum.reject(&(&1.name == section.name))
-          |> Enum.map(&{&1.name, 1})
 
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
           Extension.build_section(
