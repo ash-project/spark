@@ -867,8 +867,7 @@ defmodule Spark.Dsl.Extension do
             section_unimports ++ entity_unimports ++ configured_unimports
         end)
 
-      sections_to_unimport_and_reimport =
-          Enum.map(sections, &{&1.name, 1})
+      sections_to_unimport_and_reimport = Enum.map(sections, &{&1.name, 1})
 
       Enum.each(sections, fn section ->
         top_level_unimports =

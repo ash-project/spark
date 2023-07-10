@@ -24,7 +24,7 @@ defmodule Spark.DslTest do
         personal_details do
           first_name("Moff")
           last_name("Gideon")
-          contact "foo"
+          contact("foo")
         end
       end
     end
