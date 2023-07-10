@@ -15,6 +15,21 @@ defmodule Spark.DslTest do
     end
   end
 
+  describe "module conflicts" do
+    test "options don't conflict with outermost sections" do
+      defmodule MoffGideon do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        personal_details do
+          first_name("Moff")
+          last_name("Gideon")
+          contact "foo"
+        end
+      end
+    end
+  end
+
   describe "docs_test" do
     test "adds docs" do
       {:docs_v1, _, _, _, %{"en" => docs}, _, _} = Code.fetch_docs(TedDansen)

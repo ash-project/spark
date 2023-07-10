@@ -34,6 +34,10 @@ defmodule Spark.Test.Contact do
         last_name: [
           type: :string,
           doc: "The last name of the contact"
+        ],
+        contact: [
+          type: :string,
+          doc: "Added to incur a conflict between this and the `contact` top level section."
         ]
       ]
     }

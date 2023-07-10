@@ -1058,15 +1058,9 @@ defmodule Spark.Dsl.Extension do
             unimports ++
             [
               quote generated: true do
-                unless Enum.empty?(unquote(sections_to_unimport_and_reimport)) do
-                  import unquote(extension), except: unquote(sections_to_unimport_and_reimport)
-                end
+                import unquote(extension), only: []
 
                 unquote(body[:do])
-
-                unless Enum.empty?(unquote(sections_to_unimport_and_reimport)) do
-                  import unquote(extension), only: unquote(sections_to_unimport_and_reimport)
-                end
 
                 current_config =
                   Process.get(
@@ -1096,6 +1090,8 @@ defmodule Spark.Dsl.Extension do
                     opts: opts
                   }
                 )
+
+                import unquote(extension), only: unquote(sections_to_unimport_and_reimport)
               end
             ] ++
             configured_unimports ++
