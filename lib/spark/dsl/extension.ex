@@ -867,8 +867,6 @@ defmodule Spark.Dsl.Extension do
             section_unimports ++ entity_unimports ++ configured_unimports
         end)
 
-      sections_to_unimport_and_reimport = Enum.map(sections, &{&1.name, 1})
-
       Enum.each(sections, fn section ->
         top_level_unimports =
           if section.top_level? do
@@ -884,8 +882,7 @@ defmodule Spark.Dsl.Extension do
             section,
             all_recursive_entity_module_names ++ top_level_unimports,
             [],
-            module_prefix,
-            sections_to_unimport_and_reimport
+            module_prefix
           )
         end)
       end)
@@ -921,8 +918,7 @@ defmodule Spark.Dsl.Extension do
              section,
              unimports \\ [],
              path \\ [],
-             module_prefix \\ nil,
-             sections_to_unimport_and_reimport \\ []
+             module_prefix \\ nil
            ) do
     quote bind_quoted: [
             agent: agent,
@@ -930,8 +926,7 @@ defmodule Spark.Dsl.Extension do
             path: path,
             extension: extension,
             module_prefix: module_prefix,
-            unimports: unimports,
-            sections_to_unimport_and_reimport: sections_to_unimport_and_reimport
+            unimports: unimports
           ],
           generated: true do
       alias Spark.Dsl
@@ -959,7 +954,6 @@ defmodule Spark.Dsl.Extension do
           unimports = unquote(Macro.escape(unimports))
           unimport_modules = unquote(Macro.escape(unimport_modules))
           extension = unquote(extension)
-          sections_to_unimport_and_reimport = unquote(sections_to_unimport_and_reimport)
 
           configured_imports =
             for module <- unquote(section.imports) do
@@ -1100,8 +1094,6 @@ defmodule Spark.Dsl.Extension do
                     opts: opts
                   }
                 )
-
-                import unquote(extension), only: unquote(sections_to_unimport_and_reimport)
               end
             ] ++
             configured_unimports ++
