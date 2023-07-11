@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.19](https://github.com/ash-project/spark/compare/v1.1.18...v1.1.19) (2023-07-11)
+
+
+
+
+### Bug Fixes:
+
+* unimport other extensions when opening a section
+
+* reimport all sections after opening one
+
+* unimport entire extension, reimport only pertinent sections
+
+* only unimport/reimport necessary sections
+
+* unimport top level sections
+
 ## [v1.1.18](https://github.com/ash-project/spark/compare/v1.1.17...v1.1.18) (2023-06-22)
 
 
