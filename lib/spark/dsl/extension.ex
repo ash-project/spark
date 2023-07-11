@@ -1047,16 +1047,29 @@ defmodule Spark.Dsl.Extension do
               end
             end)
 
+          other_extension_unimports =
+            for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
+              quote do
+                import unquote(extension), only: []
+              end
+            end
+
+          other_extension_reimports =
+            for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
+              quote do
+                import unquote(extension), only: :macros
+              end
+            end
+
           entity_imports ++
             section_imports ++
             opts_import ++
             configured_imports ++
             patch_module_imports ++
             unimports ++
+            other_extension_unimports ++
             [
               quote generated: true do
-                import unquote(extension), only: []
-
                 unquote(body[:do])
 
                 current_config =
@@ -1093,6 +1106,7 @@ defmodule Spark.Dsl.Extension do
             ] ++
             configured_unimports ++
             patch_module_unimports ++
+            other_extension_reimports ++
             opts_unimport ++ entity_unimports ++ section_unimports
         end
       end
