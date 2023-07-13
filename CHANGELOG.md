@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.20](https://github.com/ash-project/spark/compare/v1.1.19...v1.1.20) (2023-07-13)
+
+
+
+
+### Improvements:
+
+* add `verify` callback
+
+* Spark.Dsl.Extension: Add `add_extensions` option which allows an extension to invite its friends. (#49)
+
 ## [v1.1.19](https://github.com/ash-project/spark/compare/v1.1.18...v1.1.19) (2023-07-11)
 
 
