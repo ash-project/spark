@@ -75,6 +75,12 @@ defmodule Spark.Dsl do
   persist multiple times.
   """
   @callback handle_opts(Keyword.t()) :: Macro.t()
+
+  @doc """
+  A callback that is called in the `after_verify` hook. Only runs on versions of Elixir >= 1.14.0
+  """
+  @callback verify(module, Keyword.t()) :: term
+
   @doc """
   Handle options in the context of the module, after all extensions have been processed. Must return a `quote` block.
   """
@@ -139,6 +145,9 @@ defmodule Spark.Dsl do
 
       @doc false
       def explain(_, _), do: nil
+
+      @doc false
+      def verify(_, _), do: :ok
 
       @doc false
       def default_extensions, do: @spark_default_extensions
@@ -340,7 +349,12 @@ defmodule Spark.Dsl do
         [body | preparations]
       end
 
-      defoverridable init: 1, handle_opts: 1, handle_before_compile: 1, explain: 2, __using__: 1
+      defoverridable init: 1,
+                     handle_opts: 1,
+                     handle_before_compile: 1,
+                     explain: 2,
+                     __using__: 1,
+                     verify: 2
     end
   end
 
@@ -395,10 +409,12 @@ defmodule Spark.Dsl do
       if to_string(@after_verify_supported) == "true" do
         quote generated: true do
           @after_compile_transformers false
-          @after_verify {__MODULE__, :__verify_ash_dsl__}
+          @after_verify {__MODULE__, :__verify_spark_dsl__}
 
           @doc false
-          def __verify_ash_dsl__(_module) do
+          def __verify_spark_dsl__(module) do
+            unquote(parent).verify(module, @opts)
+
             transformers_to_run =
               @extensions
               |> Enum.flat_map(& &1.transformers())
