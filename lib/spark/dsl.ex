@@ -122,6 +122,13 @@ defmodule Spark.Dsl do
       @spark_default_extensions parent_opts[:default_extensions]
                                 |> Keyword.values()
                                 |> List.flatten()
+                                |> Enum.flat_map(fn module ->
+                                  if function_exported?(module, :add_extensions, 0),
+                                    do: [module | module.add_extensions()],
+                                    else: [module]
+                                end)
+                                |> Enum.sort()
+                                |> Enum.uniq()
       @spark_extension_kinds List.wrap(parent_opts[:many_extension_kinds]) ++
                                List.wrap(parent_opts[:single_extension_kinds])
 
@@ -223,7 +230,11 @@ defmodule Spark.Dsl do
             end)
           end)
 
-        extensions = Enum.uniq(extensions ++ fragment_extensions)
+        extensions =
+          extensions
+          |> Enum.concat(fragment_extensions)
+          |> Enum.flat_map(&[&1 | &1.add_extensions()])
+          |> Enum.uniq()
 
         if :elixir_module.mode(__CALLER__.module) == :all do
           Module.put_attribute(__CALLER__.module, :extensions, extensions)
