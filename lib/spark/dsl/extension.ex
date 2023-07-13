@@ -119,6 +119,7 @@ defmodule Spark.Dsl.Extension do
   @callback transformers() :: [module]
   @callback verifiers() :: [module]
   @callback explain(map) :: String.t() | nil
+  @callback add_extensions() :: [module]
 
   @optional_callbacks explain: 1
 
@@ -418,7 +419,8 @@ defmodule Spark.Dsl.Extension do
             verifiers: opts[:verifiers] || [],
             dsl_patches: opts[:dsl_patches] || [],
             imports: opts[:imports] || [],
-            module_prefix: opts[:module_prefix]
+            module_prefix: opts[:module_prefix],
+            add_extensions: opts[:add_extensions] || []
           ],
           generated: true do
       alias Spark.Dsl.Extension
@@ -431,6 +433,7 @@ defmodule Spark.Dsl.Extension do
       @_verifiers verifiers
       @_dsl_patches dsl_patches
       @_imports imports
+      @_add_extensions add_extensions
 
       @doc false
       def sections, do: set_docs(@_sections)
@@ -444,6 +447,8 @@ defmodule Spark.Dsl.Extension do
       def transformers, do: @_transformers
       @doc false
       def dsl_patches, do: @_dsl_patches
+      @doc false
+      def add_extensions, do: @_add_extensions
 
       defp set_docs(items) when is_list(items) do
         Enum.map(items, &set_docs/1)
