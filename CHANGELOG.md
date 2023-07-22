@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.21](https://github.com/ash-project/spark/compare/v1.1.20...v1.1.21) (2023-07-22)
+
+
+
+
+### Improvements:
+
+* support `{:spark, _}` in typespec generators
+
 ## [v1.1.20](https://github.com/ash-project/spark/compare/v1.1.19...v1.1.20) (2023-07-13)
 
 
