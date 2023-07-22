@@ -279,6 +279,8 @@ defmodule Spark.InfoGenerator do
 
   def spec_for_type({:behaviour, _module}, _opts), do: {:module, [], Elixir}
 
+  def spec_for_type({:spark, _}, _opts), do: {:module, [], Elixir}
+
   def spec_for_type({:spark_function_behaviour, behaviour, {_, arity}}, _opts),
     do:
       spec_for_type(
