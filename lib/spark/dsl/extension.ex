@@ -1047,17 +1047,25 @@ defmodule Spark.Dsl.Extension do
             end)
 
           other_extension_unimports =
-            for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
-              quote do
-                import unquote(extension), only: []
+            if unquote(path) == [] do
+              for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
+                quote do
+                  import unquote(extension), only: []
+                end
               end
+            else
+              []
             end
 
           other_extension_reimports =
-            for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
-              quote do
-                import unquote(extension), only: :macros
+            if unquote(path) == [] do
+              for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
+                quote do
+                  import unquote(extension), only: :macros
+                end
               end
+            else
+              []
             end
 
           entity_imports ++
