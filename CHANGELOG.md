@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.22](https://github.com/ash-project/spark/compare/v1.1.21...v1.1.22) (2023-07-27)
+
+
+
+
+### Improvements:
+
+* fix lexical import error in DSL macros
+
 ## [v1.1.21](https://github.com/ash-project/spark/compare/v1.1.20...v1.1.21) (2023-07-22)
 
 
