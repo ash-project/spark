@@ -2,63 +2,72 @@ defmodule Spark.Test.Recursive do
   @moduledoc false
   defmodule Dsl do
     @moduledoc false
-    @atom %Spark.Dsl.Entity{
-      name: :atom,
-      target: Spark.Test.Atom,
-      args: [:name],
-      schema: [
-        name: [
-          type: :atom,
-          required: true
-        ]
-      ]
-    }
+    defmodule Impl do
+      use Spark
 
-    @step %Spark.Dsl.Entity{
-      name: :step,
-      target: Spark.Test.Step,
-      args: [:name],
-      recursive_as: :steps,
-      entities: [
-        steps: [@atom]
-      ],
-      schema: [
-        name: [
-          type: :atom,
-          required: true
-        ],
-        number: [
-          type: :integer
-        ]
-      ]
-    }
+      entity do
+        name(:atom)
+        target(Spark.Test.Atom)
+        args([:name])
 
-    @special_step %Spark.Dsl.Entity{
-      name: :special_step,
-      target: Spark.Test.Step,
-      args: [:name],
-      recursive_as: :steps,
-      entities: [
-        steps: [@atom]
-      ],
-      schema: [
-        name: [
-          type: :atom,
-          required: true
-        ],
-        number: [
-          type: :integer
-        ]
-      ]
-    }
+        schema do
+          field :name do
+            type(:atom)
+            required(true)
+          end
+        end
+      end
 
-    @steps %Spark.Dsl.Section{
-      name: :steps,
-      entities: [@step, @special_step, @atom]
-    }
+      entity do
+        name(:step)
+        target(Spark.Test.Step)
+        args([:name])
+        recursive_as(:steps)
+        entities(steps: :atom)
+
+        schema do
+          field :name do
+            type(:atom)
+            required(true)
+          end
+
+          field :number do
+            type(:integer)
+            required(false)
+          end
+        end
+      end
+
+      entity do
+        name(:special_step)
+        target(Spark.Test.Step)
+        args([:name])
+        recursive_as(:steps)
+        entities(steps: :atom)
+
+        schema do
+          field :name do
+            type(:atom)
+            required(true)
+          end
+
+          field :number do
+            type(:integer)
+            required(false)
+          end
+        end
+      end
+
+      section do
+        name(:steps)
+        entities([:step, :special_step, :atom])
+      end
+    end
+
+    sections = Spark.load(Impl)
 
     use Spark.Dsl.Extension,
-      sections: [@steps]
+      sections: sections
   end
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
