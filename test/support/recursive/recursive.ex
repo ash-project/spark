@@ -3,6 +3,7 @@ defmodule Spark.Test.Recursive do
   defmodule Dsl do
     @moduledoc false
     defmodule Impl do
+      @moduledoc false
       use Spark
 
       entity do
@@ -23,7 +24,7 @@ defmodule Spark.Test.Recursive do
         target(Spark.Test.Step)
         args([:name])
         recursive_as(:steps)
-        entities(steps: :atom)
+        entities(steps: [:atom])
 
         schema do
           field :name do
@@ -43,7 +44,7 @@ defmodule Spark.Test.Recursive do
         target(Spark.Test.Step)
         args([:name])
         recursive_as(:steps)
-        entities(steps: :atom)
+        entities(steps: [:atom])
 
         schema do
           field :name do
