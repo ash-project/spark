@@ -42,7 +42,7 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
   def handle_entity_children(keyword_list, entities) do
     Enum.reduce(keyword_list, {[], entities}, fn {key, value}, {result_acc, entities} ->
       {result, entities} = handle_entity_node(value, entities)
-      {result_acc ++ [{key, [result]}], entities}
+      {result_acc ++ [{key, result}], entities}
     end)
   end
 
@@ -53,6 +53,12 @@ defmodule Spark.Dsl.Internal.InsertEntitesIntoSections do
         {result, entities} = handle_entity_children(Map.get(e, :entities), entities)
         e = Map.put(e, :entities, result)
         {e, Map.put(entities, e.referenced_as, e)}
+
+      list when is_list(list) ->
+        Enum.reduce(list, {[], entities}, fn element, {result_acc, entities} ->
+          {result, entities} = handle_entity_node(element, entities)
+          {result_acc ++ [result], entities}
+        end)
 
       entity ->
         {result, entities} = handle_entity_children(Map.get(entity, :entities), entities)
