@@ -8,7 +8,7 @@ defmodule Spark.Dsl.Internal do
 
   defmodule Field do
     @moduledoc false
-    defstruct [:name, :type, :required]
+    defstruct [:name, :type, :required, doc: ""]
   end
 
   @field %Spark.Dsl.Entity{
@@ -18,7 +18,8 @@ defmodule Spark.Dsl.Internal do
     schema: [
       name: [type: :atom, required: true],
       type: [type: :any, required: true],
-      required: [type: :boolean, required: true]
+      required: [type: :boolean, required: true],
+      doc: [type: :string, required: false]
     ],
     transform: {Spark.Dsl.Internal, :field, []}
   }
