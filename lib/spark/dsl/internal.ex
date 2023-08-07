@@ -116,7 +116,7 @@ defmodule Spark.Dsl.Internal do
     updated_struct =
       case struct.schema do
         nil -> %{updated_struct | schema: []}
-        _ -> struct
+        _ -> updated_struct
       end
 
     {:ok, updated_struct}
