@@ -135,11 +135,23 @@ defmodule Spark.CodeHelpers do
     function = generate_captured_function_caller(fn_name, fn_args, caller)
 
     function_defs =
-      for {:->, _, [args, body]} <- clauses do
-        quote do
-          def unquote(fn_name)(unquote_splicing(args)) do
-            unquote(body)
-          end
+      for clause <- clauses do
+        case clause do
+          {:->, _, [[{:when, _, args_with_clause}], body]} ->
+            args = :lists.droplast(args_with_clause)
+            clause = List.last(args_with_clause)
+            quote do
+              def unquote(fn_name)(unquote_splicing(args)) when unquote(clause) do
+                unquote(body)
+              end
+            end
+
+          {:->, _, [args, body]} ->
+            quote do
+              def unquote(fn_name)(unquote_splicing(args)) do
+                unquote(body)
+              end
+            end
         end
       end
 

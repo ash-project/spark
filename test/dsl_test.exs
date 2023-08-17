@@ -45,7 +45,7 @@ defmodule Spark.DslTest do
         use Spark.Test.Contact
 
         contact do
-          contacter(fn message ->
+          contacter(fn message when not is_nil(message) ->
             "Help me Obi-Wan Kenobi: #{message}"
           end)
         end
