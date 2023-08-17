@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.23](https://github.com/ash-project/spark/compare/v1.1.22...v1.1.23) (2023-08-17)
+
+
+
+
+### Improvements:
+
+* handle when clauses on anonymous functions
+
 ## [v1.1.22](https://github.com/ash-project/spark/compare/v1.1.21...v1.1.22) (2023-07-27)
 
 
