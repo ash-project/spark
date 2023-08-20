@@ -140,6 +140,7 @@ defmodule Spark.CodeHelpers do
           {:->, _, [[{:when, _, args_with_clause}], body]} ->
             args = :lists.droplast(args_with_clause)
             clause = List.last(args_with_clause)
+
             quote do
               def unquote(fn_name)(unquote_splicing(args)) when unquote(clause) do
                 unquote(body)
