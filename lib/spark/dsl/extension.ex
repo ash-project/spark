@@ -2169,34 +2169,27 @@ defmodule Spark.Dsl.Extension do
   end
 
   def get_entity_dsl_patches(extensions, section_path) do
-    patches =
+    alias Spark.Dsl.Patch.AddEntity
+
+    section =
       extensions
-      |> Enum.flat_map(fn extension ->
-        extension.dsl_patches()
-        |> Enum.filter(&(&1.section_path == section_path))
-        |> Enum.map(&{extension, &1})
-      end)
+      |> Enum.flat_map(& &1.sections())
+      |> get_section_at_path(section_path, %{patchable?: false, entities: []})
 
-    if !section_patchable?(extensions, section_path) && Enum.any?(patches) do
-      IO.warn("Attempt to patch a DSL section which is not marked as patchable")
-      []
-    else
-      patches
-      |> Enum.map(fn
-        {extension, patch} when is_struct(patch, Spark.Dsl.Patch.AddEntity) ->
-          entity_mod_name(extension.module_prefix(), [], section_path, patch.entity)
-      end)
+    for extension <- extensions,
+        %AddEntity{section_path: ^section_path, entity: entity} <- extension.dsl_patches(),
+        reduce: [] do
+      entities ->
+        if section.patchable? || Enum.any?(section.entities, &(&1.target == entity.target)) do
+          entities ++ [entity_mod_name(extension.module_prefix(), [], section_path, entity)]
+        else
+          IO.warn(
+            "Attempt to add an entity with a patch to a non-patchable DSL section that has no compatible entities"
+          )
+
+          entities
+        end
     end
-  end
-
-  defp section_patchable?(extensions, section_path) do
-    extensions
-    |> Enum.flat_map(& &1.sections())
-    |> get_section_at_path(section_path, %{})
-    |> Map.get(:patchable?, false)
-  rescue
-    _ ->
-      false
   end
 
   defp get_section_at_path(sections, [name], default) do
@@ -2204,7 +2197,7 @@ defmodule Spark.Dsl.Extension do
     |> Enum.filter(&(&1.name == name))
     |> case do
       [section] -> section
-      [] -> default
+      _ -> default
     end
   end
 
