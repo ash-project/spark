@@ -3,6 +3,7 @@ defmodule Spark.ElixirSense.Entity do
   alias ElixirSense.Core.Introspection
   alias ElixirSense.Plugins.Util
   alias ElixirSense.Providers.Suggestion.Complete
+  alias ElixirSense.Core.State
 
   def find_entities(type, hint) do
     for {module, _} <- :code.all_loaded(),
@@ -27,7 +28,7 @@ defmodule Spark.ElixirSense.Entity do
       if builtins && !String.contains?(hint, ".") && lowercase_string?(hint) do
         apply(Complete, :complete, [
           to_string("#{inspect(builtins)}.#{hint}"),
-          apply(Complete.Env, :__struct__, [])
+          apply(State.Env, :__struct__, [])
         ])
       else
         []
