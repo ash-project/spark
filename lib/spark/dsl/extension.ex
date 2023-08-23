@@ -10,9 +10,9 @@ defmodule Spark.Dsl.Extension do
   The example at the bottom shows how you might build a (not very contextually
   relevant) DSL extension that would be used like so:
 
-     defmodule MyApp.Vehicle do
+      defmodule MyApp.Vehicle do
         use Spark.Dsl
-     end
+      end
 
       defmodule MyApp.MyResource do
         use MyApp.Vehicle,
