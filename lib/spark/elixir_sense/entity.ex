@@ -3,8 +3,6 @@ defmodule Spark.ElixirSense.Entity do
   alias ElixirSense.Core.Introspection
   alias ElixirSense.Plugins.Util
   alias ElixirSense.Providers.Suggestion.Complete
-  alias ElixirSense.Core.State
-  alias ElixirSense.Core.Metadata
 
   def find_entities(type, hint) do
     for {module, _} <- :code.all_loaded(),
@@ -27,12 +25,19 @@ defmodule Spark.ElixirSense.Entity do
   def find_spark_behaviour_impls(behaviour, builtins, hint, module_store) do
     builtins =
       if builtins && !String.contains?(hint, ".") && lowercase_string?(hint) do
-        apply(Complete, :complete, [
-          to_string("#{inspect(builtins)}.#{hint}"),
-          apply(State.Env, :__struct__, []),
-          apply(Metadata, :__struct__, []),
-          0
-        ])
+        if function_exported?(Complete, :complete, 4) do
+          apply(Complete, :complete, [
+            to_string("#{inspect(builtins)}.#{hint}"),
+            apply(ElixirSense.Core.State.Env, :__struct__, []),
+            apply(ElixirSense.Core.Metadata, :__struct__, []),
+            0
+          ])
+        else
+          apply(Complete, :complete, [
+            to_string("#{inspect(builtins)}.#{hint}"),
+            apply(Complete.Env, :__struct__, [])
+          ])
+        end
       else
         []
       end
