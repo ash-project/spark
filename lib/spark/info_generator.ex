@@ -210,8 +210,7 @@ defmodule Spark.InfoGenerator do
       @spec unquote(:"#{option.function_name}!")(dsl_or_extended :: module | map) ::
               unquote(option.type) | no_return
       def unquote(:"#{option.function_name}!")(dsl_or_extended) do
-        import Spark.Dsl.Extension, only: [get_opt: 4]
-
+        import Spark.Dsl.Extension, only: [get_opt: 4, get_persisted: 2]
         case get_opt(
                dsl_or_extended,
                unquote(option.path),
@@ -219,7 +218,8 @@ defmodule Spark.InfoGenerator do
                unquote(Map.get(option, :default, :error))
              ) do
           :error ->
-            raise "No configuration for `#{unquote(option.name)}` present on `#{inspect(dsl_or_extended)}`."
+            on = get_persisted(dsl_or_extended, :module)
+            raise "No configuration for `#{unquote(option.name)}` present on #{inspect(on)}"
 
           value ->
             value

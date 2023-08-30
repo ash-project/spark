@@ -160,6 +160,10 @@ defmodule Spark.Dsl.Extension do
     Spark.Dsl.Transformer.get_persisted(map, key, default)
   end
 
+  def get_persisted(resource, :module, _) when is_atom(resource) do
+    resource
+  end
+
   def get_persisted(resource, key, default) do
     Map.get(dsl!(resource)[:persist] || %{}, key, default)
   end
@@ -2142,15 +2146,7 @@ defmodule Spark.Dsl.Extension do
 
       {:tasks, funs} ->
         funs
-        |> Enum.map(fn func ->
-          case :erlang.get(:elixir_compiler_info) do
-            :undefined ->
-              Task.async(func)
-
-            _ ->
-              Kernel.ParallelCompiler.async(func)
-          end
-        end)
+        |> Enum.map(&do_async_compile/1)
         |> Task.await_many(:infinity)
 
         await_all_tasks(agent)
@@ -2167,6 +2163,18 @@ defmodule Spark.Dsl.Extension do
       :infinity
     )
   end
+
+  @doc false
+  def do_async_compile(fun) do
+    case :erlang.get(:elixir_compiler_info) do
+      :undefined ->
+        Task.async(fun)
+
+      _ ->
+        Kernel.ParallelCompiler.async(fun)
+    end
+  end
+
 
   def get_entity_dsl_patches(extensions, section_path) do
     alias Spark.Dsl.Patch.AddEntity

@@ -52,14 +52,7 @@ defmodule Spark.Dsl.Transformer do
   efficiently asynchronously.
   """
   def async_compile(dsl, fun) do
-    task =
-      case :erlang.get(:elixir_compiler_info) do
-        :undefined ->
-          Task.async(fun)
-
-        _ ->
-          Kernel.ParallelCompiler.async(fun)
-      end
+    task = Spark.Dsl.Extension.do_async_compile(fun)
 
     tasks = get_persisted(dsl, :spark_compile_tasks, [])
     persist(dsl, :spark_compile_tasks, [task | tasks])
