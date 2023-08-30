@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.24](https://github.com/ash-project/spark/compare/v1.1.23...v1.1.24) (2023-08-30)
+
+
+
+
+### Bug Fixes:
+
+* don't inspect dsl map in info generator errors
+
+* code highlight error (#56)
+
+### Improvements:
+
+* allow `Patch.AddEntity` if a same-target entity exists (#53)
+
 ## [v1.1.23](https://github.com/ash-project/spark/compare/v1.1.22...v1.1.23) (2023-08-17)
 
 
