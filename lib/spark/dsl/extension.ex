@@ -555,10 +555,14 @@ defmodule Spark.Dsl.Extension do
               end
             end
 
-          entity_imports =
-            for entity <- section.entities do
-              module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
+          entity_modules =
+            Enum.map(
+              section.entities,
+              &Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], &1)
+            )
 
+          entity_imports =
+            for module <- entity_modules do
               quote generated: true do
                 import unquote(module), only: :macros
               end
@@ -591,8 +595,20 @@ defmodule Spark.Dsl.Extension do
               ]
             end
 
+          patch_modules =
+            extensions
+            |> Spark.Dsl.Extension.get_entity_dsl_patches([section.name])
+            |> Enum.reject(&(&1 in entity_modules))
+
+          patch_imports =
+            for module <- patch_modules do
+              quote generated: true do
+                import unquote(module), only: :macros
+              end
+            end
+
           opts_import ++
-            section_imports ++ entity_imports ++ configured_imports
+            section_imports ++ entity_imports ++ patch_imports ++ configured_imports
         end)
       end)
 
@@ -2174,7 +2190,6 @@ defmodule Spark.Dsl.Extension do
         Kernel.ParallelCompiler.async(fun)
     end
   end
-
 
   def get_entity_dsl_patches(extensions, section_path) do
     alias Spark.Dsl.Patch.AddEntity
