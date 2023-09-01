@@ -211,6 +211,7 @@ defmodule Spark.InfoGenerator do
               unquote(option.type) | no_return
       def unquote(:"#{option.function_name}!")(dsl_or_extended) do
         import Spark.Dsl.Extension, only: [get_opt: 4, get_persisted: 2]
+
         case get_opt(
                dsl_or_extended,
                unquote(option.path),
