@@ -174,7 +174,7 @@ defmodule Spark.OptionsHelpers do
 
   @non_nimble_options [:hide, :as, :snippet, :links]
 
-  defp sanitize_schema(schema) do
+  def sanitize_schema(schema) do
     Enum.map(schema, fn {key, opts} ->
       opts =
         if opts[:type] do
@@ -265,6 +265,10 @@ defmodule Spark.OptionsHelpers do
 
       :module ->
         :atom
+
+      {nested_schema_type, keys}
+      when nested_schema_type in [:keyword_list, :non_empty_keyword_list, :map] and is_list(keys) ->
+        {nested_schema_type, sanitize_schema(keys)}
 
       type ->
         type
