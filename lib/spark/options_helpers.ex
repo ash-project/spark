@@ -270,6 +270,15 @@ defmodule Spark.OptionsHelpers do
       when nested_schema_type in [:keyword_list, :non_empty_keyword_list, :map] and is_list(keys) ->
         {nested_schema_type, sanitize_schema(keys)}
 
+      {:keyword_list, type} ->
+        {:keyword_list, sanitize_type(type, key)}
+
+      {:non_empty_keyword_list, type} ->
+        {:non_empty_keyword_list, sanitize_type(type, key)}
+
+      {:map, key_type, value_type} ->
+        {:map, sanitize_type(key_type, key), sanitize_type(value_type, key)}
+
       type ->
         type
     end
