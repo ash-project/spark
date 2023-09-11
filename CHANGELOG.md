@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.26](https://github.com/ash-project/spark/compare/v1.1.25...v1.1.26) (2023-09-11)
+
+
+
+
+### Bug Fixes:
+
+* recusively sanitize keyword and map types. (#59)
+
+* OptionsHelpers: Some nimble options types can have nested schemas. (#58)
+
 ## [v1.1.25](https://github.com/ash-project/spark/compare/v1.1.24...v1.1.25) (2023-09-01)
 
 
