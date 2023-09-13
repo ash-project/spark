@@ -1455,19 +1455,21 @@ defmodule Spark.Dsl.Extension do
 
             arg_values = Enum.reverse(arg_values)
 
-            all_sections =
+            top_level_unimports =
               __CALLER__.module
               |> Module.get_attribute(:extensions)
+              |> Enum.reject(&(&1 == extension))
               |> Enum.flat_map(fn extension ->
-                extension.sections
+                if Enum.count(section_path) == 1 && Enum.empty?(nested_entity_path || []) do
+                  Spark.Dsl.Extension.top_level_unimports(
+                    extension.sections(),
+                    extension.module_prefix(),
+                    entity
+                  )
+                else
+                  []
+                end
               end)
-
-            top_level_unimports =
-              if Enum.count(section_path) == 1 && Enum.empty?(nested_entity_path || []) do
-                Spark.Dsl.Extension.top_level_unimports(all_sections, mod, entity)
-              else
-                []
-              end
 
             imports =
               for module <- entity.imports do
