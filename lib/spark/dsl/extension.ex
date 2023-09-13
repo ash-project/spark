@@ -212,172 +212,12 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
-  @doc """
-  Generate a table of contents for a list of sections
-  """
-  def doc_index(sections, depth \\ 0) do
-    sections
-    |> Enum.flat_map(fn
-      {_, entities} ->
-        entities
-
-      other ->
-        [other]
-    end)
-    |> Enum.map_join("\n", fn
-      section ->
-        docs =
-          if depth == 0 do
-            String.duplicate(" ", depth + 1) <>
-              "* [#{section.name}](#module-#{section.name})"
-          else
-            String.duplicate(" ", depth + 1) <> "* #{section.name}"
-          end
-
-        case List.wrap(section.entities) ++ List.wrap(Map.get(section, :sections)) do
-          [] ->
-            docs
-
-          sections_and_entities ->
-            docs <> "\n" <> doc_index(sections_and_entities, depth + 2)
-        end
-    end)
-  end
-
-  @doc """
-  Generate documentation for a list of sections
-  """
-  def doc(sections, depth \\ 1) do
-    Enum.map_join(sections, "\n\n", fn section ->
-      String.duplicate("#", depth + 1) <>
-        " " <>
-        to_string(section.name) <> "\n\n" <> doc_section(section, depth)
-    end)
-  end
-
-  def doc_section(section, depth \\ 1) do
-    sections_and_entities = List.wrap(section.entities) ++ List.wrap(section.sections)
-
-    table_of_contents =
-      case sections_and_entities do
-        [] ->
-          ""
-
-        sections_and_entities ->
-          doc_index(sections_and_entities)
-      end
-
-    options = Spark.OptionsHelpers.docs(section.schema)
-
-    examples =
-      case section.examples do
-        [] ->
-          ""
-
-        examples ->
-          "Examples:\n" <> Enum.map_join(examples, &doc_example/1)
-      end
-
-    entities =
-      Enum.map_join(section.entities, "\n\n", fn entity ->
-        String.duplicate("#", depth + 2) <>
-          " " <>
-          to_string(entity.name) <>
-          "\n\n" <>
-          doc_entity(entity, depth + 2)
-      end)
-
-    sections =
-      Enum.map_join(section.sections, "\n\n", fn section ->
-        String.duplicate("#", depth + 2) <>
-          " " <>
-          to_string(section.name) <>
-          "\n\n" <>
-          doc_section(section, depth + 1)
-      end)
-
-    imports =
-      case section.imports do
-        [] ->
-          ""
-
-        mods ->
-          "Imports:\n\n" <>
-            Enum.map_join(mods, "\n", fn mod ->
-              "* `#{inspect(mod)}`"
-            end)
-      end
-
-    """
-    #{section.describe}
-
-    #{table_of_contents}
-
-    #{examples}
-
-    #{imports}
-
-    ---
-
-    #{options}
-
-    #{entities}
-
-    #{sections}
-    """
-  end
-
-  def doc_entity(entity, depth \\ 1) do
-    options = Spark.OptionsHelpers.docs(Keyword.drop(entity.schema, entity.hide))
-
-    examples =
-      case entity.examples do
-        [] ->
-          ""
-
-        examples ->
-          "Examples:\n" <> Enum.map_join(examples, &doc_example/1)
-      end
-
-    entities =
-      Enum.flat_map(entity.entities, fn
-        {_, entities} ->
-          entities
-
-        other ->
-          [other]
-      end)
-
-    entities_doc =
-      Enum.map_join(entities, "\n\n", fn entity ->
-        String.duplicate("#", depth + 2) <>
-          " " <>
-          to_string(entity.name) <>
-          "\n\n" <>
-          doc_entity(entity, depth + 1)
-      end)
-
-    table_of_contents =
-      case entities do
-        [] ->
-          ""
-
-        entities ->
-          doc_index(entities)
-      end
-
-    """
-    #{entity.describe}
-
-    #{table_of_contents}
-
-    #{examples}
-
-    #{options}
-
-    #{entities_doc}
-    """
-  end
+  defdelegate doc(sections, depth \\ 1), to: Spark.CheatSheet
+  defdelegate doc_index(sections, depth \\ 1), to: Spark.CheatSheet
+  @doc false
+  defdelegate doc_entity(entity, depth \\ 1), to: Spark.CheatSheet
+  @doc false
+  defdelegate doc_section(section, depth \\ 1), to: Spark.CheatSheet
 
   def get_opt_config(resource, path, value) do
     with otp_app when not is_nil(otp_app) <- get_persisted(resource, :otp_app),
@@ -396,23 +236,6 @@ defmodule Spark.Dsl.Extension do
         end
       end)
     end
-  end
-
-  defp doc_example({description, example}) when is_binary(description) and is_binary(example) do
-    """
-    #{description}
-    ```
-    #{example}
-    ```
-    """
-  end
-
-  defp doc_example(example) when is_binary(example) do
-    """
-    ```
-    #{example}
-    ```
-    """
   end
 
   @doc false
@@ -839,58 +662,7 @@ defmodule Spark.Dsl.Extension do
           end)
         end)
 
-      top_level_unimports =
-        sections
-        |> Enum.filter(& &1.top_level?)
-        |> Enum.flat_map(fn section ->
-          section_mod_name = Spark.Dsl.Extension.section_mod_name(module_prefix, [], section)
-
-          configured_unimports =
-            for module <- section.imports do
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          entity_unimports =
-            for entity <- section.entities do
-              module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
-
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          section_unimports =
-            for nested_section <- section.sections do
-              module =
-                Spark.Dsl.Extension.section_mod_name(
-                  module_prefix,
-                  [section.name],
-                  nested_section
-                )
-
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          opts_unimport =
-            if Map.get(section, :schema, []) == [] do
-              []
-            else
-              opts_module = Module.concat([section_mod_name, Options])
-
-              [
-                quote generated: true do
-                  import unquote(opts_module), only: []
-                end
-              ]
-            end
-
-          opts_unimport ++
-            section_unimports ++ entity_unimports ++ configured_unimports
-        end)
+      top_level_unimports = Spark.Dsl.Extension.top_level_unimports(sections, module_prefix)
 
       Enum.each(sections, fn section ->
         top_level_unimports =
@@ -934,6 +706,62 @@ defmodule Spark.Dsl.Extension do
 
       Agent.stop(agent)
     end
+  end
+
+  @doc false
+  def top_level_unimports(sections, module_prefix, skip \\ nil) do
+    sections
+    |> Enum.filter(& &1.top_level?)
+    |> Enum.flat_map(fn section ->
+      section_mod_name = Spark.Dsl.Extension.section_mod_name(module_prefix, [], section)
+
+      configured_unimports =
+        for module <- section.imports do
+          quote generated: true do
+            import unquote(module), only: []
+          end
+        end
+
+      entity_unimports =
+        for entity <- section.entities,
+            Map.delete(entity, :docs) != Map.delete(skip || %{}, :docs) do
+          module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
+
+          quote generated: true do
+            import unquote(module), only: []
+          end
+        end
+
+      section_unimports =
+        for nested_section <- section.sections do
+          module =
+            Spark.Dsl.Extension.section_mod_name(
+              module_prefix,
+              [section.name],
+              nested_section
+            )
+
+          quote generated: true do
+            import unquote(module), only: []
+          end
+        end
+
+      opts_unimport =
+        if Map.get(section, :schema, []) == [] do
+          []
+        else
+          opts_module = Module.concat([section_mod_name, Options])
+
+          [
+            quote generated: true do
+              import unquote(opts_module), only: []
+            end
+          ]
+        end
+
+      opts_unimport ++
+        section_unimports ++ entity_unimports ++ configured_unimports
+    end)
   end
 
   @doc false
@@ -1534,7 +1362,8 @@ defmodule Spark.Dsl.Extension do
                 nested_entity_path: Macro.escape(nested_entity_path),
                 deprecations: deprecations,
                 unimports: Macro.escape(unimports),
-                nested_key: nested_key
+                nested_key: nested_key,
+                mod: mod
               ] do
           @moduledoc false
           defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
@@ -1554,6 +1383,7 @@ defmodule Spark.Dsl.Extension do
             deprecations = unquote(deprecations)
             unimports = unquote(Macro.escape(unimports))
             nested_key = unquote(nested_key)
+            mod = unquote(mod)
 
             require Spark.Dsl.Extension
 
@@ -1625,6 +1455,16 @@ defmodule Spark.Dsl.Extension do
 
             arg_values = Enum.reverse(arg_values)
 
+            all_sections =
+              __CALLER__.module
+              |> Module.get_attribute(:extensions)
+              |> Enum.flat_map(fn extension ->
+                extension.sections
+              end)
+
+            top_level_unimports =
+              Spark.Dsl.Extension.top_level_unimports(all_sections, mod, entity)
+
             imports =
               for module <- entity.imports do
                 quote generated: true do
@@ -1654,7 +1494,8 @@ defmodule Spark.Dsl.Extension do
               end)
 
             code =
-              unimports ++
+              top_level_unimports ++
+                unimports ++
                 imports ++
                 funs ++
                 opt_funs ++
