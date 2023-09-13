@@ -1463,7 +1463,11 @@ defmodule Spark.Dsl.Extension do
               end)
 
             top_level_unimports =
-              Spark.Dsl.Extension.top_level_unimports(all_sections, mod, entity)
+              if Enum.count(section_path) == 1 && Enum.empty?(nested_entity_path || []) do
+                Spark.Dsl.Extension.top_level_unimports(all_sections, mod, entity)
+              else
+                []
+              end
 
             imports =
               for module <- entity.imports do
