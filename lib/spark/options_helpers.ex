@@ -43,6 +43,8 @@ defmodule Spark.OptionsHelpers do
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
           | {:struct, module}
           | :fun
+          | {:fun, list(type)}
+          | {:fun, list(type), type}
           | {:wrap_list, type}
           | :literal
           | {:literal, any}
@@ -205,6 +207,12 @@ defmodule Spark.OptionsHelpers do
 
       {:in, values} ->
         {:in, sanitize_type(values, key)}
+
+      {:fun, args} when is_list(args) ->
+        {:fun, Enum.count(args)}
+
+      {:fun, args, _} ->
+        {:fun, Enum.count(args)}
 
       {:or, subtypes} ->
         {:or, sanitize_type(subtypes, key)}
