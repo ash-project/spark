@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.27](https://github.com/ash-project/spark/compare/v1.1.26...v1.1.27) (2023-09-14)
+
+
+
+
+### Bug Fixes:
+
+* properly unimport other extension top level sections
+
+* only do top level unimports on second level paths
+
+* handle more unimports of top level entities
+
+* recusively sanitize keyword and map types. (#59)
+
+* OptionsHelpers: Some nimble options types can have nested schemas. (#58)
+
+### Improvements:
+
+* better formatted cheat sheets
+
+* add initial cheat sheet generators
+
 ## [v1.1.26](https://github.com/ash-project/spark/compare/v1.1.25...v1.1.26) (2023-09-11)
 
 
