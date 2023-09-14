@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.32](https://github.com/ash-project/spark/compare/v1.1.31...v1.1.32) (2023-09-14)
+
+
+
+
+### Bug Fixes:
+
+* don't remove DSL directory immediately after generating
+
 ## [v1.1.31](https://github.com/ash-project/spark/compare/v1.1.30...v1.1.31) (2023-09-14)
 
 
