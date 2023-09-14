@@ -124,6 +124,7 @@ defmodule Spark.CheatSheet do
 
   defp escape_pipes(string) do
     string
+    |> String.trim()
     |> String.replace("|", "\\|")
     |> tap(fn thing ->
       if String.contains?(thing, "\n") do
