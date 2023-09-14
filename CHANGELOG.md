@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.29](https://github.com/ash-project/spark/compare/v1.1.28...v1.1.29) (2023-09-14)
+
+
+
+
+### Improvements:
+
+* show tags in cheat sheets
+
 ## [v1.1.28](https://github.com/ash-project/spark/compare/v1.1.27...v1.1.28) (2023-09-14)
 
 
