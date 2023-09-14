@@ -106,7 +106,7 @@ defmodule Spark.CheatSheet do
       end
 
     examples =
-      case section.examples do
+      case entity.examples do
         [] ->
           ""
 
