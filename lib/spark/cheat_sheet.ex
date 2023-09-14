@@ -33,6 +33,18 @@ defmodule Spark.CheatSheet do
   end
 
   def section_cheat_sheet(section, path \\ []) do
+    examples =
+      case section.examples do
+        [] ->
+          ""
+
+        examples ->
+          """
+          ### Examples
+          #{doc_examples(examples)}
+          """
+      end
+
     if section.schema && section.schema != [] do
       """
       ## #{Enum.join(path ++ [section.name], ".")}
@@ -40,10 +52,7 @@ defmodule Spark.CheatSheet do
 
       #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
-
-      ### Examples
-      #{doc_examples(section.examples)}
-
+      #{examples}
 
       #{options_table(section.schema)}
 
@@ -56,8 +65,7 @@ defmodule Spark.CheatSheet do
 
       #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
-      ### Examples
-      #{doc_examples(section.examples)}
+      #{examples}
 
       #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name]))}
       #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name]))}
@@ -97,6 +105,18 @@ defmodule Spark.CheatSheet do
         """
       end
 
+    examples =
+      case section.examples do
+        [] ->
+          ""
+
+        examples ->
+          """
+          ### Examples
+          #{doc_examples(examples)}
+          """
+      end
+
     """
     ## #{Enum.join(path ++ [entity.name], ".")}
     #{args_example}
@@ -105,8 +125,7 @@ defmodule Spark.CheatSheet do
 
     #{doc_index(nested_entities, 0, Enum.join(path ++ [entity.name], "-"))}
 
-    ### Examples
-    #{doc_examples(entity.examples)}
+    #{examples}
 
     #{reference}
 

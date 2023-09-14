@@ -1,5 +1,26 @@
 defmodule Mix.Tasks.Spark.CheatSheets do
-  @shortdoc "Creates a set of cheat sheets for each Extension provided"
+  @shortdoc """
+  Creates a set of cheat sheets for each Extension provided
+
+  You may want to remove the generated files afterwards, with `fn _ -> File.rm_rf!("documentation/dsls") end` at the end of your `mix docs` alias.
+
+  For example:
+
+  ```elixir
+  defp aliases do
+    [
+      docs: [
+        "spark.cheat_sheets",
+        "docs",
+        "spark.cheat_sheets_in_search",
+        fn _ ->
+          File.rm_rf!("documentation/dsls")
+        end
+      ]
+    ]
+  end
+  ```
+  """
   @moduledoc @shortdoc
   use Mix.Task
 
