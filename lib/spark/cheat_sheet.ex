@@ -29,8 +29,9 @@ defmodule Spark.CheatSheet do
       ## #{Enum.join(path ++ [section.name], ".")}
       #{section.describe}
 
-      #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
+      ---
 
+      #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
       ### Examples
       #{doc_examples(section.examples)}
@@ -44,6 +45,8 @@ defmodule Spark.CheatSheet do
     else
       """
       ## #{Enum.join(path ++ [section.name], ".")}
+
+      ---
 
       #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
@@ -66,18 +69,20 @@ defmodule Spark.CheatSheet do
       Enum.map_join(nested_entities, &entity_cheat_sheet(&1, path ++ [entity.name]))
 
     """
-    ### #{Enum.join(path ++ [entity.name], ".")}
+    ## #{Enum.join(path ++ [entity.name], ".")}
+
     #{entity_properties(entity)}
 
     #{entity.describe}
 
+    ---
+
     #{doc_index(nested_entities, 0, Enum.join(path ++ [entity.name], "-"))}
 
-
-    #### Examples
+    ### Examples
     #{doc_examples(entity.examples)}
 
-    #### Reference
+    ### Reference
     #{options_table(Keyword.drop(entity.schema, entity.hide || []))}
 
     #{nested_entity_docs}
@@ -89,16 +94,29 @@ defmodule Spark.CheatSheet do
   end
 
   defp options_table(options) do
-    rows =
-      Enum.map_join(options, "\n", fn {key, value} ->
-        "| #{key} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(inspect_if(value[:default]))} | #{escape_pipes(value[:doc] || "")} |"
-      end)
+    if Enum.any?(Keyword.values(options), &(not is_nil(&1[:default]))) do
+      rows =
+        Enum.map_join(options, "\n", fn {key, value} ->
+          "| #{key} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(inspect_if(value[:default]))} | #{escape_pipes(value[:doc] || "")} |"
+        end)
 
-    """
-    | Name | Type | Default | Docs |
-    | ---  | ---  | ---     | ---  |
-    #{rows}
-    """
+      """
+      | Name | Type | Default | Docs |
+      | ---  | ---  | ---     | ---  |
+      #{rows}
+      """
+    else
+      rows =
+        Enum.map_join(options, "\n", fn {key, value} ->
+          "| #{key} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(value[:doc] || "")} |"
+        end)
+
+      """
+      | Name | Type | Docs |
+      | ---  | ---  | ---  |
+      #{rows}
+      """
+    end
   end
 
   defp inspect_if(nil), do: ""

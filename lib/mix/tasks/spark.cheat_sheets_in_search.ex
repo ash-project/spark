@@ -270,8 +270,8 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
         Map.update(
           extra,
           "headers",
-          [%{anchor: anchor, id: anchor}],
-          &Enum.uniq(&1 ++ [%{anchor: anchor, id: name}])
+          [sidebar_node(anchor, name)],
+          &Enum.uniq(&1 ++ [sidebar_node(anchor, name)])
         )
       else
         extra
@@ -286,14 +286,14 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
     Map.update(
       extra,
       "nodeGroups",
-      [%{"key" => "dsls", "name" => "DSLs", "nodes" => [%{anchor: anchor, id: name}]}],
+      [%{"key" => "dsls", "name" => "DSLs", "nodes" => [sidebar_node(anchor, name)]}],
       fn node_groups ->
         case Enum.find(node_groups, fn node_group ->
                node_group["key"] == "dsls"
              end) do
           nil ->
             [
-              %{"key" => "dsls", "name" => "DSLs", "nodes" => [%{anchor: anchor, id: name}]},
+              %{"key" => "dsls", "name" => "DSLs", "nodes" => [sidebar_node(anchor, name)]},
               node_groups
             ]
 
@@ -312,6 +312,10 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
         end
       end
     )
+  end
+
+  defp sidebar_node(anchor, name) do
+    %{anchor: anchor, id: name, title: "title"}
   end
 
   defp add_search_item(search_data, item) do
