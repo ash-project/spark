@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.31](https://github.com/ash-project/spark/compare/v1.1.30...v1.1.31) (2023-09-14)
+
+
+
+
+### Improvements:
+
+* remove dsl cheat sheets after building
+
 ## [v1.1.30](https://github.com/ash-project/spark/compare/v1.1.29...v1.1.30) (2023-09-14)
 
 
