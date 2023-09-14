@@ -17,10 +17,19 @@ defmodule Spark.CheatSheet do
         end
       )
 
-    extension.sections()
-    |> Enum.map_join("\n\n", &section_cheat_sheet(&1))
-    |> Kernel.<>("\n")
-    |> Kernel.<>(patches)
+    body =
+      extension.sections()
+      |> Enum.map_join("\n\n", &section_cheat_sheet(&1))
+      |> Kernel.<>("\n")
+      |> Kernel.<>(patches)
+
+    """
+    # DSL: #{inspect(extension)}
+
+    #{module_docs(extension)}
+
+    #{body}
+    """
   end
 
   def section_cheat_sheet(section, path \\ []) do
@@ -275,6 +284,18 @@ defmodule Spark.CheatSheet do
 
     #{entities_doc}
     """
+  end
+
+  defp module_docs(module) do
+    {:docs_v1, _, :elixir, _, %{"en" => docs}, _, _} = Code.fetch_docs(module)
+
+    if docs != "" do
+      docs
+    else
+      ""
+    end
+  rescue
+    _ -> ""
   end
 
   @doc """

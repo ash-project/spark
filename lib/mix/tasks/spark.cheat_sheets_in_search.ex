@@ -238,18 +238,6 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
     end)
   end
 
-  def module_docs(module, default) do
-    {:docs_v1, _, :elixir, _, %{"en" => docs}, _, _} = Code.fetch_docs(module)
-
-    if docs != "" do
-      docs
-    else
-      default
-    end
-  rescue
-    _ -> default
-  end
-
   defp add_sidebar_header(sidebar_items, extension_name, name, anchor, add_header? \\ true) do
     sidebar_items
     |> Map.put_new("extras", [])
@@ -303,7 +291,7 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
                 node_group
                 |> Map.put_new("nodes", [])
                 |> Map.update!("nodes", fn anchors ->
-                  Enum.uniq([%{anchor: anchor, id: name} | anchors])
+                  Enum.sort_by(Enum.uniq([sidebar_node(anchor, name) | anchors]), & &1["id"])
                 end)
               else
                 node_group
@@ -315,10 +303,10 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
   end
 
   defp sidebar_node(anchor, name) do
-    %{anchor: anchor, id: name, title: "title"}
+    %{"anchor" => anchor, "id" => name}
   end
 
   defp add_search_item(search_data, item) do
-    Map.update!(search_data, "items", &[item | &1])
+    Map.update!(search_data, "items", &Enum.uniq([item | &1]))
   end
 end
