@@ -77,8 +77,29 @@ defmodule Spark.CheatSheet do
     nested_entity_docs =
       Enum.map_join(nested_entities, &entity_cheat_sheet(&1, path ++ [entity.name]))
 
+    options = Keyword.drop(entity.schema, List.wrap(entity.hide))
+    arg_keys = arg_keys(entity)
+
+    reference =
+      if Enum.empty?(nested_entities) && Enum.empty?(options) do
+        ""
+      else
+        """
+        ### Reference
+        #{options_table(options, arg_keys)}
+
+        #{nested_entity_docs}
+        """
+      end
+
     """
     ## #{Enum.join(path ++ [entity.name], ".")}
+
+    ```elixir
+    #{entity.name}#{entity_args(entity)}
+    ```
+
+    ---
 
     #{entity_properties(entity)}
 
@@ -91,22 +112,55 @@ defmodule Spark.CheatSheet do
     ### Examples
     #{doc_examples(entity.examples)}
 
-    ### Reference
-    #{options_table(Keyword.drop(entity.schema, entity.hide || []))}
-
-    #{nested_entity_docs}
+    #{reference}
     """
+  end
+
+  defp entity_args(%{args: []}), do: ""
+
+  defp entity_args(entity) do
+    " " <>
+      Enum.map_join(entity.args, ", ", fn
+        key when is_atom(key) ->
+          to_string(key)
+
+        {:optional, key} ->
+          "#{key} \\ nil"
+
+        {:optional, key, default} ->
+          "#{key} \\ #{inspect(default)}"
+      end)
+  end
+
+  defp arg_keys(entity) do
+    entity.args
+    |> Enum.map(fn
+      key when is_atom(key) ->
+        key
+
+      {:optional, key} ->
+        key
+
+      {:optional, key, _} ->
+        key
+    end)
   end
 
   defp entity_properties(entity) do
     "Introspection Target: `#{inspect(entity.target)}`"
   end
 
-  defp options_table(options) do
+  defp options_table(options, positional_args \\ []) do
+    options =
+      Enum.sort_by(options, fn {key, _value} ->
+        {Enum.find_index(positional_args, &(&1 == key)),
+         Enum.find_index(options, fn {other_key, _} -> other_key == key end)}
+      end)
+
     if Enum.any?(Keyword.values(options), &(not is_nil(&1[:default]))) do
       rows =
         Enum.map_join(options, "\n", fn {key, value} ->
-          "| #{key} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(inspect_if(value[:default]))} | #{escape_pipes(value[:doc] || "")} |"
+          "| `#{key}` #{tags(key, value, positional_args)} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(inspect_if(value[:default]))} | #{escape_pipes(value[:doc] || "")} |"
         end)
 
       """
@@ -117,7 +171,7 @@ defmodule Spark.CheatSheet do
     else
       rows =
         Enum.map_join(options, "\n", fn {key, value} ->
-          "| #{key} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(value[:doc] || "")} |"
+          "| `#{key}` #{tags(key, value, positional_args)} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(value[:doc] || "")} |"
         end)
 
       """
@@ -125,6 +179,30 @@ defmodule Spark.CheatSheet do
       | ---  | ---  | ---  |
       #{rows}
       """
+    end
+  end
+
+  defp tags(key, config, positional_args) do
+    arg_pos = Enum.find_index(positional_args, &(&1 == key))
+
+    tags =
+      if arg_pos do
+        ["arg #{arg_pos + 1}"]
+      else
+        []
+      end
+
+    tags =
+      if config[:required] && is_nil(config[:default]) do
+        ["required" | tags]
+      else
+        tags
+      end
+
+    if tags == [] do
+      ""
+    else
+      " - " <> Enum.join(tags, "-")
     end
   end
 
