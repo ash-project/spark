@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.34](https://github.com/ash-project/spark/compare/v1.1.33...v1.1.34) (2023-09-14)
+
+
+
+
+### Improvements:
+
+* add `--check` to `spark.cheat_sheets`
+
 ## [v1.1.33](https://github.com/ash-project/spark/compare/v1.1.32...v1.1.33) (2023-09-14)
 
 
