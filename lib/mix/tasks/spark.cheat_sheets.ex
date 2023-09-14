@@ -2,24 +2,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
   @shortdoc """
   Creates a set of cheat sheets for each Extension provided
 
-  You may want to remove the generated files afterwards, with `fn _ -> File.rm_rf!("documentation/dsls") end` at the end of your `mix docs` alias.
-
-  For example:
-
-  ```elixir
-  defp aliases do
-    [
-      docs: [
-        "spark.cheat_sheets",
-        "docs",
-        "spark.cheat_sheets_in_search",
-        fn _ ->
-          File.rm_rf!("documentation/dsls")
-        end
-      ]
-    ]
-  end
-  ```
+  You will want to include this task with the `--check` flag in your CI pipeline as well.
   """
   @moduledoc @shortdoc
   use Mix.Task
@@ -29,7 +12,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
 
     {opts, _} =
       OptionParser.parse!(opts,
-        switches: [strip_prefix: :string, check: :boolean, extensions: :string]
+        switches: [strip_prefix: :string, check: :boolean, extensions: :string, check: :string]
       )
 
     unless opts[:extensions] do
@@ -42,13 +25,28 @@ defmodule Mix.Tasks.Spark.CheatSheets do
       |> Enum.map(&Module.concat([&1]))
       |> Enum.uniq()
 
-    File.rm_rf!("documentation/dsls")
+    if !opts[:check] do
+      File.rm_rf!("documentation/dsls")
+    end
 
     for extension <- extensions do
       cheat_sheet = Spark.CheatSheet.cheat_sheet(extension)
       File.mkdir_p!("documentation/dsls")
       extension_name = Spark.Mix.Helpers.extension_name(extension, opts)
-      File.write!("documentation/dsls/DSL:-#{extension_name}.cheatmd", cheat_sheet)
+
+      filename = "documentation/dsls/DSL:-#{extension_name}.cheatmd"
+
+      if opts[:check] do
+        if File.exists?(filename) && File.read!(filename) == cheat_sheet do
+          Mix.shell().info("Cheat sheet for #{extension_name} is up to date")
+        else
+          raise """
+          The cheat sheet for #{extension_name} is out of date. Please regenerate spark cheat sheets.
+          """
+        end
+      else
+        File.write!(filename, cheat_sheet)
+      end
     end
   end
 end
