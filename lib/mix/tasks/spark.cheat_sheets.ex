@@ -29,7 +29,5 @@ defmodule Mix.Tasks.Spark.CheatSheets do
       extension_name = Spark.Mix.Helpers.extension_name(extension, opts)
       File.write!("documentation/dsls/DSL:-#{extension_name}.cheatmd", cheat_sheet)
     end
-
-    File.rm_rf!("documentation/dsls")
   end
 end
