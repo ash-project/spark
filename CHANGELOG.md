@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.35](https://github.com/ash-project/spark/compare/v1.1.34...v1.1.35) (2023-09-15)
+
+
+
+
+### Bug Fixes:
+
+* properly show entity argument examples
+
 ## [v1.1.34](https://github.com/ash-project/spark/compare/v1.1.33...v1.1.34) (2023-09-14)
 
 
