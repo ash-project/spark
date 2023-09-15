@@ -62,6 +62,7 @@ defmodule Spark.CheatSheet do
     else
       """
       ## #{Enum.join(path ++ [section.name], ".")}
+      #{describe(section.describe)}
 
       #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
