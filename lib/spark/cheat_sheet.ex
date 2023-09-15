@@ -45,12 +45,20 @@ defmodule Spark.CheatSheet do
           """
       end
 
+    doc_index =
+      if !Enum.empty?(section.sections ++ section.entities) do
+        """
+        ### Nested DSLs
+        #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
+        """
+      end
+
     if section.schema && section.schema != [] do
       """
       ## #{Enum.join(path ++ [section.name], ".")}
       #{describe(section.describe)}
 
-      #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
+      #{doc_index}
 
       #{examples}
 
@@ -64,7 +72,7 @@ defmodule Spark.CheatSheet do
       ## #{Enum.join(path ++ [section.name], ".")}
       #{describe(section.describe)}
 
-      #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
+      #{doc_index}
 
       #{examples}
 
@@ -120,13 +128,21 @@ defmodule Spark.CheatSheet do
           """
       end
 
+    doc_index =
+      if !Enum.empty?(nested_entities) do
+        """
+        ### Nested DSLs
+        #{doc_index(nested_entities, 0, Enum.join(path ++ [entity.name], "-"))}
+        """
+      end
+
     """
     ## #{Enum.join(path ++ [entity.name], ".")}
     #{args_example}
 
     #{describe(entity.describe)}
 
-    #{doc_index(nested_entities, 0, Enum.join(path ++ [entity.name], "-"))}
+    #{doc_index}
 
     #{examples}
 
@@ -203,6 +219,11 @@ defmodule Spark.CheatSheet do
     {required, optional} =
       Enum.split_with(options, fn {key, _config} ->
         key in positional_args
+      end)
+
+    optional =
+      Enum.sort_by(optional, fn {_key, config} ->
+        !config[:required]
       end)
 
     required =
