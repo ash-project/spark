@@ -48,7 +48,7 @@ defmodule Spark.CheatSheet do
     if section.schema && section.schema != [] do
       """
       ## #{Enum.join(path ++ [section.name], ".")}
-      #{section.describe}
+      #{describe(section.describe)}
 
       #{doc_index(section.sections ++ section.entities, 0, Enum.join(path ++ [section.name], "-"))}
 
@@ -98,6 +98,8 @@ defmodule Spark.CheatSheet do
 
     args_example =
       if Enum.empty?(entity.args) do
+        ""
+      else
         """
         ```elixir
         #{entity.name}#{entity_args(entity)}
@@ -121,7 +123,7 @@ defmodule Spark.CheatSheet do
     ## #{Enum.join(path ++ [entity.name], ".")}
     #{args_example}
 
-    #{entity.describe}
+    #{describe(entity.describe)}
 
     #{doc_index(nested_entities, 0, Enum.join(path ++ [entity.name], "-"))}
 
@@ -131,6 +133,28 @@ defmodule Spark.CheatSheet do
 
     #{entity_properties(entity)}
     """
+  end
+
+  defp describe(entity) do
+    entity
+    |> String.split("\n")
+    |> Enum.map(&String.trim_leading/1)
+    |> Enum.map_join("\n", fn
+      "####" <> rest ->
+        "######" <> rest
+
+      "###" <> rest ->
+        "#####" <> rest
+
+      "##" <> rest ->
+        "####" <> rest
+
+      "#" <> rest ->
+        "###" <> rest
+
+      other ->
+        other
+    end)
   end
 
   defp entity_args(%{args: []}), do: ""
