@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.37](https://github.com/ash-project/spark/compare/v1.1.36...v1.1.37) (2023-09-16)
+
+
+
+
+### Improvements:
+
+* `inspect_if` adds backticks for better docs
+
+* better display for nested DSLs in cheat sheets
+
 ## [v1.1.36](https://github.com/ash-project/spark/compare/v1.1.35...v1.1.36) (2023-09-15)
 
 
