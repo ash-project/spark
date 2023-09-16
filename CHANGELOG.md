@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.39](https://github.com/ash-project/spark/compare/v1.1.38...v1.1.39) (2023-09-16)
+
+
+
+
+### Bug Fixes:
+
+* handle empty string case in cheat_sheets
+
 ## [v1.1.38](https://github.com/ash-project/spark/compare/v1.1.37...v1.1.38) (2023-09-16)
 
 
