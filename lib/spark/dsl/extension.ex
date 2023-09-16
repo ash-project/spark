@@ -516,6 +516,8 @@ defmodule Spark.Dsl.Extension do
   end
 
   def run_transformers(mod, transformers, spark_dsl_config, env) do
+    spark_dsl_config = Map.update!(spark_dsl_config, :persist, &Map.put(&1, :env, env))
+
     Enum.reduce_while(transformers, spark_dsl_config, fn transformer, dsl ->
       result =
         try do
@@ -1139,10 +1141,15 @@ defmodule Spark.Dsl.Extension do
               section = unquote(Macro.escape(section))
 
               value =
-                if config[:type] == :quoted do
-                  Macro.escape(value)
-                else
-                  value
+                case config[:type] do
+                  :quoted ->
+                    Macro.escape(value)
+
+                  :quoted_with_env ->
+                    {Macro.escape(value), __CALLER__}
+
+                  _ ->
+                    value
                 end
 
               Spark.Dsl.Extension.maybe_deprecated(
@@ -1397,7 +1404,7 @@ defmodule Spark.Dsl.Extension do
             {args_without_opts, opts} =
               entity_args
               |> Enum.zip([unquote_splicing(arg_vars)])
-              |> Spark.Dsl.Extension.escape_quoted(entity_schema)
+              |> Spark.Dsl.Extension.escape_quoted(entity_schema, __CALLER__)
               |> Spark.Dsl.Extension.shuffle_opts_to_end(unquote(Macro.escape(entity.args)), opts)
 
             if not Keyword.keyword?(opts) do
@@ -1725,10 +1732,15 @@ defmodule Spark.Dsl.Extension do
             config = unquote(Macro.escape(config))
 
             value =
-              if config[:type] == :quoted do
-                Macro.escape(value)
-              else
-                value
+              case config[:type] do
+                :quoted ->
+                  Macro.escape(value)
+
+                :quoted_with_env ->
+                  {Macro.escape(value), __CALLER__}
+
+                _ ->
+                  value
               end
 
             Spark.Dsl.Extension.maybe_deprecated(
@@ -1772,12 +1784,17 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def escape_quoted(options, schema) do
+  def escape_quoted(options, schema, caller) do
     Enum.map(options, fn {name, value} ->
-      if schema[name][:type] == :quoted do
-        {name, Macro.escape(value)}
-      else
-        {name, value}
+      case schema[name][:type] do
+        :quoted ->
+          {name, Macro.escape(value)}
+
+        :quoted_with_env ->
+          {name, {Macro.escape(value), caller}}
+
+        _ ->
+          {name, value}
       end
     end)
   end

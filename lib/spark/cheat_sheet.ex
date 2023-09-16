@@ -62,7 +62,7 @@ defmodule Spark.CheatSheet do
 
       #{examples}
 
-      #{options_table(section.schema)}
+      #{options_table(section.schema, path ++ [section.name])}
 
       #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name]))}
       #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name]))}
@@ -99,7 +99,7 @@ defmodule Spark.CheatSheet do
         ""
       else
         """
-        #{options_table(options, arg_keys)}
+        #{options_table(options, arg_keys, path ++ [entity.name])}
 
         #{nested_entity_docs}
         """
@@ -212,10 +212,10 @@ defmodule Spark.CheatSheet do
     """
   end
 
-  defp options_table(options, positional_args \\ [])
-  defp options_table([], _), do: nil
+  defp options_table(options, path, positional_args \\ [])
+  defp options_table([], _path, _), do: nil
 
-  defp options_table(options, positional_args) do
+  defp options_table(options, path, positional_args) do
     {required, optional} =
       Enum.split_with(options, fn {key, _config} ->
         key in positional_args
@@ -231,9 +231,9 @@ defmodule Spark.CheatSheet do
         Enum.find_index(positional_args, &(&1 == key))
       end)
 
-    args = do_options_table(required, "Arguments")
+    args = do_options_table(required, path, "Arguments")
 
-    opts = do_options_table(optional, "Options")
+    opts = do_options_table(optional, path, "Options")
 
     table =
       String.trim(args) <> "\n" <> String.trim(opts)
@@ -243,54 +243,66 @@ defmodule Spark.CheatSheet do
     """
   end
 
-  defp do_options_table([], _header), do: ""
+  defp do_options_table([], _path, _header), do: ""
 
-  defp do_options_table(options, header) do
+  defp do_options_table(options, path, header) do
     rows =
       Enum.map_join(options, "\n", fn {key, value} ->
         required_star =
           if value[:required] && is_nil(value[:default]) do
-            "*"
+            """
+            <sup style="color: red">*</sup>
+            """
           else
             ""
           end
 
-        "| `#{key}`#{required_star} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{escape_pipes(inspect_if(value[:default]))} | #{escape_pipes(value[:doc] || "")} |"
+        anchor = Enum.join(path ++ [key], ".")
+
+        """
+        <tr>
+          <td style="text-align: left">
+            <a id="#{anchor}" href="##{anchor}">
+              <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
+                #{key}
+              </span>
+            </a>
+              #{required_star}
+          </td>
+          <td style="text-align: left">
+            <code class="inline">#{Spark.Types.doc_type(value[:type])}</code>
+          </td>
+          <td style="text-align: left">
+            #{inspect_if(value[:default])}
+          </td>
+          <td style="text-align: left" colspan=2>
+            #{value[:doc]}
+          </td>
+        </tr>
+        """
       end)
 
-    table =
-      """
-      ### #{header}
-      | Name | Type | Default | Docs |
-      | ---  | ---  | ---     | ---  |
-      #{rows}
-      """
-
     """
-    #{table}
+    ### #{header}
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Default</th>
+          <th colspan=2>Docs</th>
+        </tr>
+      </thead>
+      <tbody>
+        #{rows}
+      </tbody>
+    </table>
     """
   end
 
   defp inspect_if(nil), do: ""
-  defp inspect_if(value), do: "`#{inspect(value)}`"
-
-  defp escape_pipes(string) do
-    string
-    |> String.trim()
-    |> String.replace("|", "\\|")
-    |> tap(fn thing ->
-      if String.contains?(thing, "\n") do
-        IO.warn("""
-        Multi-line DSL option doc detected. Please move contextual information into the
-        doc of a section, entity or module.
-
-        #{thing}
-        """)
-      end
-    end)
-    |> String.replace("\n\n", "\n")
-    |> String.replace("\n", " ")
-  end
+  defp inspect_if(value), do: "<code class=\"inline\">#{inspect(value)}</code>"
 
   @doc """
   Generate a markdown bullet list documentation for a list of sections

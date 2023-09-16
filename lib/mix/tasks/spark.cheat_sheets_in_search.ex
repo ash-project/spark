@@ -110,35 +110,16 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
         search_data,
         %{
           "doc" => section.describe,
-          "ref" => "#{extension_name}.html##{Enum.join(path ++ [section.name], "-")}",
+          "ref" =>
+            "#{dsl_search_name(extension_name)}.html##{Enum.join(path ++ [section.name], "-")}",
           "title" => "#{extension_name}.#{Enum.join(path ++ [section.name], ".")}",
           "type" => "DSL"
         }
       )
 
-    sidebar_items =
-      if path == [] do
-        sidebar_items
-      else
-        add_sidebar_header(
-          sidebar_items,
-          extension_name,
-          "#{Enum.join(path ++ [section.name], ".")}",
-          Enum.join(path ++ [section.name], "-")
-        )
-      end
-
     search_data =
       add_schema_to_search_data(
         search_data,
-        extension_name,
-        section.schema,
-        path ++ [section.name]
-      )
-
-    sidebar_items =
-      add_schema_to_sidebar_items(
-        sidebar_items,
         extension_name,
         section.schema,
         path ++ [section.name]
@@ -164,31 +145,16 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
         search_data,
         %{
           "doc" => entity.describe,
-          "ref" => "#{extension_name}.html##{Enum.join(path ++ [entity.name], "-")}",
+          "ref" =>
+            "#{dsl_search_name(extension_name)}.html##{Enum.join(path ++ [entity.name], "-")}",
           "title" => "#{extension_name}.#{Enum.join(path ++ [entity.name], ".")}",
           "type" => "DSL"
         }
       )
 
-    sidebar_items =
-      add_sidebar_header(
-        sidebar_items,
-        extension_name,
-        "#{Enum.join(path ++ [entity.name], ".")}",
-        Enum.join(path ++ [entity.name], "-")
-      )
-
     search_data =
       add_schema_to_search_data(
         search_data,
-        extension_name,
-        entity.schema,
-        path ++ [entity.name]
-      )
-
-    sidebar_items =
-      add_schema_to_sidebar_items(
-        sidebar_items,
         extension_name,
         entity.schema,
         path ++ [entity.name]
@@ -213,7 +179,7 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
         search_data,
         %{
           "doc" => config[:doc] || "",
-          "ref" => "#{extension_name}.html##{Enum.join(path ++ [key], "-")}",
+          "ref" => "#{dsl_search_name(extension_name)}.html##{Enum.join(path ++ [key], "-")}",
           "title" => "#{extension_name}.#{Enum.join(path ++ [key], ".")}",
           "type" => "DSL"
         }
@@ -221,92 +187,12 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
     end)
   end
 
-  defp add_schema_to_sidebar_items(
-         sidebar_items,
-         extension_name,
-         schema,
-         path
-       ) do
-    Enum.reduce(schema, sidebar_items, fn {key, _value}, sidebar_items ->
-      add_sidebar_header(
-        sidebar_items,
-        extension_name,
-        "#{Enum.join(path ++ [key], ".")}",
-        Enum.join(path, "-"),
-        false
-      )
-    end)
-  end
-
-  defp add_sidebar_header(sidebar_items, extension_name, name, anchor, add_header? \\ true) do
-    sidebar_items
-    |> Map.put_new("extras", [])
-    |> Map.update!("extras", fn extras ->
-      Enum.map(extras, fn extra ->
-        replace_extra(extra, extension_name, name, anchor, add_header?)
-      end)
-    end)
-  end
-
-  defp replace_extra(extra, extension_name, name, anchor, add_header?) when is_list(extra) do
-    Enum.map(extra, &replace_extra(&1, extension_name, name, anchor, add_header?))
-  end
-
-  defp replace_extra(extra, extension_name, name, anchor, add_header?) do
-    if extra["title"] == "DSL: #{extension_name}" do
-      if add_header? do
-        Map.update(
-          extra,
-          "headers",
-          [sidebar_node(anchor, name)],
-          &Enum.uniq(&1 ++ [sidebar_node(anchor, name)])
-        )
-      else
-        extra
-      end
-      |> add_node_group(extension_name, name, anchor)
-    else
-      extra
-    end
-  end
-
-  defp add_node_group(extra, _extension_name, name, anchor) do
-    Map.update(
-      extra,
-      "nodeGroups",
-      [%{"key" => "dsls", "name" => "DSLs", "nodes" => [sidebar_node(anchor, name)]}],
-      fn node_groups ->
-        case Enum.find(node_groups, fn node_group ->
-               node_group["key"] == "dsls"
-             end) do
-          nil ->
-            [
-              %{"key" => "dsls", "name" => "DSLs", "nodes" => [sidebar_node(anchor, name)]},
-              node_groups
-            ]
-
-          _ ->
-            Enum.map(node_groups, fn node_group ->
-              if node_group["key"] == "dsls" do
-                node_group
-                |> Map.put_new("nodes", [])
-                |> Map.update!("nodes", fn anchors ->
-                  Enum.sort_by(Enum.uniq([sidebar_node(anchor, name) | anchors]), & &1["id"])
-                end)
-              else
-                node_group
-              end
-            end)
-        end
-      end
-    )
-  end
-
-  defp sidebar_node(anchor, name) do
-    %{"anchor" => anchor, "id" => name}
+  defp dsl_search_name(extension_name) do
+    ("dsl-" <> extension_name) |> String.split(".") |> Enum.map_join("-", &String.downcase/1)
   end
 
   defp add_search_item(search_data, item) do
+    item = Map.update!(item, "title", &String.trim(&1 || ""))
     Map.update!(search_data, "items", &Enum.uniq([item | &1]))
   end
 end

@@ -22,6 +22,7 @@ defmodule Spark.OptionsHelpers do
   - `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
   - `{:literal, value}` -> exactly the value specified.
   - `:quoted` -> retains the quoted value of the code provided to the option
+  - `:quoted_with_env` -> retains the qutoed value of the code provided to the option and the env, in a tuple `{quoted, env}`.
   - `{:wrap_list, type}` -> Allows a single value or a list of values.
   """
 
