@@ -272,7 +272,7 @@ defmodule Spark.CheatSheet do
   end
 
   defp inspect_if(nil), do: ""
-  defp inspect_if(value), do: inspect(value)
+  defp inspect_if(value), do: "`#{inspect(value)}`"
 
   defp escape_pipes(string) do
     string
