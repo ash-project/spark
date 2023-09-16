@@ -20,6 +20,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
       |> Keyword.get(:extensions, "")
       |> Kernel.||("")
       |> String.split(",")
+      |> Enum.reject(&(&1 == ""))
       |> Enum.map(&Module.concat([&1]))
       |> Enum.uniq()
 
