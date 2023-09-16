@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.38](https://github.com/ash-project/spark/compare/v1.1.37...v1.1.38) (2023-09-16)
+
+
+
+
+### Bug Fixes:
+
+* allow empty extensions in spark.cheat_sheets
+
 ## [v1.1.37](https://github.com/ash-project/spark/compare/v1.1.36...v1.1.37) (2023-09-16)
 
 
