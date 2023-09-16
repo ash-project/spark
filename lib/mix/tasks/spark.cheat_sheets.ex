@@ -15,12 +15,10 @@ defmodule Mix.Tasks.Spark.CheatSheets do
         switches: [strip_prefix: :string, check: :boolean, extensions: :string, check: :string]
       )
 
-    unless opts[:extensions] do
-      raise "Must supply a comma separated list of extensions to generate a .formatter.exs for"
-    end
-
     extensions =
-      opts[:extensions]
+      opts
+      |> Keyword.get(:extensions, "")
+      |> Kernel.||("")
       |> String.split(",")
       |> Enum.map(&Module.concat([&1]))
       |> Enum.uniq()
