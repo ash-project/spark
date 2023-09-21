@@ -77,7 +77,7 @@ defmodule Spark.Types do
 
   def doc_type({:wrap_list, subtype}) do
     str = doc_type(subtype)
-    "list(#{str}) | #{str}"
+    "#{str} | list(#{str})"
   end
 
   def doc_type({:list_of, subtype}), do: doc_type({:list, subtype})
