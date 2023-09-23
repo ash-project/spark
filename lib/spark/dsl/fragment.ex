@@ -6,13 +6,13 @@ defmodule Spark.Dsl.Fragment do
   extensions as you would normally to that resource, and they will be added to the
   parent resource.
 
-  defmodule MyApp.Resource.Graphql do
-    use Spark.Dsl.Fragment, of: Ash.Resource, extensions: AshGraphql.Resource
-
-    graphql do
-      ...
-    end
-  end
+      defmodule MyApp.Resource.Graphql do
+        use Spark.Dsl.Fragment, of: Ash.Resource, extensions: AshGraphql.Resource
+    
+        graphql do
+          ...
+        end
+      end
   """
 
   defmacro __using__(opts) do
