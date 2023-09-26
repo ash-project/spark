@@ -19,10 +19,12 @@ defmodule Spark.Types do
   def doc_type(:any), do: "`any`"
   def doc_type(:keyword_list), do: "Keyword.t"
 
-  def doc_type({:keyword_list, schema}) do
+  def doc_type({:keyword_list, schema}) when is_list(schema) do
     options = Enum.map(schema, fn {key, value} -> {key, value[:type]} end)
     "#{doc_type({:or, options})}"
   end
+
+  def doc_type({:keyword_list, value_type}), do: "Keyword.t(#{doc_type(value_type)})"
 
   def doc_type(:non_empty_keyword_list), do: "Keyword.t"
   def doc_type(:atom), do: "atom"
@@ -44,6 +46,10 @@ defmodule Spark.Types do
   end
 
   def doc_type(:map), do: "map"
+
+  def doc_type({:map, key_type, value_type}),
+    do: "%{optional(#{doc_type(key_type)}) => #{doc_type(value_type)}}"
+
   def doc_type(:struct), do: "struct"
   def doc_type({:struct, struct}), do: "#{inspect(struct)}"
   def doc_type(nil), do: "nil"
