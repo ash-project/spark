@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.40](https://github.com/ash-project/spark/compare/v1.1.39...v1.1.40) (2023-09-27)
+
+
+
+
+### Improvements:
+
+* add `mix spark.replace_doc_links`
+
+* clean up cheat sheets & various type improvements
+
 ## [v1.1.39](https://github.com/ash-project/spark/compare/v1.1.38...v1.1.39) (2023-09-16)
 
 
