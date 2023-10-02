@@ -82,6 +82,13 @@ defmodule Spark.MixProject do
       main: "get-started-with-spark",
       source_ref: "v#{@version}",
       extra_section: "GUIDES",
+      before_closing_head_tag: fn type ->
+        if type == :html do
+          """
+          <script defer data-domain="ashhexdocs" src="https://plausible.io/js/script.js"></script>
+          """
+        end
+      end,
       spark: [
         mix_tasks: [
           Formatting: [
