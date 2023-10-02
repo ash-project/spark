@@ -36,7 +36,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
       filename = "documentation/dsls/DSL:-#{extension_name}.cheatmd"
 
       if opts[:check] do
-        if File.exists?(filename) && File.read!(filename) == cheat_sheet do
+        if File.exists?(filename) && String.trim(File.read!(filename)) == String.trim(cheat_sheet) do
           Mix.shell().info("Cheat sheet for #{extension_name} is up to date")
         else
           raise """
