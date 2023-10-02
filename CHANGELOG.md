@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.41](https://github.com/ash-project/spark/compare/v1.1.40...v1.1.41) (2023-10-02)
+
+
+
+
+### Bug Fixes:
+
+* trim cheat_sheets before checking
+
+* support nested types in `:keyword_list` and `:map` nimble types. (#62)
+
 ## [v1.1.40](https://github.com/ash-project/spark/compare/v1.1.39...v1.1.40) (2023-09-27)
 
 
