@@ -279,7 +279,7 @@ defmodule Spark.CheatSheet do
             #{inspect_if(value[:default])}
           </td>
           <td style="text-align: left" colspan=2>
-            #{value[:doc]}
+            #{html(value[:doc])}
           </td>
         </tr>
         """
@@ -302,6 +302,30 @@ defmodule Spark.CheatSheet do
       </tbody>
     </table>
     """
+  end
+
+  if Code.ensure_loaded?(Earmark) do
+    defp html(doc) do
+      doc
+      |> Earmark.as_html()
+      |> case do
+        {:ok, html_doc, _errors} ->
+          html_doc
+
+        {:error, _, errors} ->
+          IO.warn("""
+          Error converting markdown to html:
+
+          # Errors
+          #{inspect(errors)}
+
+          # Doc
+          #{inspect(doc)}
+          """)
+      end
+    end
+  else
+    defp html(doc), do: doc
   end
 
   defp inspect_if(nil), do: ""
