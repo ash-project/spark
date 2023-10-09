@@ -269,7 +269,9 @@ defmodule Spark.Formatter do
       {func, meta, body} = node when is_atom(func) ->
         count = Enum.count(List.wrap(body))
 
-        if builders[func] in [count, count - 1] && Enum.count(List.wrap(body)) &&
+        builders = Keyword.get_values(builders, func)
+
+        if Enum.any?(builders, &(&1 in [count, count - 1])) &&
              Keyword.keyword?(meta) &&
              meta[:closing] do
           {func, Keyword.delete(meta, :closing), body}
