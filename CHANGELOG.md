@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.43](https://github.com/ash-project/spark/compare/v1.1.42...v1.1.43) (2023-10-09)
+
+
+
+
+### Bug Fixes:
+
+* fix spark.formatter plugin not removing all parens
+
 ## [v1.1.42](https://github.com/ash-project/spark/compare/v1.1.41...v1.1.42) (2023-10-08)
 
 
