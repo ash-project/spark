@@ -452,12 +452,13 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  defmacro set_state(additional_persisted_data, transform? \\ true) do
+  defmacro set_state(additional_persisted_data, fragments, transform? \\ true) do
     quote generated: true,
           location: :keep,
           bind_quoted: [
             additional_persisted_data: additional_persisted_data,
-            transform?: transform?
+            transform?: transform?,
+            fragments: fragments
           ] do
       alias Spark.Dsl.Transformer
 
@@ -482,6 +483,7 @@ defmodule Spark.Dsl.Extension do
           persist,
           &Map.merge(&1, persist)
         )
+        |> Spark.Dsl.handle_fragments(fragments)
 
       for {key, _value} <- Process.get() do
         if is_tuple(key) and elem(key, 0) == __MODULE__ do

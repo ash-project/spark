@@ -8,7 +8,7 @@ defmodule Spark.Dsl.Fragment do
 
       defmodule MyApp.Resource.Graphql do
         use Spark.Dsl.Fragment, of: Ash.Resource, extensions: AshGraphql.Resource
-    
+
         graphql do
           ...
         end
@@ -68,7 +68,7 @@ defmodule Spark.Dsl.Fragment do
 
   defmacro __before_compile__(_) do
     quote do
-      Spark.Dsl.Extension.set_state([], false)
+      Spark.Dsl.Extension.set_state([], [], false)
 
       def extensions do
         @extensions
