@@ -261,7 +261,6 @@ defmodule Spark.CheatSheet do
           end
 
         anchor = Enum.join(path ++ [key], "-")
-        IO.inspect(anchor)
 
         """
         <tr>
