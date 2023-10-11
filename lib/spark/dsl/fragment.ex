@@ -8,7 +8,7 @@ defmodule Spark.Dsl.Fragment do
 
       defmodule MyApp.Resource.Graphql do
         use Spark.Dsl.Fragment, of: Ash.Resource, extensions: AshGraphql.Resource
-
+    
         graphql do
           ...
         end
@@ -68,21 +68,6 @@ defmodule Spark.Dsl.Fragment do
 
   defmacro __before_compile__(_) do
     quote do
-      @spark_dsl_config {__MODULE__, :spark_sections}
-                        |> Process.get([])
-                        |> Enum.map(fn {_extension, section_path} ->
-                          {section_path,
-                           Process.get(
-                             {__MODULE__, :spark, section_path},
-                             []
-                           )}
-                        end)
-                        |> Enum.into(%{})
-                        |> Map.update(
-                          :persist,
-                          %{extensions: @extensions || []},
-                          &Map.merge(&1, %{extensions: @extensions || []})
-                        )
       Spark.Dsl.Extension.set_state([], false)
 
       def extensions do

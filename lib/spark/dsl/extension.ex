@@ -461,7 +461,27 @@ defmodule Spark.Dsl.Extension do
           ] do
       alias Spark.Dsl.Transformer
 
-      spark_dsl_config = @spark_dsl_config
+      persist =
+        additional_persisted_data
+        |> Keyword.put(:extensions, @extensions || [])
+        |> Enum.into(%{})
+
+      spark_dsl_config =
+        {__MODULE__, :spark_sections}
+        |> Process.get([])
+        |> Enum.map(fn {_extension, section_path} ->
+          {section_path,
+           Process.get(
+             {__MODULE__, :spark, section_path},
+             []
+           )}
+        end)
+        |> Enum.into(%{})
+        |> Map.update(
+          :persist,
+          persist,
+          &Map.merge(&1, persist)
+        )
 
       for {key, _value} <- Process.get() do
         if is_tuple(key) and elem(key, 0) == __MODULE__ do
