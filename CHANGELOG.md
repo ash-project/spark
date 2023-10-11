@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.46](https://github.com/ash-project/spark/compare/v1.1.45...v1.1.46) (2023-10-11)
+
+
+
+
+### Bug Fixes:
+
+* properly handle fragments after spark_dsl_config is set
+
+* properly derive dsl state from source of truth in set_state
+
 ## [v1.1.45](https://github.com/ash-project/spark/compare/v1.1.44...v1.1.45) (2023-10-11)
 
 
