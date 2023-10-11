@@ -102,7 +102,7 @@ defmodule Spark.CheatSheet do
         ""
       else
         """
-        #{options_table(options, arg_keys, path ++ [entity.name])}
+        #{options_table(options, path ++ [entity.name], arg_keys)}
 
         #{nested_entity_docs}
         """
@@ -261,6 +261,7 @@ defmodule Spark.CheatSheet do
           end
 
         anchor = Enum.join(path ++ [key], "-")
+        IO.inspect(anchor)
 
         """
         <tr>
