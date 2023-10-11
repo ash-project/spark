@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.45](https://github.com/ash-project/spark/compare/v1.1.44...v1.1.45) (2023-10-11)
+
+
+
+
+### Bug Fixes:
+
+* run transformers *after* handling fragments
+
 ## [v1.1.44](https://github.com/ash-project/spark/compare/v1.1.43...v1.1.44) (2023-10-11)
 
 
