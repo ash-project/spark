@@ -499,8 +499,24 @@ defmodule Spark.Dsl do
         Module.register_attribute(__MODULE__, :spark_is, persist: true)
         Module.put_attribute(__MODULE__, :spark_is, @spark_is)
 
-        Spark.Dsl.Extension.set_state(@persist)
+        @spark_dsl_config {__MODULE__, :spark_sections}
+                          |> Process.get([])
+                          |> Enum.map(fn {_extension, section_path} ->
+                            {section_path,
+                             Process.get(
+                               {__MODULE__, :spark, section_path},
+                               []
+                             )}
+                          end)
+                          |> Enum.into(%{})
+                          |> Map.update(
+                            :persist,
+                            %{extensions: @extensions || []},
+                            &Map.merge(&1, %{extensions: @extensions || []})
+                          )
+
         @spark_dsl_config Spark.Dsl.handle_fragments(@spark_dsl_config, fragments)
+        Spark.Dsl.Extension.set_state(@persist)
 
         for {block, bindings} <- Enum.reverse(@spark_dsl_config[:eval] || []) do
           Code.eval_quoted(block, bindings, __ENV__)
