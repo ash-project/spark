@@ -555,6 +555,22 @@ defmodule Spark.Dsl.Extension do
 
         {:error, error} ->
           raise_transformer_error(transformer, error)
+        other ->
+          raise """
+          Invalid return from transformer: #{inspect(transformer)}
+
+          Expected one of:
+
+          * `:ok`
+          * `:halt`
+          * `{:warn, dsl_state, warnings}`
+          * `{:ok, dsl_state}`
+          * `{:error, error}`
+
+          Got:
+
+          #{inspect(other)}
+          """
       end
     end)
   end
