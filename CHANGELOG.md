@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.47](https://github.com/ash-project/spark/compare/v1.1.46...v1.1.47) (2023-10-17)
+
+
+
+
+### Improvements:
+
+* optimize access to persisted data
+
+* better error message on bad transformer
+
 ## [v1.1.46](https://github.com/ash-project/spark/compare/v1.1.45...v1.1.46) (2023-10-11)
 
 
