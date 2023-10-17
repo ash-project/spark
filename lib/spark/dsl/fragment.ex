@@ -81,6 +81,12 @@ defmodule Spark.Dsl.Fragment do
       def spark_dsl_config do
         @spark_dsl_config
       end
+
+      @persisted @spark_dsl_config[:persist]
+
+      def persisted do
+        @persisted
+      end
     end
   end
 end

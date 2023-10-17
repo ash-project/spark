@@ -144,6 +144,29 @@ defmodule Spark.Dsl.Extension do
       end
   end
 
+  defp persisted!(resource) do
+    resource.persisted()
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        Module.get_attribute(resource, :persisted) || %{}
+      rescue
+        ArgumentError ->
+          IO.inspect("here")
+
+          try do
+            resource.persisted()
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      `#{inspect(resource)}` is not a Spark DSL module.
+                      """,
+                      __STACKTRACE__
+          end
+      end
+  end
+
   @doc "Get the entities configured for a given section"
   def get_entities(map, path) when is_map(map) do
     Spark.Dsl.Transformer.get_entities(map, path) || []
@@ -165,7 +188,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   def get_persisted(resource, key, default) do
-    Map.get(dsl!(resource)[:persist] || %{}, key, default)
+    Map.get(persisted!(resource), key, default)
   end
 
   @doc """
@@ -555,6 +578,7 @@ defmodule Spark.Dsl.Extension do
 
         {:error, error} ->
           raise_transformer_error(transformer, error)
+
         other ->
           raise """
           Invalid return from transformer: #{inspect(transformer)}

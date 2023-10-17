@@ -511,6 +511,12 @@ defmodule Spark.Dsl do
           @spark_dsl_config
         end
 
+        @persisted @spark_dsl_config[:persist]
+
+        def persisted do
+          @persisted
+        end
+
         cond do
           @moduledoc == false ->
             :ok
