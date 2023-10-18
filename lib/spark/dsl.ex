@@ -507,11 +507,39 @@ defmodule Spark.Dsl do
 
         def __spark_placeholder__, do: nil
 
+        for {path, %{entities: entities}} <- @spark_dsl_config do
+          def entities(unquote(path)), do: unquote(Macro.escape(entities || []))
+        end
+
+        def entities(_), do: []
+
+        for {path, %{opts: opts}} <- @spark_dsl_config do
+          for {key, value} <- opts do
+            def fetch_opt(unquote(path), unquote(key)) do
+              {:ok, unquote(Macro.escape(value))}
+            end
+          end
+        end
+
+        def fetch_opt(_, _), do: :error
+
         def spark_dsl_config do
           @spark_dsl_config
         end
 
         @persisted @spark_dsl_config[:persist]
+
+        for {key, value} <- @persisted do
+          def persisted(unquote(key), _), do: unquote(Macro.escape(value))
+        end
+
+        def persisted(_, default), do: default
+
+        for {key, value} <- @persisted do
+          def persisted(unquote(key)), do: unquote(Macro.escape(value))
+        end
+
+        def persisted(_), do: nil
 
         def persisted do
           @persisted

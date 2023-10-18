@@ -123,39 +123,16 @@ defmodule Spark.Dsl.Extension do
 
   @optional_callbacks explain: 1
 
-  defp dsl!(resource) do
-    resource.spark_dsl_config()
+  defp persisted!(resource, key, default) do
+    resource.persisted(key, default)
   rescue
     _ in [UndefinedFunctionError, ArgumentError] ->
       try do
-        Module.get_attribute(resource, :spark_dsl_config) || %{}
+        Map.get(Module.get_attribute(resource, :persisted) || %{}, key)
       rescue
         ArgumentError ->
           try do
-            resource.spark_dsl_config()
-          rescue
-            _ ->
-              reraise ArgumentError,
-                      """
-                      `#{inspect(resource)}` is not a Spark DSL module.
-                      """,
-                      __STACKTRACE__
-          end
-      end
-  end
-
-  defp persisted!(resource) do
-    resource.persisted()
-  rescue
-    _ in [UndefinedFunctionError, ArgumentError] ->
-      try do
-        Module.get_attribute(resource, :persisted) || %{}
-      rescue
-        ArgumentError ->
-          IO.inspect("here")
-
-          try do
-            resource.persisted()
+            resource.persisted(key)
           rescue
             _ ->
               reraise ArgumentError,
@@ -168,12 +145,33 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc "Get the entities configured for a given section"
+  def get_entities(map, nil), do: get_entities(map, [])
+  def get_entities(map, path) when not is_list(path), do: get_entities(map, [path])
+
   def get_entities(map, path) when is_map(map) do
     Spark.Dsl.Transformer.get_entities(map, path) || []
   end
 
   def get_entities(resource, path) do
-    dsl!(resource)[path][:entities] || []
+    resource.entities(path)
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
+        Spark.Dsl.Transformer.get_entities(dsl, path) || []
+      rescue
+        ArgumentError ->
+          try do
+            resource.entities(path)
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      `#{inspect(resource)}` is not a Spark DSL module.
+                      """,
+                      __STACKTRACE__
+          end
+      end
   end
 
   @doc "Get a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
@@ -188,7 +186,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   def get_persisted(resource, key, default) do
-    Map.get(persisted!(resource), key, default)
+    persisted!(resource, key, default)
   end
 
   @doc """
@@ -205,6 +203,10 @@ defmodule Spark.Dsl.Extension do
 
   def fetch_opt(resource, path, value, configurable? \\ false)
 
+  def fetch_opt(map, path, value, configurable?) when not is_list(path) do
+    fetch_opt(map, [path], value, configurable?)
+  end
+
   def fetch_opt(map, path, value, configurable?) when is_map(map) do
     if configurable? do
       case get_opt_config(Spark.Dsl.Transformer.get_persisted(map, :module), path, value) do
@@ -219,20 +221,40 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
-  def fetch_opt(resource, path, value, configurable?) do
-    path = List.wrap(path)
-
+  def fetch_opt(resource, path, key, configurable?) do
     if configurable? do
-      case get_opt_config(resource, path, value) do
+      case get_opt_config(resource, path, key) do
         {:ok, value} ->
           {:ok, value}
 
         _ ->
-          Keyword.fetch(dsl!(resource)[path][:opts] || [], value)
+          do_fetch_opt(resource, path, key)
       end
     else
-      Keyword.fetch(dsl!(resource)[path][:opts] || [], value)
+      do_fetch_opt(resource, path, key)
     end
+  end
+
+  defp do_fetch_opt(resource, path, key) do
+    resource.fetch_opt(path, key)
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
+        Spark.Dsl.Transformer.fetch_option(dsl, path, key)
+      rescue
+        ArgumentError ->
+          try do
+            resource.fetch_opt(path, key)
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      `#{inspect(resource)}` is not a Spark DSL module.
+                      """,
+                      __STACKTRACE__
+          end
+      end
   end
 
   defdelegate doc(sections, depth \\ 1), to: Spark.CheatSheet
