@@ -513,7 +513,7 @@ defmodule Spark.Dsl do
 
         def entities(_), do: []
 
-        for {path, %{opts: opts}} <- @spark_dsl_config do
+        for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           for {key, value} <- opts do
             def fetch_opt(unquote(path), unquote(key)) do
               {:ok, unquote(Macro.escape(value))}
