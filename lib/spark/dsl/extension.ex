@@ -1209,9 +1209,6 @@ defmodule Spark.Dsl.Extension do
                   :quoted ->
                     Macro.escape(value)
 
-                  :quoted_with_env ->
-                    {Macro.escape(value), __CALLER__}
-
                   _ ->
                     value
                 end
@@ -1800,9 +1797,6 @@ defmodule Spark.Dsl.Extension do
                 :quoted ->
                   Macro.escape(value)
 
-                :quoted_with_env ->
-                  {Macro.escape(value), __CALLER__}
-
                 _ ->
                   value
               end
@@ -1853,9 +1847,6 @@ defmodule Spark.Dsl.Extension do
       case schema[name][:type] do
         :quoted ->
           {name, Macro.escape(value)}
-
-        :quoted_with_env ->
-          {name, {Macro.escape(value), caller}}
 
         _ ->
           {name, value}
