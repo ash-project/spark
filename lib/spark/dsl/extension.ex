@@ -1842,7 +1842,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def escape_quoted(options, schema, caller) do
+  def escape_quoted(options, schema, _caller) do
     Enum.map(options, fn {name, value} ->
       case schema[name][:type] do
         :quoted ->
@@ -1922,30 +1922,15 @@ defmodule Spark.Dsl.Extension do
 
   def expand_alias_no_require(ast, env) do
     Macro.postwalk(ast, fn
-      {:__aliases__, _, parts} = node ->
+      {:__aliases__, _, _} = node ->
         expanded = do_expand(node, %{env | lexical_tracker: nil})
 
         if is_atom(expanded) do
-          try do
-            alias_used =
-              Enum.find_value(env.aliases, fn {alias_value, destination} ->
-                if List.last(Module.split(destination)) ==
-                     to_string(List.first(parts)) do
-                  alias_value
-                end
-              end)
-
-            if alias_used do
-              # Dear Jose, I know you would hate this if you saw it 😢.
-              # I will propose a utility for doing this with a public
-              # API soon, but this had to do for the short term.
-
-              Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, alias_used)
-            end
-          rescue
-            _e ->
-              :ok
-          end
+          env
+          |> Macro.Env.lookup_alias_as(expanded)
+          |> Enum.each(fn used_alias ->
+            Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, used_alias)
+          end)
         end
 
         expanded
