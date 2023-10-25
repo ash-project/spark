@@ -1928,18 +1928,35 @@ defmodule Spark.Dsl.Extension do
 
   def expand_alias_no_require(ast, env) do
     Macro.postwalk(ast, fn
-      {:__aliases__, _, _} = node ->
-        expanded = do_expand(node, %{env | lexical_tracker: nil})
+      {:__aliases__, _, parts} = node ->
+        try do
+          # Dear Jose, I know you would hate this if you saw it 😢.
+          # I will propose a utility for doing this with a public
+          # API soon, but this had to do for the short term.
 
-        if is_atom(expanded) do
-          env
-          |> Macro.Env.lookup_alias_as(expanded)
-          |> Enum.each(fn used_alias ->
-            Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, used_alias)
+          Enum.flat_map(env.aliases, fn {alias_value, _destination} ->
+            if List.last(Module.split(alias_value)) ==
+                 to_string(List.first(parts)) do
+              [alias_value]
+            else
+              []
+            end
           end)
+          |> Enum.each(fn alias_used ->
+            env
+            |> Macro.Env.lookup_alias_as(alias_used)
+            |> Enum.each(fn alias_used ->
+              Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, alias_used)
+            end)
+
+            Kernel.LexicalTracker.alias_dispatch(env.lexical_tracker, alias_used)
+          end)
+        rescue
+          _e ->
+            :ok
         end
 
-        expanded
+        do_expand(node, %{env | lexical_tracker: nil})
 
       other ->
         other
