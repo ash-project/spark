@@ -118,6 +118,7 @@ defmodule Spark.Dsl.Extension do
   @callback module_imports() :: [module]
   @callback transformers() :: [module]
   @callback verifiers() :: [module]
+  @callback persisters() :: [module]
   @callback explain(map) :: String.t() | nil
   @callback add_extensions() :: [module]
 
@@ -289,6 +290,7 @@ defmodule Spark.Dsl.Extension do
             sections: opts[:sections] || [],
             transformers: opts[:transformers] || [],
             verifiers: opts[:verifiers] || [],
+            persisters: opts[:persisters] || [],
             dsl_patches: opts[:dsl_patches] || [],
             imports: opts[:imports] || [],
             module_prefix: opts[:module_prefix],
@@ -303,6 +305,7 @@ defmodule Spark.Dsl.Extension do
       @_sections sections
       @_transformers transformers
       @_verifiers verifiers
+      @_persisters persisters
       @_dsl_patches dsl_patches
       @_imports imports
       @_add_extensions add_extensions
@@ -311,6 +314,8 @@ defmodule Spark.Dsl.Extension do
       def sections, do: set_docs(@_sections)
       @doc false
       def verifiers, do: [Spark.Dsl.Verifiers.VerifyEntityUniqueness | @_verifiers]
+      @doc false
+      def persisters, do: @_persisters
       @doc false
       def module_imports, do: @_imports
       @doc false
@@ -542,6 +547,7 @@ defmodule Spark.Dsl.Extension do
           |> Enum.flat_map(& &1.transformers())
           |> Transformer.sort()
           |> Enum.reject(& &1.after_compile?())
+          |> Enum.concat(Enum.flat_map(@extensions, & &1.persisters()))
         else
           []
         end
