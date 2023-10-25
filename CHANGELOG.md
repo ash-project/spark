@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.50](https://github.com/ash-project/spark/compare/v1.1.49...v1.1.50) (2023-10-25)
+
+
+
+
+### Bug Fixes:
+
+* fix alias usage regression
+
+### Improvements:
+
+* change `:wrap_list` doc to `x | list(x)` (#60)
+
 ## [v1.1.49](https://github.com/ash-project/spark/compare/v1.1.48...v1.1.49) (2023-10-25)
 
 
