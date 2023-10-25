@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.49](https://github.com/ash-project/spark/compare/v1.1.48...v1.1.49) (2023-10-25)
+
+
+
+
+### Bug Fixes:
+
+* properly mark all aliases as used
+
+* only optimize spark dsl config's with list paths
+
+### Improvements:
+
+* `persisters` are unordered transformers always run at the end
+
 ## [v1.1.48](https://github.com/ash-project/spark/compare/v1.1.47...v1.1.48) (2023-10-18)
 
 
