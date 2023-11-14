@@ -32,6 +32,8 @@ defmodule Spark.CheatSheet do
     #{module_docs(extension)}
 
     #{body}
+
+    <style type="text/css">.spark-required::after { content: "*"; color: red !important; }</style>
     """
   end
 
@@ -251,9 +253,9 @@ defmodule Spark.CheatSheet do
   defp do_options_table(options, path, header) do
     rows =
       Enum.map_join(options, "", fn {key, value} ->
-        required_star =
+        required_class =
           if value[:required] && is_nil(value[:default]) do
-            "\*"
+            ".spark-required"
           else
             ""
           end
@@ -261,7 +263,7 @@ defmodule Spark.CheatSheet do
         anchor = Enum.join(path ++ [key], "-")
 
         """
-        | [`#{key}`](##{anchor}){: ##{anchor}} #{required_star} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{inspect_if(value[:default])} | #{escape_pipes(String.trim(value[:doc] || ""))} |
+        | [`#{key}`](##{anchor}){: ##{anchor} #{required_class}} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{inspect_if(value[:default])} | #{escape_pipes(String.trim(value[:doc] || ""))} |
         """
       end)
 
