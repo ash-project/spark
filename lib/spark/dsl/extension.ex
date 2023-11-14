@@ -1916,7 +1916,30 @@ defmodule Spark.Dsl.Extension do
   end
 
   def expand_alias(ast, %Macro.Env{} = env) do
-    Macro.postwalk(ast, fn
+    Macro.prewalk(ast, fn
+      {:%, meta, [left, right]} ->
+        left =
+          case expand_alias(left, env) do
+            atom when is_atom(atom) ->
+              try do
+                Code.ensure_compiled!(atom)
+              rescue
+                e ->
+                  case env.function do
+                    {fun, arity} ->
+                      reraise e, [{env.module, fun, arity, meta} | __STACKTRACE__]
+
+                    _ ->
+                      reraise e, __STACKTRACE__
+                  end
+              end
+
+            _ ->
+              left
+          end
+
+        {:%, meta, [left, expand_alias(right, env)]}
+
       {:__aliases__, _, _} = node ->
         # This is basically just `Macro.expand_literal/2`
         do_expand(node, %{env | function: {:module_info, 0}})
@@ -1927,7 +1950,30 @@ defmodule Spark.Dsl.Extension do
   end
 
   def expand_alias_no_require(ast, env) do
-    Macro.postwalk(ast, fn
+    Macro.prewalk(ast, fn
+      {:%, meta, [left, right]} ->
+        left =
+          case expand_alias_no_require(left, env) do
+            atom when is_atom(atom) ->
+              try do
+                Code.ensure_compiled!(atom)
+              rescue
+                e ->
+                  case env.function do
+                    {fun, arity} ->
+                      reraise e, [{env.module, fun, arity, meta} | __STACKTRACE__]
+
+                    _ ->
+                      reraise e, __STACKTRACE__
+                  end
+              end
+
+            _ ->
+              left
+          end
+
+        {:%, meta, [left, expand_alias_no_require(right, env)]}
+
       {:__aliases__, _, parts} = node ->
         try do
           # Dear Jose, I know you would hate this if you saw it 😢.

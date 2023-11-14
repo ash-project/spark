@@ -32,6 +32,73 @@ defmodule Spark.CodeHelpers do
   end
 
   @doc """
+  Copy of `Macro.prewalk/2` w/ a branch accumulator
+  """
+  def prewalk(ast, fun) when is_function(fun, 1) do
+    elem(prewalk(ast, nil, nil, fn x, nil, nil -> {fun.(x), nil} end), 0)
+  end
+
+  @doc """
+  Copy of `Macro.prewalk/3` w/ a branch accumulator
+  """
+  def prewalk(ast, acc, branch_acc, fun) when is_function(fun, 3) do
+    traverse(ast, acc, branch_acc, fun, fn x, a -> {x, a} end)
+  end
+
+  @doc """
+  A copy of the corresponding `Macro.traverse` function that has a separate accumulator that only goes *down* each branch, only for `pre`
+  """
+  def traverse(ast, acc, branch_acc, pre, post)
+      when is_function(pre, 3) and is_function(post, 2) do
+    {ast, acc, branch_acc} = pre.(ast, acc, branch_acc)
+    do_traverse(ast, acc, branch_acc, pre, post)
+  end
+
+  defp do_traverse({form, meta, args}, acc, branch_acc, pre, post) when is_atom(form) do
+    {args, acc} = do_traverse_args(args, acc, branch_acc, pre, post)
+    post.({form, meta, args}, acc)
+  end
+
+  defp do_traverse({form, meta, args}, acc, branch_acc, pre, post) do
+    {form, acc, branch_acc} = pre.(form, acc, branch_acc)
+    {form, acc} = do_traverse(form, acc, branch_acc, pre, post)
+    {args, acc} = do_traverse_args(args, acc, branch_acc, pre, post)
+    post.({form, meta, args}, acc)
+  end
+
+  defp do_traverse({left, right}, acc, branch_acc, pre, post) do
+    {left, acc, left_branch_acc} = pre.(left, acc, branch_acc)
+    {left, acc} = do_traverse(left, acc, left_branch_acc, pre, post)
+    {right, acc, right_branch_acc} = pre.(right, acc, branch_acc)
+    {right, acc} = do_traverse(right, acc, right_branch_acc, pre, post)
+    post.({left, right}, acc)
+  end
+
+  defp do_traverse(list, acc, branch_acc, pre, post) when is_list(list) do
+    {list, acc} = do_traverse_args(list, acc, branch_acc, pre, post)
+    post.(list, acc)
+  end
+
+  defp do_traverse(x, acc, _branch_acc, _pre, post) do
+    post.(x, acc)
+  end
+
+  defp do_traverse_args(args, acc, _branch_acc, _pre, _post) when is_atom(args) do
+    {args, acc}
+  end
+
+  defp do_traverse_args(args, acc, branch_acc, pre, post) when is_list(args) do
+    :lists.mapfoldl(
+      fn x, acc ->
+        {x, acc, branch_acc} = pre.(x, acc, branch_acc)
+        do_traverse(x, acc, branch_acc, pre, post)
+      end,
+      acc,
+      args
+    )
+  end
+
+  @doc """
   Lift anonymous and captured functions.
 
   Acts as an AST transformer to allow these kinds of functions to be added in
