@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.51](https://github.com/ash-project/spark/compare/v1.1.50...v1.1.51) (2023-11-14)
+
+
+
+
+### Improvements:
+
+* ensure struct references are compiled
+
 ## [v1.1.50](https://github.com/ash-project/spark/compare/v1.1.49...v1.1.50) (2023-10-25)
 
 
