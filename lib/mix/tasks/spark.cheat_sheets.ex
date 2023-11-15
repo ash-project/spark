@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
       File.mkdir_p!("documentation/dsls")
       extension_name = Spark.Mix.Helpers.extension_name(extension, opts)
 
-      filename = "documentation/dsls/DSL:-#{extension_name}.cheatmd"
+      filename = "documentation/dsls/DSL:-#{extension_name}.md"
 
       if opts[:check] do
         if File.exists?(filename) && String.trim(File.read!(filename)) == String.trim(cheat_sheet) do

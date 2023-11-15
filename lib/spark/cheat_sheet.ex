@@ -32,6 +32,8 @@ defmodule Spark.CheatSheet do
     #{module_docs(extension)}
 
     #{body}
+
+    <style type="text/css">.spark-required::after { content: "*"; color: red !important; }</style>
     """
   end
 
@@ -250,12 +252,10 @@ defmodule Spark.CheatSheet do
 
   defp do_options_table(options, path, header) do
     rows =
-      Enum.map_join(options, "\n", fn {key, value} ->
-        required_star =
+      Enum.map_join(options, "", fn {key, value} ->
+        required_class =
           if value[:required] && is_nil(value[:default]) do
-            """
-            <sup style="color: red">*</sup>
-            """
+            ".spark-required"
           else
             ""
           end
@@ -263,73 +263,38 @@ defmodule Spark.CheatSheet do
         anchor = Enum.join(path ++ [key], "-")
 
         """
-        <tr>
-          <td style="text-align: left">
-            <a id="#{anchor}" href="##{anchor}">
-              <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
-                #{key}
-              </span>
-            </a>
-              #{required_star}
-          </td>
-          <td style="text-align: left">
-            <code class="inline">#{Spark.Types.doc_type(value[:type])}</code>
-          </td>
-          <td style="text-align: left">
-            #{inspect_if(value[:default])}
-          </td>
-          <td style="text-align: left" colspan=2>
-            #{html(value[:doc])}
-          </td>
-        </tr>
+        | [`#{key}`](##{anchor}){: ##{anchor} #{required_class}} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{inspect_if(value[:default])} | #{escape_pipes(String.trim(value[:doc] || ""))} |
         """
       end)
 
     """
     ### #{header}
 
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Default</th>
-          <th colspan=2>Docs</th>
-        </tr>
-      </thead>
-      <tbody>
-        #{rows}
-      </tbody>
-    </table>
+    | Name | Type | Default | Docs |
+    |------|------|---------|------|
+    #{rows}
     """
   end
 
-  if Code.ensure_loaded?(Earmark) do
-    defp html(doc) do
-      doc
-      |> Earmark.as_html()
-      |> case do
-        {:ok, html_doc, _errors} ->
-          html_doc
-
-        {:error, _, errors} ->
-          IO.warn("""
-          Error converting markdown to html:
-
-          # Errors
-          #{inspect(errors)}
-
-          # Doc
-          #{inspect(doc)}
-          """)
-      end
-    end
-  else
-    defp html(doc), do: doc
-  end
-
   defp inspect_if(nil), do: ""
-  defp inspect_if(value), do: "<code class=\"inline\">#{inspect(value)}</code>"
+  defp inspect_if(value), do: "`#{inspect(value)}`"
+
+  defp escape_pipes(string) do
+    string
+    |> String.trim()
+    |> String.replace("|", "\\|")
+    |> tap(fn thing ->
+      if String.contains?(thing, "\n") do
+        IO.warn("""
+        Multi-line DSL option doc detected. Please move contextual information into the
+        doc of a section, entity or module.
+        #{thing}
+        """)
+      end
+    end)
+    |> String.replace("\n\n", "\n")
+    |> String.replace("\n", " ")
+  end
 
   @doc """
   Generate a markdown bullet list documentation for a list of sections
