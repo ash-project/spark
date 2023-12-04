@@ -167,8 +167,18 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @awesome_status %Spark.Dsl.Section{
+      name: :awesome?,
+      schema: [
+        awesome?: [
+          type: :boolean,
+          required: true
+        ]
+      ]
+    }
+
     use Spark.Dsl.Extension,
-      sections: [@contact, @personal_details, @address, @presets],
+      sections: [@contact, @personal_details, @address, @presets, @awesome_status],
       verifiers: [Spark.Test.Contact.Verifiers.VerifyNotGandalf]
 
     def explain(dsl_state) do
