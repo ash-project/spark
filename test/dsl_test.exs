@@ -1,5 +1,4 @@
 defmodule Spark.DslTest do
-  alias Spark.DslTest.DslWithPredicate
   use ExUnit.Case
 
   import Spark.CodeHelpers
@@ -413,7 +412,7 @@ defmodule Spark.DslTest do
 
   test "predicate options correctly compile" do
     assert {_, _, filename} =
-             :code.get_object_code(:"Elixir.Spark.Test.Contact.Dsl.Awesome?.Options")
+             :code.get_object_code(:"Elixir.Spark.Test.Contact.Dsl.AwesomeQuestionMark.Options")
 
     refute to_string(filename) =~ "?"
   end

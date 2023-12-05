@@ -459,7 +459,7 @@ defmodule Spark.Dsl.Extension do
             if Map.get(section, :schema, []) == [] do
               []
             else
-              opts_module = Module.concat([section_mod_name, Options])
+              opts_module = Spark.Dsl.Extension.module_concat([section_mod_name, Options])
 
               [
                 quote generated: true do
@@ -691,14 +691,14 @@ defmodule Spark.Dsl.Extension do
           |> Enum.filter(& &1.recursive_as)
           |> Enum.flat_map(fn entity ->
             entity_mod_name =
-              Module.concat([
+              Spark.Dsl.Extension.module_concat([
                 module_prefix,
                 Macro.camelize(to_string(section.name)),
                 Macro.camelize(to_string(entity.name))
               ])
 
             mod_name =
-              Module.concat([
+              Spark.Dsl.Extension.module_concat([
                 entity_mod_name,
                 Options
               ])
@@ -822,7 +822,7 @@ defmodule Spark.Dsl.Extension do
         if Map.get(section, :schema, []) == [] do
           []
         else
-          opts_module = Module.concat([section_mod_name, Options])
+          opts_module = Spark.Dsl.Extension.module_concat([section_mod_name, Options])
 
           [
             quote generated: true do
@@ -1051,7 +1051,7 @@ defmodule Spark.Dsl.Extension do
         [Macro.camelize(to_string(entity.name))]
       ])
 
-    Module.concat(mod_parts)
+    Spark.Dsl.Extension.module_concat(mod_parts)
   end
 
   @doc false
@@ -1063,7 +1063,9 @@ defmodule Spark.Dsl.Extension do
         Macro.camelize(to_string(nested_section_name))
       end)
 
-    Module.concat([mod | nested_mod_name] ++ [Macro.camelize(to_string(section.name))])
+    Spark.Dsl.Extension.module_concat(
+      [mod | nested_mod_name] ++ [Macro.camelize(to_string(section.name))]
+    )
   end
 
   defp unimports(mod, section, path, opts_mod_name) do
@@ -1113,7 +1115,7 @@ defmodule Spark.Dsl.Extension do
       if section.schema == [] do
         nil
       else
-        Module.concat([mod, Macro.camelize(to_string(section.name)), Options])
+        Spark.Dsl.Extension.module_concat([mod, Macro.camelize(to_string(section.name)), Options])
       end
 
     {entity_modules, unimport_modules} =
@@ -1160,7 +1162,7 @@ defmodule Spark.Dsl.Extension do
           end)
 
         mod_name =
-          Module.concat(
+          Spark.Dsl.Extension.module_concat(
             [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
           )
 
@@ -1321,7 +1323,7 @@ defmodule Spark.Dsl.Extension do
       ) do
     mod_name = entity_mod_name(mod, nested_entity_path, section_path, entity)
 
-    options_mod_name = Module.concat(mod_name, "Options")
+    options_mod_name = Spark.Dsl.Extension.module_concat(mod_name, "Options")
 
     {nested_entity_mods, nested_entity_unimports} =
       Enum.reduce(entity.entities, {[], []}, fn
@@ -2151,6 +2153,23 @@ defmodule Spark.Dsl.Extension do
       end,
       :infinity
     )
+  end
+
+  @doc false
+  def module_concat(value1, value2) do
+    module_concat([value1, value2])
+  end
+
+  def module_concat(values) do
+    values
+    |> List.wrap()
+    |> List.flatten()
+    |> Enum.map(fn value ->
+      value
+      |> to_string()
+      |> String.replace("?", "QuestionMark")
+    end)
+    |> Module.concat()
   end
 
   @doc false
