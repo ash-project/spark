@@ -188,10 +188,10 @@ defmodule Spark.CheatSheet do
           to_string(key)
 
         {:optional, key} ->
-          "#{key} \\ nil"
+          "#{key} \\\\ nil"
 
         {:optional, key, default} ->
-          "#{key} \\ #{inspect(default)}"
+          "#{key} \\\\ #{inspect(default)}"
       end)
   end
 
