@@ -147,6 +147,11 @@ defmodule Spark.Dsl.Extension do
 
   @doc "Get the entities configured for a given section"
   def get_entities(map, nil), do: get_entities(map, [])
+
+  def get_entities(%struct{}, path) do
+    get_entities(struct, path)
+  end
+
   def get_entities(map, path) when not is_list(path), do: get_entities(map, [path])
 
   def get_entities(map, path) when is_map(map) do
@@ -178,6 +183,10 @@ defmodule Spark.Dsl.Extension do
   @doc "Get a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
   def get_persisted(resource, key, default \\ nil)
 
+  def get_persisted(%struct{}, key, default) do
+    get_persisted(struct, key, default)
+  end
+
   def get_persisted(map, key, default) when is_map(map) do
     Spark.Dsl.Transformer.get_persisted(map, key, default)
   end
@@ -203,6 +212,10 @@ defmodule Spark.Dsl.Extension do
   end
 
   def fetch_opt(resource, path, value, configurable? \\ false)
+
+  def fetch_opt(%struct{}, path, value, configurable?) do
+    fetch_opt(struct, path, value, configurable?)
+  end
 
   def fetch_opt(map, path, value, configurable?) when not is_list(path) do
     fetch_opt(map, [path], value, configurable?)
