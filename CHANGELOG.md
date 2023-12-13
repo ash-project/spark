@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.52](https://github.com/ash-project/spark/compare/v1.1.51...v1.1.52) (2023-12-13)
+
+
+
+
+### Bug Fixes:
+
+* don't use question marks in module names
+
+* Ensure `\\` for default argument values are rendered correctly in generated guides (#68)
+
+### Improvements:
+
+* accept structs in info functions by default
+
 ## [v1.1.51](https://github.com/ash-project/spark/compare/v1.1.50...v1.1.51) (2023-11-14)
 
 
