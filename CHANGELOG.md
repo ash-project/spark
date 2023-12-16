@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.53](https://github.com/ash-project/spark/compare/v1.1.52...v1.1.53) (2023-12-16)
+
+
+
+
+### Bug Fixes:
+
+* properly type spec map types
+
 ## [v1.1.52](https://github.com/ash-project/spark/compare/v1.1.51...v1.1.52) (2023-12-13)
 
 
