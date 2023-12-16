@@ -365,8 +365,17 @@ defmodule Spark.InfoGenerator do
   def spec_for_type({mod, arg}, _opts) when is_atom(mod) and is_list(arg),
     do: {{:module, [], Elixir}, {:list, [], Elixir}}
 
-  def spec_for_type(tuple, _opts) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> Enum.map(&spec_for_type(&1, [])) |> List.to_tuple()
+  def spec_for_type({:map, key_type, value_type}, _opts) do
+    {:%{}, [], [{{:optional, [], [spec_for_type(key_type, [])]}, spec_for_type(value_type, [])}]}
+  end
+
+  def spec_for_type(:map, opts) do
+    spec_for_type({:map, :atom, :any}, opts)
+  end
+
+  def spec_for_type(tuple, _opts) when is_tuple(tuple) do
+    {:tuple, [], []}
+  end
 
   def spec_for_type([], _), do: []
   def spec_for_type([type], opts), do: [spec_for_type(type, opts)]
