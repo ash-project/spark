@@ -15,18 +15,26 @@ defmodule Spark.Types do
     doc_type({:or, [{:fun, arity}, {:spark_behaviour, mod}]})
   end
 
-  def doc_type({:custom, _, _, _}), do: "`any`"
-  def doc_type(:any), do: "`any`"
-  def doc_type(:keyword_list), do: "Keyword.t"
+  def doc_type({:custom, _, _, _}), do: "any"
+  def doc_type(:any), do: "any"
 
-  def doc_type({:keyword_list, schema}) when is_list(schema) do
-    options = Enum.map(schema, fn {key, value} -> {key, value[:type]} end)
-    "#{doc_type({:or, options})}"
+  def doc_type(:keyword_list), do: "keyword"
+  def doc_type(:non_empty_keyword_list), do: "keyword"
+
+  def doc_type({keyword_type, [*: value]})
+      when keyword_type in [:keyword_list, :non_empty_keyword_list] and is_list(value),
+      do: "keyword(#{doc_type(value[:type])})"
+
+  def doc_type({keyword_type, schema})
+      when keyword_type in [:keyword_list, :non_empty_keyword_list] and is_list(schema) do
+    options =
+      Enum.map_join(schema, ", ", fn {key, value} ->
+        "#{key}: #{doc_type(value[:type])}"
+      end)
+
+    "[#{options}]"
   end
 
-  def doc_type({:keyword_list, value_type}), do: "Keyword.t(#{doc_type(value_type)})"
-
-  def doc_type(:non_empty_keyword_list), do: "Keyword.t"
   def doc_type(:atom), do: "atom"
   def doc_type(:string), do: "String.t"
   def doc_type(:boolean), do: "boolean"
@@ -49,6 +57,15 @@ defmodule Spark.Types do
 
   def doc_type({:map, key_type, value_type}),
     do: "%{optional(#{doc_type(key_type)}) => #{doc_type(value_type)}}"
+
+  def doc_type({:map, schema}) when is_list(schema) do
+    options =
+      Enum.map_join(schema, ", ", fn {key, value} ->
+        "#{if value[:required], do: "required", else: "optional"}(:#{key}) => #{doc_type(value[:type])}"
+      end)
+
+    "%{#{options}}"
+  end
 
   def doc_type(:struct), do: "struct"
   def doc_type({:struct, struct}), do: "#{inspect(struct)}"
@@ -88,7 +105,7 @@ defmodule Spark.Types do
 
   def doc_type({:list_of, subtype}), do: doc_type({:list, subtype})
   def doc_type({:mfa_or_fun, arity}), do: doc_type({:or, [{:fun, arity}, :mfa]})
-  def doc_type(:literal), do: "any()"
+  def doc_type(:literal), do: "any"
   def doc_type({:literal, value}), do: inspect(value)
   def doc_type({:tagged_tuple, tag, type}), do: doc_type({:tuple, [{:literal, tag}, type]})
   def doc_type({:spark_type, type, _}), do: doc_type({:behaviour, type})
