@@ -74,8 +74,10 @@ defmodule Spark.OptionsHelpers do
           | {:fun, arity :: non_neg_integer}
           | {:in, [type] | Range.t()}
           | {:custom, module, function :: atom, args :: [any]}
-          | {:or, [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema}]}
-          | {:list, type | {:keyword_list, schema} | {:non_empty_keyword_list, schema}}
+          | {:or,
+             [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}]}
+          | {:list,
+             type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}}
           | {:tuple, [type]}
 
   @typedoc """
