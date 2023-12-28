@@ -74,9 +74,9 @@ defmodule Spark.OptionsHelpers do
           | {:fun, arity :: non_neg_integer}
           | {:in, [type] | Range.t()}
           | {:custom, module, function :: atom, args :: [any]}
-          | {:or, [type]}
-          | {:list, type | {:keyword_list, type} | {:non_empty_keyword_list, type}}
-          | {:tuple, [type | {:keyword_list, type} | {:non_empty_keyword_list, type}]}
+          | {:or, [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema}]}
+          | {:list, type | {:keyword_list, schema} | {:non_empty_keyword_list, schema}}
+          | {:tuple, [type]}
 
   @typedoc """
   The schema type, as defined by the [NimbleOptions docs](https://hexdocs.pm/nimble_options/NimbleOptions.html#module-schema-options).
@@ -85,7 +85,7 @@ defmodule Spark.OptionsHelpers do
           {:type, type | :any}
           | {:required, boolean}
           | {:default, :any}
-          | {:keys, Keyword.t({:type, type})}
+          | {:keys, schema}
           | {:deprecated, String.t()}
           | {:doc, String.t()}
           | {:subsection, String.t()}
