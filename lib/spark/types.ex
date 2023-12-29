@@ -93,8 +93,8 @@ defmodule Spark.Types do
     "(#{args} -> #{doc_type(return)})"
   end
 
-  def doc_type({:one_of, choices}), do: doc_type({:in, choices})
-  def doc_type({:in, choices}), do: Enum.map_join(choices, " | ", &inspect/1)
+  def doc_type({:one_of, values}), do: doc_type({:in, values})
+  def doc_type({:in, values}), do: Enum.map_join(values, " | ", &inspect/1)
   def doc_type({:or, subtypes}), do: Enum.map_join(subtypes, " | ", &doc_type/1)
   def doc_type({:list, subtype}), do: "list(#{doc_type(subtype)})"
 

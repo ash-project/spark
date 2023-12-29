@@ -30,7 +30,7 @@ defmodule Spark.OptionsHelpers do
   """
   @type type ::
           nimble_types
-          | {:one_of, [type]}
+          | {:one_of, [any]}
           | {:tagged_tuple, tag :: type, inner_type :: type}
           | {:spark_behaviour, module}
           | {:spark_behaviour, module, module}
@@ -72,7 +72,7 @@ defmodule Spark.OptionsHelpers do
           | :mfa
           | :mod_arg
           | {:fun, arity :: non_neg_integer}
-          | {:in, [type] | Range.t()}
+          | {:in, [any] | Range.t()}
           | {:custom, module, function :: atom, args :: [any]}
           | {:or,
              [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}]}
@@ -205,10 +205,10 @@ defmodule Spark.OptionsHelpers do
   defp sanitize_type(type, key) do
     case type do
       {:one_of, values} ->
-        {:in, sanitize_type(values, key)}
+        {:in, values}
 
       {:in, values} ->
-        {:in, sanitize_type(values, key)}
+        {:in, values}
 
       {:fun, args} when is_list(args) ->
         {:fun, Enum.count(args)}
