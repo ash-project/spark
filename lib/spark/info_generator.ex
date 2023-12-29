@@ -316,8 +316,8 @@ defmodule Spark.InfoGenerator do
       {{:., [], [{:__aliases__, [], [:Range]}, :t]}, [],
        [spec_for_type(first, []), spec_for_type(last, [])]}
 
-  def spec_for_type({:in, types}, _opts) do
-    types
+  def spec_for_type({:in, values}, _opts) do
+    values
     |> Enum.map(&spec_for_type({:literal, &1}, []))
     |> case do
       [] ->
@@ -360,7 +360,7 @@ defmodule Spark.InfoGenerator do
   def spec_for_type(number, _opts) when is_number(number), do: number
   def spec_for_type(string, _opts) when is_binary(string), do: spec_for_type(:string, [])
 
-  def spec_for_type({:one_of, options}, opts), do: spec_for_type({:in, options}, opts)
+  def spec_for_type({:one_of, values}, opts), do: spec_for_type({:in, values}, opts)
 
   def spec_for_type({mod, arg}, _opts) when is_atom(mod) and is_list(arg),
     do: {{:module, [], Elixir}, {:list, [], Elixir}}
