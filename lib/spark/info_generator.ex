@@ -345,6 +345,10 @@ defmodule Spark.InfoGenerator do
     |> List.to_tuple()
   end
 
+  def spec_for_type(:quoted, _opts) do
+    {:any, [], Elixir}
+  end
+
   def spec_for_type(:string, _opts),
     do: {{:., [], [{:__aliases__, [alias: false], [:String]}, :t]}, [], []}
 

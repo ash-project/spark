@@ -97,6 +97,7 @@ defmodule Spark.Types do
   def doc_type({:in, values}), do: Enum.map_join(values, " | ", &inspect/1)
   def doc_type({:or, subtypes}), do: Enum.map_join(subtypes, " | ", &doc_type/1)
   def doc_type({:list, subtype}), do: "list(#{doc_type(subtype)})"
+  def doc_type(:quoted), do: "any"
 
   def doc_type({:wrap_list, subtype}) do
     str = doc_type(subtype)
