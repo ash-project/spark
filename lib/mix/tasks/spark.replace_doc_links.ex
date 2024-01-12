@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Spark.ReplaceDocLinks do
       new_contents =
         file
         |> File.read!()
-        |> String.replace(~r/\>d\:[a-zA-Z0-9|_\.]*\</, fn ">d:" <> contents ->
+        |> String.replace(~r/\>d\:[a-zA-Z0-9|_\?\!\.]*\</, fn ">d:" <> contents ->
           contents =
             contents
             |> String.trim_trailing("<")
