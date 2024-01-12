@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.54](https://github.com/ash-project/spark/compare/v1.1.53...v1.1.54) (2024-01-12)
+
+
+
+
+### Bug Fixes:
+
+* properly detect dsl links with ? and ! in them
+
+* update Spark.Formatter to respect `extensions` list (#73)
+
+* spec & doc type for `:quoted`
+
+* correct typespec/sanitisation for :in and :one_of (#72)
+
+* proper typespec for keyed nimble types (#70)
+
+* keep subsection of target merged schema
+
+### Improvements:
+
+* working `doc_type` for nested schemas (#71)
+
 ## [v1.1.53](https://github.com/ash-project/spark/compare/v1.1.52...v1.1.53) (2023-12-16)
 
 
