@@ -257,7 +257,9 @@ defmodule Spark.DslTest do
 
       assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
       assert preset.name == :foo
+      refute preset.special?
       assert special_preset.name == :bar
+      assert special_preset.special?
     end
 
     test "identifiers are honored" do
@@ -321,10 +323,6 @@ defmodule Spark.DslTest do
                          special_preset(:foo)
                        end
                      end
-
-                     assert [preset, special_preset] = Spark.Test.Contact.Info.presets(MartyMcfly)
-                     assert preset.name == :foo
-                     assert special_preset.name == :foo
                    end
     end
   end
