@@ -19,5 +19,5 @@
   "nimble_parsec": {:hex, :nimble_parsec, "1.3.1", "2c54013ecf170e249e9291ed0a62e5832f70a476c61da16f6aac6dca0189f2af", [:mix], [], "hexpm", "2682e3c0b2eb58d90c6375fc0cc30bc7be06f365bf72608804fb9cffa5e1b167"},
   "parse_trans": {:hex, :parse_trans, "3.3.0", "09765507a3c7590a784615cfd421d101aec25098d50b89d7aa1d66646bc571c1", [:rebar3], [], "hexpm", "17ef63abde837ad30680ea7f857dd9e7ced9476cdd7b0394432af4bfc241b960"},
   "sobelow": {:hex, :sobelow, "0.11.1", "23438964486f8112b41e743bbfd402da3e5b296fdc9eacab29914b79c48916dd", [:mix], [{:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "9897363a7eff96f4809304a90aad819e2ad5e5d24db547af502885146746a53c"},
-  "sourceror": {:hex, :sourceror, "0.11.1", "1b80efe84330beefb6b3da95b75c1e1cdefe9dc785bf4c5064fae251a8af615c", [:mix], [], "hexpm", "22b6828ee5572f6cec75cc6357f3ca6c730a02954cef0302c428b3dba31e5e74"},
+  "sourceror": {:hex, :sourceror, "1.0.1", "ec2c41726d181adce888ac94b3f33b359a811b46e019c084509e02c70042e424", [:mix], [], "hexpm", "28225464ffd68bda1843c974f3ff7ccef35e29be09a65dfe8e3df3f7e3600c57"},
 }
