@@ -1,18 +1,62 @@
 defmodule CrossExtensionPatchTest do
   use ExUnit.Case
 
+  defmodule Template do
+    @moduledoc false
+    defstruct name: nil, type: nil
+
+    def input(name) do
+      %__MODULE__{name: name, type: :input}
+    end
+  end
+
+  defmodule Argument do
+    @moduledoc false
+    defstruct name: nil, value: nil
+
+    def entity do
+      %Spark.Dsl.Entity{
+        name: :argument,
+        args: [:name, :value],
+        imports: [Template],
+        target: __MODULE__,
+        schema: [
+          name: [type: :atom, required: true],
+          value: [type: {:struct, Template}, required: true]
+        ]
+      }
+    end
+  end
+
   defmodule Step do
     @moduledoc false
-    defstruct name: nil, steps: []
+    defstruct name: nil, steps: [], arguments: []
 
     def entity(name) do
       %Spark.Dsl.Entity{
         name: name,
         args: [:name],
         entities: [
-          steps: []
+          steps: [],
+          arguments: [Argument.entity()]
         ],
         recursive_as: :steps,
+        target: __MODULE__,
+        schema: [
+          name: [type: :atom, required: true]
+        ]
+      }
+    end
+  end
+
+  defmodule Input do
+    @moduledoc false
+    defstruct name: nil
+
+    def entity do
+      %Spark.Dsl.Entity{
+        name: :input,
+        args: [:name],
         target: __MODULE__,
         schema: [
           name: [type: :atom, required: true]
@@ -29,7 +73,7 @@ defmodule CrossExtensionPatchTest do
           name: :base,
           top_level?: true,
           patchable?: true,
-          entities: [Step.entity(:step_a)]
+          entities: [Step.entity(:step_a), Input.entity()]
         }
       ]
   end
@@ -90,5 +134,28 @@ defmodule CrossExtensionPatchTest do
     assert [%{name: :outer, steps: [%{name: :inner}]}] =
              CrossExtensionPatchedEntityRecursion
              |> Spark.Dsl.Extension.get_entities([:base])
+  end
+
+  test "patched entities with non-conflicting imports" do
+    defmodule NonConflictingImports do
+      @moduledoc false
+      use Dsl
+
+      input(:fruit)
+
+      step_a :a do
+        argument(:arg, input(:fruit))
+      end
+
+      step_b :b do
+        argument(:arg, input(:bun))
+      end
+    end
+
+    [%{value: %Template{name: :fruit}}, %{value: %Template{name: :bun}}] =
+      NonConflictingImports
+      |> Spark.Dsl.Extension.get_entities([:base])
+      |> Enum.filter(&is_struct(&1, Step))
+      |> Enum.flat_map(& &1.arguments)
   end
 end
