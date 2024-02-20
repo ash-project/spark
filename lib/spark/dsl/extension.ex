@@ -1560,6 +1560,50 @@ defmodule Spark.Dsl.Extension do
                 end
               end)
 
+            {other_extension_imports, other_extension_unimports} =
+              __CALLER__.module
+              |> Module.get_attribute(:extensions)
+              |> Enum.reject(&(&1 == extension))
+              |> Enum.flat_map(fn extension ->
+                extension.dsl_patches()
+                |> Enum.filter(fn
+                  %Spark.Dsl.Patch.AddEntity{section_path: ^section_path} ->
+                    true
+
+                  _ ->
+                    false
+                end)
+                |> Enum.map(& &1.entity)
+                |> Enum.concat(
+                  Spark.Dsl.Extension.get_entities_for_path(extension.sections(), section_path)
+                )
+                |> Enum.uniq_by(&(&1.name))
+                |> Enum.map(&{extension, &1})
+              end)
+              |> Enum.reduce({[], []}, fn {extension, entity},
+                                          {other_extension_imports, other_extension_unimports} ->
+                mod_name =
+                  Spark.Dsl.Extension.entity_mod_name(
+                    extension.module_prefix(),
+                    [],
+                    section_path,
+                    entity
+                  )
+
+                mod_import =
+                  quote generated: true do
+                    import unquote(mod_name)
+                  end
+
+                mod_unimport =
+                  quote generated: true do
+                    import unquote(mod_name), only: []
+                  end
+
+                {[mod_import | other_extension_imports],
+                 [mod_unimport | other_extension_unimports]}
+              end)
+
             imports =
               for module <- entity.imports do
                 quote generated: true do
@@ -1591,6 +1635,7 @@ defmodule Spark.Dsl.Extension do
             code =
               top_level_unimports ++
                 unimports ++
+                other_extension_imports ++
                 imports ++
                 funs ++
                 opt_funs ++
@@ -1740,7 +1785,7 @@ defmodule Spark.Dsl.Extension do
                       new_config
                     )
                   end
-                ]
+                ] ++ other_extension_unimports
 
             # This is (for some reason I'm not really sure why) necessary to keep the imports within a lexical scope
             quote generated: true do
@@ -2234,5 +2279,23 @@ defmodule Spark.Dsl.Extension do
     |> Enum.filter(&(&1.name == head))
     |> Enum.flat_map(& &1.sections)
     |> get_section_at_path(tail, default)
+  end
+
+  def get_entities_for_path(sections, [name]) do
+    sections
+    |> Enum.find(&(&1.name == name))
+    |> case do
+      %{entities: entities} ->
+        entities
+
+      _ ->
+        []
+    end
+  end
+
+  def get_entities_for_path(sections, [name | rest]) do
+    sections
+    |> Enum.filter(&(&1.name == name))
+    |> get_entities_for_path(rest)
   end
 end
