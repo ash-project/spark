@@ -2297,9 +2297,9 @@ defmodule Spark.Dsl.Extension do
     |> Enum.filter(& &1.recursive_as)
   end
 
-  def get_entities_for_path(sections, [name | rest]) do
+  def get_recursive_entities_for_path(sections, [name | rest]) do
     sections
     |> Enum.filter(&(&1.name == name))
-    |> get_entities_for_path(rest)
+    |> get_recursive_entities_for_path(rest)
   end
 end
