@@ -1575,9 +1575,12 @@ defmodule Spark.Dsl.Extension do
                 end)
                 |> Enum.map(& &1.entity)
                 |> Enum.concat(
-                  Spark.Dsl.Extension.get_entities_for_path(extension.sections(), section_path)
+                  Spark.Dsl.Extension.get_recursive_entities_for_path(
+                    extension.sections(),
+                    section_path
+                  )
                 )
-                |> Enum.uniq_by(&(&1.name))
+                |> Enum.uniq_by(& &1.name)
                 |> Enum.map(&{extension, &1})
               end)
               |> Enum.reduce({[], []}, fn {extension, entity},
@@ -1592,7 +1595,7 @@ defmodule Spark.Dsl.Extension do
 
                 mod_import =
                   quote generated: true do
-                    import unquote(mod_name)
+                    import unquote(mod_name), only: :macros
                   end
 
                 mod_unimport =
@@ -2281,7 +2284,7 @@ defmodule Spark.Dsl.Extension do
     |> get_section_at_path(tail, default)
   end
 
-  def get_entities_for_path(sections, [name]) do
+  def get_recursive_entities_for_path(sections, [name]) do
     sections
     |> Enum.find(&(&1.name == name))
     |> case do
@@ -2291,6 +2294,7 @@ defmodule Spark.Dsl.Extension do
       _ ->
         []
     end
+    |> Enum.filter(& &1.recursive_as)
   end
 
   def get_entities_for_path(sections, [name | rest]) do
