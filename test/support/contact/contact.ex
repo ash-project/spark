@@ -157,13 +157,27 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @preset_with_snippet %Spark.Dsl.Entity{
+      name: :preset_with_snippet,
+      args: [:name],
+      target: Preset,
+      snippet: "preset_with_snippet ${1::doc_brown}",
+      schema: [
+        name: [
+          type: :atom,
+          required: true
+        ]
+      ]
+    }
+
     @presets %Spark.Dsl.Section{
       name: :presets,
       entities: [
         @preset,
         @preset_with_fn_arg,
         @preset_with_optional,
-        @preset_with_quoted
+        @preset_with_quoted,
+        @preset_with_snippet
       ]
     }
 
