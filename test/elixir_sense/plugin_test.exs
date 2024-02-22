@@ -62,4 +62,22 @@ defmodule Spark.ElixirSense.PluginTest do
              }
            ] = result
   end
+
+  test "entity snippets are correctly shown" do
+    buffer = """
+    defmodule DocBrown do
+      use Spark.Test.Contact
+
+      presets do
+        preset_with_snip
+        #               ^
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+    result = suggestions(buffer, cursor)
+
+    assert [%{snippet: "preset_with_snippet ${1::doc_brown}"}] = result
+  end
 end

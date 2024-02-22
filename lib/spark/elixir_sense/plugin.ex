@@ -250,20 +250,15 @@ defmodule Spark.ElixirSense.Plugin do
   defp find_option(_, _), do: nil
 
   defp section_suggestions(section) do
-    snippet = Map.get(section, :snippet)
-
-    snippet =
-      if snippet && snippet != "" do
-        snippet
-      else
-        "$0"
-      end
-
     %{
       type: :generic,
       kind: :function,
       label: to_string(section.name),
-      snippet: "#{section.name} do\n  #{snippet}\nend",
+      snippet: """
+      #{section.name} do
+        #{snippet_or_default(section.snippet, "$0")}
+      end
+      """,
       detail: "Dsl Section",
       documentation: Map.get(section, :docs) || ""
     }
@@ -274,19 +269,14 @@ defmodule Spark.ElixirSense.Plugin do
       type: :generic,
       kind: :function,
       label: to_string(entity.name),
-      snippet: "#{entity.name} #{args(entity)}",
+      snippet: snippet_or_default(entity.snippet, "#{entity.name} #{args(entity)}"),
       detail: "Dsl Entity",
       documentation: Map.get(entity, :docs) || ""
     }
   end
 
   defp option_suggestions(key, config, type) do
-    snippet =
-      if config[:snippet] && config[:snippet] != "" do
-        config[:snippet]
-      else
-        default_snippet(config)
-      end
+    snippet = snippet_or_default(config[:snippet], default_snippet(config))
 
     snippet =
       case type do
@@ -806,4 +796,8 @@ defmodule Spark.ElixirSense.Plugin do
     _ ->
       []
   end
+
+  defp snippet_or_default(nil, default), do: default
+  defp snippet_or_default("", default), do: default
+  defp snippet_or_default(snippet, _default), do: snippet
 end
