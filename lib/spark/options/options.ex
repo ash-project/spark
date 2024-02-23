@@ -118,6 +118,9 @@ defmodule Spark.Options do
     * Config validation against schemas
     * Automatic doc generation
 
+
+  Spark also uses this to power entity and section schemas.
+
   ## Schema Options
 
   These are the options supported in a *schema*. They are what

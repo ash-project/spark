@@ -36,46 +36,6 @@ defmodule Spark.MixProject do
     ]
   end
 
-  defp extras() do
-    "documentation/**/*.md"
-    |> Path.wildcard()
-    |> Enum.map(fn path ->
-      title =
-        path
-        |> Path.basename(".md")
-        |> String.split(~r/[-_]/)
-        |> Enum.map(&String.capitalize/1)
-        |> Enum.join(" ")
-        |> case do
-          "F A Q" ->
-            "FAQ"
-
-          other ->
-            other
-        end
-
-      {String.to_atom(path),
-       [
-         title: title
-       ]}
-    end)
-  end
-
-  defp groups_for_extras() do
-    "documentation/*"
-    |> Path.wildcard()
-    |> Enum.map(fn folder ->
-      name =
-        folder
-        |> Path.basename()
-        |> String.split(~r/[-_]/)
-        |> Enum.map(&String.capitalize/1)
-        |> Enum.join(" ")
-
-      {name, folder |> Path.join("**") |> Path.wildcard()}
-    end)
-  end
-
   defp docs do
     # The main page in the docs
     [
@@ -104,8 +64,15 @@ defmodule Spark.MixProject do
           ]
         ]
       ],
-      extras: extras(),
-      groups_for_extras: groups_for_extras(),
+      extras: [
+          "documentation/how_to/upgrade-to-2.0.md",
+          "documentation/how_to/writing-extensions.md",
+          "documentation/tutorials/get-started-with-spark.md"
+      ],
+      groups_for_extras: [
+        "How To": ~r/documentation\/how_to/,
+        "Tutorials": ~r/documentation\/tutorials/
+      ],
       groups_for_modules: [
         "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers|^Spark.Options)/,
         Errors: [Spark.Error.DslError],
