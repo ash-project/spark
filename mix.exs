@@ -65,13 +65,13 @@ defmodule Spark.MixProject do
         ]
       ],
       extras: [
-          "documentation/how_to/upgrade-to-2.0.md",
-          "documentation/how_to/writing-extensions.md",
-          "documentation/tutorials/get-started-with-spark.md"
+        "documentation/how_to/upgrade-to-2.0.md",
+        "documentation/how_to/writing-extensions.md",
+        "documentation/tutorials/get-started-with-spark.md"
       ],
       groups_for_extras: [
         "How To": ~r/documentation\/how_to/,
-        "Tutorials": ~r/documentation\/tutorials/
+        Tutorials: ~r/documentation\/tutorials/
       ],
       groups_for_modules: [
         "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers|^Spark.Options)/,

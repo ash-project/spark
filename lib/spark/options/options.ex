@@ -418,8 +418,6 @@ defmodule Spark.Options do
           | :quoted
           | {:custom, module, function :: atom, args :: [any]}
 
-
-
   @type option_schema :: [
           {:type, type}
           | {:required, boolean}
