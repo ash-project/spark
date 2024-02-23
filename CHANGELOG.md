@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.0](https://github.com/ash-project/spark/compare/v1.1.54...v2.0.0) (2024-02-23)
+### Breaking Changes:
+
+* vendor NimbleOptions in `Spark.Options`
+
+
+
+### Bug Fixes:
+
+* honour an entity's snippet when one is present. (#77)
+
+* only import recursive entities from other extensions inside entities
+
+* import entity builders from other extensions inside of entities
+
 ## [v1.1.54](https://github.com/ash-project/spark/compare/v1.1.53...v1.1.54) (2024-01-12)
 
 
