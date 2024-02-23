@@ -174,7 +174,7 @@ defmodule Spark.Dsl.Transformer do
       Keyword.split(entity.auto_set_fields || [], Keyword.keys(entity.schema))
 
     with {:ok, opts} <-
-           Spark.OptionsHelpers.validate(
+           Spark.Options.validate(
              Keyword.merge(opts, before_validate_auto),
              entity.schema
            ),

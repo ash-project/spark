@@ -254,7 +254,7 @@ defmodule Spark.InfoGenerator do
       [value_type]
     else
       quote do
-        Keyword.t()
+        keyword()
       end
     end
   end

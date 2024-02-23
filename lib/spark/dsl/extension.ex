@@ -1019,7 +1019,7 @@ defmodule Spark.Dsl.Extension do
                   )
 
                 opts =
-                  case Spark.OptionsHelpers.validate(
+                  case Spark.Options.validate(
                          current_config.opts,
                          Map.get(unquote(Macro.escape(section)), :schema, [])
                        ) do

@@ -44,17 +44,16 @@ defmodule Spark.Dsl do
 
   To add a DSL to a module, add `use Spark.Dsl, ...options`. The options supported with `use Spark.Dsl` are:
 
-  #{Spark.OptionsHelpers.docs(@using_schema)}
+  #{Spark.Options.docs(@using_schema)}
 
   See the callbacks defined in this module to augment the behavior/compilation of the module getting a Dsl.
 
   ## Schemas/Data Types
 
-  Spark DSLs use a superset of `NimbleOptions` for the `schema` that makes up sections/entities of the DSL.
-  For more information, see `Spark.OptionsHelpers`.
+  For more information, see `Spark.Options`.
   """
 
-  @type opts :: Keyword.t()
+  @type opts :: keyword()
   @type t :: map()
 
   @doc """
@@ -74,20 +73,20 @@ defmodule Spark.Dsl do
   use `@persist {:key, value}`. It can be called multiple times to
   persist multiple times.
   """
-  @callback handle_opts(Keyword.t()) :: Macro.t()
+  @callback handle_opts(keyword()) :: Macro.t()
 
   @doc """
   A callback that is called in the `after_verify` hook. Only runs on versions of Elixir >= 1.14.0
   """
-  @callback verify(module, Keyword.t()) :: term
+  @callback verify(module, keyword()) :: term
 
   @doc """
   Handle options in the context of the module, after all extensions have been processed. Must return a `quote` block.
   """
-  @callback handle_before_compile(Keyword.t()) :: Macro.t()
+  @callback handle_before_compile(keyword()) :: Macro.t()
 
   defmacro __using__(opts) do
-    opts = Spark.OptionsHelpers.validate!(opts, @using_schema)
+    opts = Spark.Options.validate!(opts, @using_schema)
 
     their_opt_schema =
       Enum.map(opts[:single_extension_kinds], fn extension_kind ->
@@ -256,7 +255,7 @@ defmodule Spark.Dsl do
 
             opts =
               unquote(opts)
-              |> Spark.OptionsHelpers.validate!(unquote(their_opt_schema))
+              |> Spark.Options.validate!(unquote(their_opt_schema))
               |> unquote(__MODULE__).init()
               |> Spark.Dsl.unwrap()
 
@@ -471,7 +470,7 @@ defmodule Spark.Dsl do
                 )
 
               opts =
-                case Spark.OptionsHelpers.validate(
+                case Spark.Options.validate(
                        current_config.opts,
                        Map.get(section, :schema, [])
                      ) do

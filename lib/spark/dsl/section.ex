@@ -14,7 +14,7 @@ defmodule Spark.Dsl.Section do
   A section may have entities, which are constructors that produce instances of structs.
   For more on entities, see `Spark.Dsl.Entity`.
 
-  A section may also have a `schema`, which is a `NimbleOptions` schema. Spark will produce
+  A section may also have a `schema`, which you can learn more about in `Spark.Options`. Spark will produce
   builders for those options, so that they may be configured. They are retrieved with
   `Spark.Dsl.Extension.get_opt/4`.
 
@@ -44,8 +44,7 @@ defmodule Spark.Dsl.Section do
 
   alias Spark.{
     Dsl.Entity,
-    Dsl.Section,
-    OptionsHelpers
+    Dsl.Section
   }
 
   @type name :: atom()
@@ -97,7 +96,7 @@ defmodule Spark.Dsl.Section do
   """
   @type top_level?() :: boolean()
 
-  @type links :: nil | Keyword.t([String.t()])
+  @type links :: nil | keyword([String.t()])
 
   @type examples() :: [String.t()]
 
@@ -105,7 +104,7 @@ defmodule Spark.Dsl.Section do
 
   @type no_depend_modules() :: [atom]
 
-  @type auto_set_fields() :: Keyword.t(any)
+  @type auto_set_fields() :: keyword(any)
 
   @type entities :: [Entity.t()]
 
@@ -121,7 +120,7 @@ defmodule Spark.Dsl.Section do
   @type t :: %Section{
           name: name(),
           imports: imports(),
-          schema: OptionsHelpers.schema(),
+          schema: Spark.Options.schema(),
           describe: describe(),
           snippet: snippet(),
           top_level?: top_level?(),

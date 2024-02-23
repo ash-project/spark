@@ -263,7 +263,7 @@ defmodule Spark.CheatSheet do
         anchor = Enum.join(path ++ [key], "-")
 
         """
-        | [`#{key}`](##{anchor}){: ##{anchor} #{required_class}} | `#{escape_pipes(Spark.Types.doc_type(value[:type]))}` | #{inspect_if(value[:default])} | #{escape_pipes(String.trim(value[:doc] || ""))} |
+        | [`#{key}`](##{anchor}){: ##{anchor} #{required_class}} | `#{escape_pipes(Spark.Options.Docs.dsl_docs_type(value[:type]))}` | #{inspect_if(value[:default])} | #{escape_pipes(String.trim(value[:doc] || ""))} |
         """
       end)
 
@@ -320,7 +320,7 @@ defmodule Spark.CheatSheet do
           doc_index(sections_and_entities, 0)
       end
 
-    options = Spark.OptionsHelpers.docs(section.schema)
+    options = Spark.Options.docs(section.schema)
 
     examples =
       case section.examples do
@@ -382,7 +382,7 @@ defmodule Spark.CheatSheet do
 
   @doc false
   def doc_entity(entity, depth \\ 1) do
-    options = Spark.OptionsHelpers.docs(Keyword.drop(entity.schema, entity.hide))
+    options = Spark.Options.docs(Keyword.drop(entity.schema, entity.hide))
 
     examples =
       case entity.examples do

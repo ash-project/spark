@@ -85,10 +85,7 @@ defmodule Spark.Dsl.Entity do
     docs: ""
   ]
 
-  alias Spark.{
-    Dsl.Entity,
-    OptionsHelpers
-  }
+  alias Spark.{Dsl.Entity}
 
   @typedoc """
   Defines the struct that will be built from this entity definition.
@@ -100,7 +97,7 @@ defmodule Spark.Dsl.Entity do
   @typedoc """
   A keyword list of nested entities.
   """
-  @type entities :: Keyword.t(t)
+  @type entities :: keyword(t)
 
   @typedoc """
   Specifies a function that will run on the target struct after building.
@@ -156,9 +153,9 @@ defmodule Spark.Dsl.Entity do
   @typedoc """
   Set the provided key value pairs in the produced struct. These fields do not need to be included in the Entity's schema.
   """
-  @type auto_set_fields :: Keyword.t(any)
+  @type auto_set_fields :: keyword(any)
 
-  @type deprecations :: Keyword.t(String.t())
+  @type deprecations :: keyword(String.t())
 
   # Using type id() since identifier is a reserved type.
   @type id :: term()
@@ -182,7 +179,7 @@ defmodule Spark.Dsl.Entity do
 
   @type hide :: [atom()]
 
-  @type links :: Keyword.t([String.t()]) | nil
+  @type links :: keyword([String.t()]) | nil
 
   @type modules :: [atom]
 
@@ -210,7 +207,7 @@ defmodule Spark.Dsl.Entity do
           name: name(),
           no_depend_modules: no_depend_modules(),
           recursive_as: recursive_as(),
-          schema: OptionsHelpers.schema(),
+          schema: Spark.Options.schema(),
           singleton_entity_keys: singleton_entity_keys(),
           snippet: snippet(),
           target: target(),
@@ -247,7 +244,7 @@ defmodule Spark.Dsl.Entity do
       Keyword.split(auto_set_fields || [], Keyword.keys(schema))
 
     with {:ok, opts} <-
-           OptionsHelpers.validate(Keyword.merge(opts || [], before_validate_auto), schema),
+           Spark.Options.validate(Keyword.merge(opts || [], before_validate_auto), schema),
          opts <- Keyword.merge(opts, after_validate_auto),
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
          built <- struct(target, opts),

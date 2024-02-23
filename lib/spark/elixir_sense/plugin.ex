@@ -290,7 +290,7 @@ defmodule Spark.ElixirSense.Plugin do
           "#{key} #{snippet}"
       end
 
-    config = Spark.OptionsHelpers.update_key_docs(config)
+    config = Spark.Options.update_key_docs(config)
 
     %{
       type: :generic,

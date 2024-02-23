@@ -107,7 +107,7 @@ defmodule Spark.MixProject do
       extras: extras(),
       groups_for_extras: groups_for_extras(),
       groups_for_modules: [
-        "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers)/,
+        "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers|^Spark.Options)/,
         Errors: [Spark.Error.DslError],
         Internals: ~r/.*/
       ]
@@ -129,7 +129,6 @@ defmodule Spark.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nimble_options, "~> 0.5 or ~> 1.0"},
       {:sourceror, "~> 1.0"},
       {:jason, "~> 1.4"},
       # {:dep_from_hexpm, "~> 0.3.0"},
