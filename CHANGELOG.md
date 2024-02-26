@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.1.55](https://github.com/ash-project/spark/compare/v1.1.54...v1.1.55) (2024-02-26)
+
+
+
+
+### Bug Fixes:
+
+* honour an entity's snippet when one is present. (#77)
+* only import recursive entities from other extensions inside entities
+* import entity builders from other extensions inside of entities
+
 ## [v1.1.54](https://github.com/ash-project/spark/compare/v1.1.53...v1.1.54) (2024-01-12)
 
 
