@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.0.1](https://github.com/ash-project/spark/compare/v2.0.0...v2.0.1) (2024-02-26)
+
+
+
+
+### Bug Fixes:
+
+* handle `nil` values in `spark_function_behaviour`
+
 ## [v2.0.0](https://github.com/ash-project/spark/compare/v1.1.54...v2.0.0) (2024-02-23)
 ### Breaking Changes:
 
