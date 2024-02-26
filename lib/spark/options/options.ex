@@ -1165,6 +1165,10 @@ defmodule Spark.Options do
     error_tuple(key, value, "expected module in #{render_key(key)}, got: #{inspect(value)}")
   end
 
+  defp validate_type({:spark_function_behaviour, _module, {_function_mod, _arity}}, _key, nil) do
+    {:ok, nil}
+  end
+
   defp validate_type({:spark_function_behaviour, _module, {_function_mod, _arity}}, _key, value)
        when is_atom(value) do
     {:ok, {value, []}}
@@ -1186,6 +1190,14 @@ defmodule Spark.Options do
        )
        when is_function(value, arity) do
     {:ok, {function_mod, fun: value}}
+  end
+
+  defp validate_type(
+         {:spark_function_behaviour, _module, _module2, {_function_mod, _arity}},
+         _key,
+         nil
+       ) do
+    {:ok, nil}
   end
 
   defp validate_type(
