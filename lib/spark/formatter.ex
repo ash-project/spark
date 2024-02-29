@@ -61,7 +61,7 @@ defmodule Spark.Formatter do
           {key, value}
 
         {key, value} ->
-          {Code.ensure_compiled!(Module.concat([key])), value}
+          {Module.concat([key]), value}
       end)
 
     parse_result =
