@@ -58,6 +58,7 @@ defmodule Spark.Test.Contact do
         :name,
         :contacter,
         :default_message,
+        :thing,
         :singleton,
         :__identifier__,
         special?: false
@@ -166,6 +167,10 @@ defmodule Spark.Test.Contact do
         name: [
           type: :atom,
           required: true
+        ],
+        thing: [
+          type: :string,
+          required: false
         ]
       ]
     }

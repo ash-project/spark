@@ -80,4 +80,32 @@ defmodule Spark.ElixirSense.PluginTest do
 
     assert [%{snippet: "preset_with_snippet ${1::doc_brown}"}] = result
   end
+
+  test "entity snippets are correctly shown when parenthesis are involved" do
+    buffer = """
+    defmodule DocBrown do
+      use Spark.Test.Contact
+
+      presets do
+        preset_with_snippet :foo, bar() do
+
+    #     ^
+        end
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+
+    assert [
+             %{
+               label: "thing",
+               type: :generic,
+               kind: :function,
+               detail: "Option",
+               documentation: "",
+               snippet: "thing \"$0\""
+             }
+           ] = suggestions(buffer, cursor)
+  end
 end

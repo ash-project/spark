@@ -601,7 +601,9 @@ defmodule Spark.ElixirSense.Plugin do
        ) do
     case type do
       {:value, _value} ->
-        entity.schema ++
+        Enum.reject(entity.schema, fn {key, _} ->
+          key in entity.args
+        end) ++
           Enum.flat_map(entity.entities || [], &elem(&1, 1)) ++
           Enum.uniq(recursives ++ List.wrap(recursive_for(entity)))
 
@@ -688,7 +690,9 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp find_opt_hints(%{__struct__: Spark.Dsl.Entity} = entity, hint) do
-    Enum.flat_map(entity.schema, fn {key, value} ->
+    entity.schema
+    |> Enum.reject(&(elem(&1, 0) in entity.args))
+    |> Enum.flat_map(fn {key, value} ->
       if apply(Matcher, :match?, [to_string(key), hint]) do
         arg_index = Enum.find_index(Spark.Dsl.Entity.arg_names(entity), &(&1 == key))
 
@@ -731,8 +735,9 @@ defmodule Spark.ElixirSense.Plugin do
 
     with earliest_line when not is_nil(earliest_line) <-
            scopes_to_lines[env.scope_id],
-         [%{func: func}] when func != :defmodule <-
-           opts.buffer_metadata.calls[earliest_line],
+         funcs <-
+           Enum.reject(opts.buffer_metadata.calls[earliest_line] || [], &(&1.func == :defmodule)),
+         %{func: func} <- List.last(funcs),
          next_env when not is_nil(next_env) <-
            opts.buffer_metadata.lines_to_env[earliest_line] do
       get_scope_path(opts, scopes_to_lines, next_env, [func | path])
