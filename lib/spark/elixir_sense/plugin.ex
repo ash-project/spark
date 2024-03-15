@@ -28,37 +28,127 @@ defmodule Spark.ElixirSense.Plugin do
   alias Spark.ElixirSense.Entity
   alias Spark.ElixirSense.Types
 
-  def suggestions(hint, {_, function_call, arg_index, info}, _chain, opts) do
-    opts = add_module_store(opts)
-    option = info.option || get_option(opts.cursor_context.text_before)
+  def suggestions(hint, {_, :use, 1, _}, _, opts) do
+    using =
+      opts.cursor_context.text_before
+      |> String.split("use ")
+      |> Enum.at(-1)
+      |> String.split(",", trim: true)
+      |> Enum.at(0)
+      |> String.trim()
 
-    {path, type} =
-      if function_call == :use || option == :do || !info.cursor_at_option do
-        {[], nil}
-      else
-        type =
-          case option do
-            nil ->
-              {:arg, arg_index}
+    if using && using != "" do
+      using = Module.concat([using])
 
-            option ->
-              {:value, option}
-          end
+      if Code.ensure_loaded?(using) && Spark.implements_behaviour?(using, Spark.Dsl) do
+        opt_schema = using.opt_schema()
 
-        {[function_call], type}
+        suggestions =
+          opt_schema
+          |> Enum.filter(fn {key, _} ->
+            apply(Matcher, :match?, [to_string(key), hint])
+          end)
+          |> Enum.map(fn {key, config} ->
+            option_suggestions(key, config, :option)
+          end)
+
+        {:override, suggestions}
       end
+    else
+      :ignore
+    end
+  end
 
-    get_suggestions(hint, opts, path, type)
+  def suggestions(hint, {module, function_call, arg_index, info}, _chain, opts) do
+    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
+
+    if is_spark_entity? do
+      opts = add_module_store(opts)
+      option = info.option || get_option(opts.cursor_context.text_before)
+
+      {path, type} =
+        if function_call == :use || option == :do || !info.cursor_at_option do
+          {[], nil}
+        else
+          type =
+            case option do
+              nil ->
+                {:arg, arg_index}
+
+              option ->
+                {:value, option}
+            end
+
+          {[function_call], type}
+        end
+
+      case get_suggestions(hint, opts, path, type) do
+        :ignore ->
+          autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info})
+        other ->
+          other
+      end
+    else
+      autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info})
+    end
+  rescue
+    _ ->
+      :ignore
   end
 
   def suggestions(hint, opts) do
-    opts = add_module_store(opts)
-    option = get_section_option(opts.cursor_context.text_before)
+    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
 
-    if option do
-      get_suggestions(hint, opts, [], {:value, option})
+    if is_spark_entity? do
+      opts = add_module_store(opts)
+      option = get_section_option(opts.cursor_context.text_before)
+
+      if option do
+        get_suggestions(hint, opts, [], {:value, option})
+      else
+        get_suggestions(hint, opts)
+      end
     else
-      get_suggestions(hint, opts)
+      :ignore
+    end
+  rescue
+    _ ->
+      :ignore
+  end
+
+  defp autocomplete_spark_options(hint, _, {module, function_call, arg_index, _}) do
+    case Code.fetch_docs(module) do
+      {:docs_v1, _a, :elixir, _b, _c, _d, functions} ->
+        schema =
+          Enum.find_value(functions, fn
+            {{:function, ^function_call, _}, _, _, _,
+             %{spark_opts: spark_opts}} ->
+              Enum.find_value(spark_opts, fn {index, schema} ->
+                if index == arg_index do
+                  schema
+                end
+              end)
+
+            _ ->
+              nil
+          end)
+
+        if schema do
+          suggestions =
+            schema
+            |> Enum.filter(fn {key, _} ->
+              apply(Matcher, :match?, [to_string(key), hint])
+            end)
+            |> Enum.map(fn {key, config} ->
+              option_suggestions(key, config, :option)
+            end)
+          {:override, suggestions}
+        else
+          :ignore
+        end
+
+      _ ->
+        :ignore
     end
   end
 
@@ -79,10 +169,9 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   def get_suggestions(hint, opts, opt_path \\ [], type \\ nil) do
-    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
+    dsl_mod = get_dsl_mod(opts)
 
-    with true <- is_spark_entity?,
-         dsl_mod when not is_nil(dsl_mod) <- get_dsl_mod(opts) do
+    if dsl_mod do
       extension_kinds =
         List.flatten(dsl_mod.module_info[:attributes][:spark_extension_kinds] || [])
 
@@ -149,8 +238,7 @@ defmodule Spark.ElixirSense.Plugin do
           {:override, List.flatten(suggestions)}
       end
     else
-      _ ->
-        :ignore
+      :ignore
     end
   end
 

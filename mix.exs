@@ -67,6 +67,7 @@ defmodule Spark.MixProject do
       extras: [
         "documentation/how_to/upgrade-to-2.0.md",
         "documentation/how_to/writing-extensions.md",
+        "documentation/how_to/split-up-large-dsls.md",
         "documentation/tutorials/get-started-with-spark.md"
       ],
       groups_for_extras: [

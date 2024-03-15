@@ -108,4 +108,61 @@ defmodule Spark.ElixirSense.PluginTest do
              }
            ] = suggestions(buffer, cursor)
   end
+
+  describe "using opts" do
+    test "opts to `__using__` are autocompleted" do
+      buffer = """
+      defmodule DocBrown do
+        use Spark.Test.Contact, otp_
+      #                             ^
+      end
+      """
+
+      [cursor] = cursors(buffer)
+
+      assert [
+               %{
+                 label: "otp_app",
+                 type: :generic,
+                 kind: :function,
+                 snippet: "otp_app: :$0",
+                 detail: "Option",
+                 documentation: "The otp_app to use for any application configurable options"
+               }
+             ] = suggestions(buffer, cursor)
+    end
+  end
+
+  describe "function that accepts a spark option schema" do
+    test "it autocompletes the opts" do
+      buffer = """
+      ExampleOptions.func(1, 2, opt
+      #                            ^
+      """
+
+      [cursor] = cursors(buffer)
+
+      assert [
+        %{
+          label: "option",
+          type: :generic,
+          kind: :function,
+          snippet: "option: \"$0\"",
+          detail: "Option",
+          documentation: "An option"
+        }
+      ] = suggestions(buffer, cursor)
+    end
+
+    test "it ignores maps" do
+      buffer = """
+      ExampleOptions.func(1, 2, %{opt
+      #                              ^
+      """
+
+      [cursor] = cursors(buffer)
+
+      assert [] = suggestions(buffer, cursor)
+    end
+  end
 end

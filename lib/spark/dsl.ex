@@ -90,23 +90,41 @@ defmodule Spark.Dsl do
 
     their_opt_schema =
       Enum.map(opts[:single_extension_kinds], fn extension_kind ->
-        {extension_kind, type: :atom, default: opts[:default_extensions][extension_kind]}
+        {extension_kind,
+         type: :atom,
+         default: opts[:default_extensions][extension_kind],
+         doc:
+           opts[:extension_kind_docs][extension_kind] ||
+             "#{extension_kind} extensions to add to the #{__MODULE__}"}
       end) ++
         Enum.map(opts[:many_extension_kinds], fn extension_kind ->
-          {extension_kind, type: {:list, :atom}, default: []}
+          {extension_kind,
+           [
+             type: {:list, :atom},
+             default: [],
+             doc:
+               opts[:extension_kind_docs][extension_kind] ||
+                 "#{extension_kind} extensions to add to the #{__MODULE__}"
+           ]}
         end)
 
     their_opt_schema =
       if opts[:untyped_extensions?] do
-        Keyword.put(their_opt_schema, :extensions, type: {:list, :atom})
+        Keyword.put(their_opt_schema, :extensions,
+          type: {:list, :atom},
+          doc: "A list of DSL extensions to add to the #{inspect(__MODULE__)}"
+        )
       else
         their_opt_schema
       end
 
     their_opt_schema =
       Keyword.merge(their_opt_schema,
-        otp_app: [type: :atom],
-        fragments: [type: {:list, :module}]
+        otp_app: [type: :atom, doc: "The otp_app to use for any application configurable options"],
+        fragments: [
+          type: {:list, :module},
+          doc: "Fragments to include in the #{__MODULE__}. See the fragments guide for more."
+        ]
       )
 
     their_opt_schema = Keyword.merge(opts[:opt_schema] || [], their_opt_schema)
@@ -139,6 +157,31 @@ defmodule Spark.Dsl do
 
       @behaviour Spark.Dsl
 
+      @their_opt_schema their_opt_schema
+
+      def opt_schema, do: @their_opt_schema
+
+      cond do
+        @moduledoc == false ->
+          :ok
+
+        @moduledoc ->
+          @moduledoc """
+          #{@moduledoc}
+
+          ### Options
+
+          #{Spark.Options.docs(@their_opt_schema)}
+          """
+
+        true ->
+          @moduledoc """
+          ### Options
+
+          #{Spark.Options.docs(@their_opt_schema)}
+          """
+      end
+
       @doc false
       def init(opts), do: {:ok, opts}
 
@@ -170,15 +213,30 @@ defmodule Spark.Dsl do
       end
 
       defmacro __using__(opts) do
+        opts =
+          if Macro.quoted_literal?(opts) do
+            opts
+          else
+            IO.warn(
+              "Got a non-literal value for options to a `use Spark.DSL`. This is not supported and the options are being ignored."
+            )
+
+            []
+          end
+
         parent = unquote(parent)
         parent_opts = unquote(parent_opts)
         their_opt_schema = unquote(their_opt_schema)
         require Spark.Dsl.Extension
 
         fragments =
-          opts[:fragments]
-          |> List.wrap()
-          |> Enum.map(&Spark.Dsl.Extension.do_expand(&1, __CALLER__))
+          if Keyword.keyword?(opts) do
+            opts[:fragments]
+            |> List.wrap()
+            |> Enum.map(&Spark.Dsl.Extension.do_expand(&1, __CALLER__))
+          else
+            []
+          end
 
         {opts, extensions} =
           parent_opts[:default_extensions]
@@ -262,6 +320,8 @@ defmodule Spark.Dsl do
             parent = unquote(parent)
             parent_opts = unquote(parent_opts)
             their_opt_schema = unquote(their_opt_schema)
+
+            @their_opt_schema their_opt_schema
 
             @opts opts
             @before_compile Spark.Dsl
