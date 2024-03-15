@@ -121,7 +121,7 @@ defmodule Spark.ElixirSense.Plugin do
       {:docs_v1, _a, :elixir, _b, _c, _d, functions} ->
         schema =
           Enum.find_value(functions, fn
-            {{:function, ^function_call, _}, _, _, _,
+            {{_, ^function_call, _}, _, _, _,
              %{spark_opts: spark_opts}} ->
               Enum.find_value(spark_opts, fn {index, schema} ->
                 if index == arg_index do
