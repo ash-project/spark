@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.0](https://github.com/ash-project/spark/compare/v2.0.1...v2.1.0) (2024-03-15)
+
+
+
+
+### Bug Fixes:
+
+* add defaults to `Verifier` functions
+
+* autocomplete properly when multiple scopes are on one line
+
+* don't require that using module is compiled
+
+### Improvements:
+
+* autocomplete for macros as well
+
+* autocomplete options to `use` a DSL
+
+* support autocompleting function opts
+
 ## [v2.0.1](https://github.com/ash-project/spark/compare/v2.0.0...v2.0.1) (2024-02-26)
 
 
