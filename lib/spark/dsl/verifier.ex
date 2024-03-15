@@ -16,9 +16,9 @@ defmodule Spark.Dsl.Verifier do
   end
 
   defdelegate get_persisted(dsl, key), to: Spark.Dsl.Transformer
-  defdelegate get_persisted(dsl, key, default \\ nil), to: Spark.Dsl.Transformer
+  defdelegate get_persisted(dsl, key, default), to: Spark.Dsl.Transformer
   defdelegate get_option(dsl_state, path, option), to: Spark.Dsl.Transformer
-  defdelegate get_option(dsl_state, path, option, default \\ nil), to: Spark.Dsl.Transformer
+  defdelegate get_option(dsl_state, path, option, default), to: Spark.Dsl.Transformer
   defdelegate fetch_option(dsl_state, path, option), to: Spark.Dsl.Transformer
   defdelegate get_entities(dsl_state, path), to: Spark.Dsl.Transformer
 end
