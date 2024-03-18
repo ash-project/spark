@@ -106,7 +106,34 @@ defmodule Spark.ElixirSense.PluginTest do
                documentation: "",
                snippet: "thing \"$0\""
              }
-           ] = suggestions(buffer, cursor)
+           ] = Enum.take(suggestions(buffer, cursor), 1)
+  end
+
+  test "entity snippets are correctly shown when parenthesis are involved, using options" do
+    buffer = """
+    defmodule DocBrown do
+      use Spark.Test.Contact
+
+      presets do
+        preset_with_snippet :foo, bar(),
+    #                                    ^
+        end
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+
+    assert [
+             %{
+               label: "thing",
+               type: :generic,
+               kind: :function,
+               detail: "Option",
+               documentation: "",
+               snippet: "thing: \"$0\""
+             }
+           ] = Enum.take(suggestions(buffer, cursor), 1)
   end
 
   describe "using opts" do
@@ -131,6 +158,60 @@ defmodule Spark.ElixirSense.PluginTest do
                }
              ] = suggestions(buffer, cursor)
     end
+
+    test "opts to `__using__` are autocompleted in other formats" do
+      buffer = """
+      defmodule DocBrown do
+        use Spark.Test.Contact,
+          thing: :foo,
+          otp_
+      #       ^
+      end
+      """
+
+      [cursor] = cursors(buffer)
+
+      assert [
+               %{
+                 label: "otp_app",
+                 type: :generic,
+                 kind: :function,
+                 snippet: "otp_app: :$0",
+                 detail: "Option",
+                 documentation: "The otp_app to use for any application configurable options"
+               }
+             ] = suggestions(buffer, cursor)
+    end
+
+    defmodule Foo do
+      use Spark.Dsl.Extension
+    end
+
+    test "opts to `__using__` are autocompleted with value types" do
+      buffer = """
+      defmodule DocBrown do
+        use Spark.Test.Contact, extensions: []
+      #                                      ^
+      end
+      """
+
+      [cursor] = cursors(buffer)
+
+      suggestions =
+        buffer
+        |> suggestions(cursor)
+        |> Enum.map(& &1.insert_text)
+        |> Enum.take(4)
+        |> Enum.sort()
+
+      assert suggestions ==
+               Enum.sort([
+                 "Spark.Test.Contact.Dsl",
+                 "Spark.Test.Recursive.Dsl",
+                 "Spark.Test.TopLevel.Dsl",
+                 "Spark.Test.ContactPatcher"
+               ])
+    end
   end
 
   describe "function that accepts a spark option schema" do
@@ -143,15 +224,15 @@ defmodule Spark.ElixirSense.PluginTest do
       [cursor] = cursors(buffer)
 
       assert [
-        %{
-          label: "option",
-          type: :generic,
-          kind: :function,
-          snippet: "option: \"$0\"",
-          detail: "Option",
-          documentation: "An option"
-        }
-      ] = suggestions(buffer, cursor)
+               %{
+                 label: "option",
+                 type: :generic,
+                 kind: :function,
+                 snippet: "option: \"$0\"",
+                 detail: "Option",
+                 documentation: "An option"
+               }
+             ] = suggestions(buffer, cursor)
     end
 
     test "it ignores maps" do

@@ -17,6 +17,18 @@ defmodule Spark.Dsl do
       default: true,
       doc: "Whether or not to support an `extensions` key which contains untyped extensions"
     ],
+    extension_kind_types: [
+      type: :keyword_list,
+      default: [],
+      doc:
+        "A keyword list of extension kinds and their types, e.g `[authorizers: {:list, {:behaviour, Ash.Authorizer}}]`"
+    ],
+    extension_kind_docs: [
+      type: :keyword_list,
+      default: [],
+      doc:
+        "A keyword list of extension kinds and a short documentation snippet to be used when autocompleting that option"
+    ],
     default_extensions: [
       type: :keyword_list,
       default: [],
@@ -91,7 +103,7 @@ defmodule Spark.Dsl do
     their_opt_schema =
       Enum.map(opts[:single_extension_kinds], fn extension_kind ->
         {extension_kind,
-         type: :atom,
+         type: opts[:extension_kind_types][extension_kind] || {:behaviour, Spark.Dsl.Extension},
          default: opts[:default_extensions][extension_kind],
          doc:
            opts[:extension_kind_docs][extension_kind] ||
@@ -100,7 +112,9 @@ defmodule Spark.Dsl do
         Enum.map(opts[:many_extension_kinds], fn extension_kind ->
           {extension_kind,
            [
-             type: {:list, :atom},
+             type:
+               opts[:extension_kind_types][extension_kind] ||
+                 {:list, {:behaviour, Spark.Dsl.Extension}},
              default: [],
              doc:
                opts[:extension_kind_docs][extension_kind] ||
@@ -111,7 +125,7 @@ defmodule Spark.Dsl do
     their_opt_schema =
       if opts[:untyped_extensions?] do
         Keyword.put(their_opt_schema, :extensions,
-          type: {:list, :atom},
+          type: {:list, {:behaviour, Spark.Dsl.Extension}},
           doc: "A list of DSL extensions to add to the #{inspect(__MODULE__)}"
         )
       else

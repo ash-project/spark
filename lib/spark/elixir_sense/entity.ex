@@ -99,6 +99,29 @@ defmodule Spark.ElixirSense.Entity do
     builtins ++ custom
   end
 
+  def find_behaviour_impls(behaviour, hint, module_store) do
+    for module <- module_store.by_behaviour[behaviour] || [],
+        mod_str = inspect(module),
+        apply(Util, :match_module?, [mod_str, hint]),
+        !asks_to_skip?(module) do
+      {doc, _} = apply(Introspection, :get_module_docs_summary, [module])
+
+      %{
+        type: :generic,
+        kind: :class,
+        label: mod_str,
+        insert_text: apply(Util, :trim_leading_for_insertion, [hint, mod_str]),
+        detail: "#{inspect(behaviour)}",
+        documentation: doc
+      }
+    end
+  end
+
+  defp asks_to_skip?(module) do
+    Code.ensure_loaded?(module) && function_exported?(module, :skip_in_spark_autocomplete, 0) &&
+      module.skip_in_spark_autocomplete()
+  end
+
   defp lowercase_string?(""), do: true
 
   defp lowercase_string?(string) do

@@ -1,4 +1,5 @@
 defmodule ExampleOptions do
+  @moduledoc false
   @schema [
     option: [
       type: :string,

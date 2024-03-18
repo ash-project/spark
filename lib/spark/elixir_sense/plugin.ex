@@ -28,68 +28,19 @@ defmodule Spark.ElixirSense.Plugin do
   alias Spark.ElixirSense.Entity
   alias Spark.ElixirSense.Types
 
-  def suggestions(hint, {_, :use, 1, _}, _, opts) do
-    using =
-      opts.cursor_context.text_before
-      |> String.split("use ")
-      |> Enum.at(-1)
-      |> String.split(",", trim: true)
-      |> Enum.at(0)
-      |> String.trim()
+  def suggestions(hint, _, _chain, opts) do
+    case suggestions(hint, opts) do
+      :ignore ->
+        case func_call_chain(opts.cursor_context.text_before, opts.env) do
+          [%{candidate: {module, function_call}, npar: arg_index} = info | _] ->
+            autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info}, opts)
 
-    if using && using != "" do
-      using = Module.concat([using])
-
-      if Code.ensure_loaded?(using) && Spark.implements_behaviour?(using, Spark.Dsl) do
-        opt_schema = using.opt_schema()
-
-        suggestions =
-          opt_schema
-          |> Enum.filter(fn {key, _} ->
-            apply(Matcher, :match?, [to_string(key), hint])
-          end)
-          |> Enum.map(fn {key, config} ->
-            option_suggestions(key, config, :option)
-          end)
-
-        {:override, suggestions}
-      end
-    else
-      :ignore
-    end
-  end
-
-  def suggestions(hint, {module, function_call, arg_index, info}, _chain, opts) do
-    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
-
-    if is_spark_entity? do
-      opts = add_module_store(opts)
-      option = info.option || get_option(opts.cursor_context.text_before)
-
-      {path, type} =
-        if function_call == :use || option == :do || !info.cursor_at_option do
-          {[], nil}
-        else
-          type =
-            case option do
-              nil ->
-                {:arg, arg_index}
-
-              option ->
-                {:value, option}
-            end
-
-          {[function_call], type}
+          _ ->
+            :ignore
         end
 
-      case get_suggestions(hint, opts, path, type) do
-        :ignore ->
-          autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info})
-        other ->
-          other
-      end
-    else
-      autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info})
+      suggestions ->
+        suggestions
     end
   rescue
     _ ->
@@ -100,29 +51,508 @@ defmodule Spark.ElixirSense.Plugin do
     is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
 
     if is_spark_entity? do
-      opts = add_module_store(opts)
-      option = get_section_option(opts.cursor_context.text_before)
+      case func_call_chain(opts.cursor_context.text_before, opts.env) do
+        [%{candidate: {Elixir, :use}, params: [mod | _]} = info | _] ->
+          {using, _} = get_mod(mod, opts.env)
 
-      if option do
-        get_suggestions(hint, opts, [], {:value, option})
-      else
-        get_suggestions(hint, opts)
+          if Code.ensure_loaded?(using) && Spark.implements_behaviour?(using, Spark.Dsl) do
+            opt_schema = using.opt_schema()
+
+            if opt_schema do
+              case autocomplete_schema(opt_schema, hint, info.value_type_path, opts) do
+                [] ->
+                  :ignore
+
+                completions ->
+                  {:override, completions}
+              end
+            else
+              :ignore
+            end
+          else
+            :ignore
+          end
+
+        [%{candidate: {module, function_call}, npar: arg_index} = info | _] = chain ->
+          chain
+          |> Enum.split_while(fn
+            %{candidate: {Elixir, :defmodule}} -> false
+            _ -> true
+          end)
+          |> case do
+            {_, []} ->
+              autocomplete_spark_options(
+                hint,
+                opts,
+                {module, function_call, arg_index, info},
+                opts
+              )
+
+            {path_items, _} ->
+              scope_path =
+                path_items
+                |> Enum.map(fn %{candidate: {_, function_call}} -> function_call end)
+                |> Enum.reverse()
+
+              get_suggestions(hint, opts, scope_path, info.value_type_path)
+          end
+
+        _ ->
+          :ignore
       end
     else
-      :ignore
+      case func_call_chain(opts.cursor_context.text_before, opts.env) do
+        [%{candidate: {module, function_call}, npar: arg_index} = info | _] ->
+          autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info}, opts)
+
+        _ ->
+          :ignore
+      end
     end
   rescue
-    _ ->
+    _e ->
       :ignore
   end
 
-  defp autocomplete_spark_options(hint, _, {module, function_call, arg_index, _}) do
+  defp autocomplete_schema(
+         schema,
+         hint,
+         [{:keyword_key, key, _rest_keyword} | value_type_path],
+         opts
+       ) do
+    case Keyword.fetch(schema, key) do
+      :error ->
+        []
+
+      {:ok, config} ->
+        option_values(key, config, hint, opts, value_type_path)
+    end
+  end
+
+  defp autocomplete_schema(schema, hint, [{:making_keyword_key, other_opts}], _opts) do
+    other_keys =
+      other_opts
+      |> Enum.reject(&cursor?/1)
+      |> Enum.map(&elem(&1, 0))
+
+    schema
+    |> Keyword.drop(other_keys)
+    |> Enum.filter(fn {key, _} ->
+      apply(Matcher, :match?, [to_string(key), hint])
+    end)
+    |> Enum.map(fn {key, config} ->
+      option_suggestions(key, config, :option)
+    end)
+  end
+
+  defp autocomplete_schema(schema, hint, [], _opts) do
+    schema
+    |> Enum.filter(fn {key, _} ->
+      apply(Matcher, :match?, [to_string(key), hint])
+    end)
+    |> Enum.map(fn {key, config} ->
+      option_suggestions(key, config, :option)
+    end)
+  end
+
+  defp autocomplete_schema(_schema, _hint, _value_type_path, _opts) do
+    []
+  end
+
+  defp func_call_chain(code, env) do
+    case Code.Fragment.container_cursor_to_quoted(code, columns: true) do
+      {:ok, container} ->
+        container
+        |> cursor_path()
+        |> Enum.reverse()
+        |> collapse_do_blocks()
+        |> collapse_lists()
+        |> Enum.reverse()
+        |> to_partials()
+        |> path_to_mod_fun_arg_info(env)
+        |> Enum.reverse()
+        |> handle_dangling_do_blocks()
+
+      _ ->
+        []
+    end
+  end
+
+  defp handle_dangling_do_blocks([%{value_type_path: [{:keyword_key, :do, []}]} = info | rest]) do
+    [%{info | value_type_path: [:do_block]} | rest]
+  end
+
+  defp handle_dangling_do_blocks(other), do: other
+
+  defp collapse_do_blocks([first | rest]) do
+    case first do
+      {_func, _, args} ->
+        case List.last(args) do
+          [{:do, _block}] ->
+            [first | collapse_do_blocks(Enum.drop(rest, 2))]
+
+          _ ->
+            [first | collapse_do_blocks(rest)]
+        end
+
+      _ ->
+        [first, collapse_do_blocks(rest)]
+    end
+  end
+
+  defp collapse_do_blocks([]), do: []
+
+  defp collapse_lists([first, _second | rest]) when is_list(first) do
+    [first | collapse_lists(rest)]
+  end
+
+  defp collapse_lists([first | rest]), do: [first | collapse_lists(rest)]
+
+  defp collapse_lists([]), do: []
+
+  defp path_to_mod_fun_arg_info(path, env) do
+    path
+    |> Enum.reduce_while({[], []}, fn
+      {:__block__, _, _items}, {acc, stack} ->
+        {:cont, {acc, [:block | stack]}}
+
+      item, {acc, stack} ->
+        case to_mod_fun_arg_info(item, env) do
+          {:ok, item} ->
+            item = %{item | value_type_path: merge_do_and_blocks(stack ++ item.value_type_path)}
+            {:cont, {[item | acc], []}}
+
+          _ ->
+            case cursor_at_value_type_path(item) do
+              nil ->
+                {:cont, {acc, stack}}
+
+              path ->
+                {:cont, {acc, stack ++ path}}
+            end
+        end
+    end)
+    |> elem(0)
+  end
+
+  defp merge_do_and_blocks([]), do: []
+
+  defp merge_do_and_blocks([:block, {:keyword_key, :do, _} | rest]) do
+    merge_do_and_blocks([:do_block | rest])
+  end
+
+  defp merge_do_and_blocks([first | rest]) do
+    [first | merge_do_and_blocks(rest)]
+  end
+
+  defp to_partials(items, last \\ :___none___)
+  defp to_partials([item], :__none__), do: [item]
+
+  defp to_partials([item], last) do
+    [replace_with_cursor(item, last)]
+  end
+
+  defp to_partials([], _), do: []
+
+  defp to_partials([first, second | rest], :__none__) do
+    [replace_with_cursor(second, first) | to_partials(rest, second)]
+  end
+
+  defp to_partials([first | rest], last) do
+    [replace_with_cursor(first, last) | to_partials(rest, first)]
+  end
+
+  defp replace_with_cursor(inside, replace) do
+    Macro.prewalk(inside, fn
+      ^replace ->
+        {:__cursor__, [], []}
+
+      other ->
+        other
+    end)
+  end
+
+  @excluded_funs [:__block__]
+
+  defp to_mod_fun_arg_info(item, binding_env) do
+    with {_, {:ok, call_info}} <-
+           Macro.prewalk(item, nil, &find_call_pre/2),
+         {{m, elixir_prefix}, f} when f not in @excluded_funs <-
+           get_mod_fun(
+             call_info.call,
+             binding_env
+           ) do
+      {:ok,
+       %{
+         candidate: {m, f},
+         elixir_prefix: elixir_prefix,
+         params: call_info.params,
+         npar: call_info.npar,
+         pos: {{call_info.meta[:line], call_info.meta[:column]}, {call_info.meta[:line], nil}},
+         value_type_path: call_info[:value_type_path] || [],
+         cursor_at_option: call_info.cursor_at_option,
+         options_so_far: call_info.options,
+         option: call_info.option
+       }}
+    else
+      _other ->
+        :error
+    end
+  end
+
+  defp cursor_path(container) do
+    Macro.path(container, fn
+      {:__cursor__, _, _} ->
+        true
+
+      _ ->
+        false
+    end)
+  end
+
+  defp find_call_pre(ast, {:ok, call_info}),
+    do: {ast, {:ok, call_info}}
+
+  # transform `a |> b(c)` calls into `b(a, c)`
+  defp find_call_pre({:|>, _, [params_1, {call, meta, params_rest}]}, state) do
+    params = [params_1 | params_rest || []]
+    find_call_pre({call, meta, params}, state)
+  end
+
+  defp find_call_pre({{:., meta, call}, _, params} = ast, _state) when is_list(params) do
+    {ast, find_cursor_in_params(params, call, meta)}
+  end
+
+  defp find_call_pre({atom, meta, params} = ast, _state)
+       when is_atom(atom) and is_list(params) and atom not in [:{}, :%{}] do
+    {ast, find_cursor_in_params(params, atom, meta)}
+  end
+
+  defp find_call_pre({atom, meta, params} = ast, _state)
+       when is_atom(atom) and is_list(params) and atom not in [:{}, :%{}] do
+    {ast, find_cursor_in_params(params, atom, meta)}
+  end
+
+  defp find_call_pre(ast, state), do: {ast, state}
+
+  defp get_mod_fun(atom, _binding_env) when is_atom(atom), do: {{Elixir, atom}, atom}
+
+  defp get_mod_fun([{:__aliases__, _, list}, fun], binding_env) do
+    mod = get_mod(list, binding_env)
+
+    if mod do
+      {mod, fun}
+    end
+  end
+
+  defp get_mod_fun([{:__MODULE__, _, nil}, fun], binding_env) do
+    if binding_env.current_module not in [nil, Elixir] do
+      {{binding_env.current_module, false}, fun}
+    end
+  end
+
+  defp get_mod_fun([{:@, _, [{name, _, nil}]}, fun], binding_env) when is_atom(name) do
+    case ElixirSense.Core.Binding.expand(binding_env, {:attribute, name}) do
+      {:atom, atom} ->
+        {{atom, false}, fun}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_mod_fun([{name, _, nil}, fun], binding_env) when is_atom(name) do
+    case ElixirSense.Core.Binding.expand(binding_env, {:variable, name}) do
+      {:atom, atom} ->
+        {{atom, false}, fun}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_mod_fun([atom, fun], _binding_env) when is_atom(atom), do: {{atom, false}, fun}
+  defp get_mod_fun(_, _binding_env), do: nil
+
+  defp get_mod({:__aliases__, _, list}, binding_env) do
+    get_mod(list, binding_env)
+  end
+
+  defp get_mod([{:__aliases__, _, list} | _rest], binding_env) do
+    get_mod(list, binding_env)
+  end
+
+  defp get_mod([{:__MODULE__, _, nil} | rest], binding_env) do
+    if binding_env.current_module not in [nil, Elixir] do
+      mod =
+        binding_env.current_module
+        |> Module.split()
+        |> Kernel.++(rest)
+        |> Module.concat()
+
+      {mod, false}
+    end
+  end
+
+  defp get_mod([{:@, _, [{name, _, nil}]} | rest], binding_env) when is_atom(name) do
+    case ElixirSense.Core.Binding.expand(binding_env, {:attribute, name}) do
+      {:atom, atom} ->
+        if ElixirSense.Core.Introspection.elixir_module?(atom) do
+          mod =
+            atom
+            |> Module.split()
+            |> Kernel.++(rest)
+            |> Module.concat()
+
+          {mod, false}
+        else
+          nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_mod([head | _rest] = list, _binding_env) when is_atom(head) do
+    {Module.concat(list), head == Elixir}
+  end
+
+  defp get_mod(_list, _binding_env), do: nil
+
+  defp find_cursor_in_params(params, call, meta) do
+    params
+    |> Enum.with_index()
+    |> Enum.find_value(fn {param, index} ->
+      case cursor_at_value_type_path(param) do
+        nil ->
+          nil
+
+        path ->
+          {:ok,
+           %{
+             call: call,
+             params: params,
+             npar: index,
+             meta: meta,
+             value_type_path: path,
+             options: nil,
+             cursor_at_option: false,
+             option: nil
+           }}
+      end
+    end)
+  end
+
+  defp cursor?({:__cursor__, _, _}), do: true
+  defp cursor?(_), do: false
+
+  defp cursor_at_value_type_path([{:do, _, block}]) do
+    Enum.find_value(List.wrap(block), fn item ->
+      case cursor_at_value_type_path(item) do
+        nil ->
+          nil
+
+        path ->
+          [:do_block | path]
+      end
+    end)
+  end
+
+  defp cursor_at_value_type_path([{:__cursor__, _, _}]) do
+    [{:list_index, 0, []}]
+  end
+
+  defp cursor_at_value_type_path(other) when is_list(other) do
+    if Keyword.keyword?(Enum.reject(other, &cursor?/1)) do
+      Enum.find_value(other, fn
+        {:__cursor__, _, _} = cursor ->
+          [
+            {:making_keyword_key, Enum.reject(other, &(&1 == cursor))}
+          ]
+
+        {key, value} ->
+          case cursor_at_value_type_path(value) do
+            nil ->
+              nil
+
+            path ->
+              [{:keyword_key, key, Keyword.delete(other, key)} | path]
+          end
+      end)
+    else
+      other
+      |> Enum.with_index()
+      |> Enum.find_value(fn {value, index} ->
+        case cursor_at_value_type_path(value) do
+          nil ->
+            nil
+
+          path ->
+            [{:list_index, index} | path]
+        end
+      end)
+      |> case do
+        [{:list_index, index} | path] ->
+          [{:list_index, index, List.delete_at(path, index)} | path]
+
+        nil ->
+          nil
+      end
+    end
+  end
+
+  defp cursor_at_value_type_path({a, b}) do
+    cursor_at_value_type_path({:{}, [], [a, b]})
+  end
+
+  defp cursor_at_value_type_path({:{}, _, elems}) do
+    elems
+    |> Enum.with_index()
+    |> Enum.find_value(fn
+      {{:__cursor__, _, _}, index} ->
+        [{:making_tuple_elem, index, List.delete_at(elems, index)}]
+
+      {value, index} ->
+        case cursor_at_value_type_path(value) do
+          nil ->
+            nil
+
+          path ->
+            [{:tuple_index, index, List.delete_at(elems, index)} | path]
+        end
+    end)
+  end
+
+  defp cursor_at_value_type_path({:%{}, _, keys}) do
+    Enum.find_value(keys, fn
+      {:__cursor__, _, _} = cursor ->
+        [{:making_map_key, Enum.reject(keys, &(&1 == cursor))}]
+
+      {key, value} ->
+        case cursor_at_value_type_path(value) do
+          nil ->
+            nil
+
+          path ->
+            [
+              {:map_key, key, Enum.reject(keys, fn {other_key, _val} -> other_key == key end)}
+              | path
+            ]
+        end
+    end)
+  end
+
+  defp cursor_at_value_type_path({:__cursor__, _, []}), do: []
+
+  defp cursor_at_value_type_path(_), do: nil
+
+  defp autocomplete_spark_options(hint, _, {module, function_call, arg_index, info}, opts) do
     case Code.fetch_docs(module) do
       {:docs_v1, _a, :elixir, _b, _c, _d, functions} ->
         schema =
           Enum.find_value(functions, fn
-            {{_, ^function_call, _}, _, _, _,
-             %{spark_opts: spark_opts}} ->
+            {{_, ^function_call, _}, _, _, _, %{spark_opts: spark_opts}} ->
               Enum.find_value(spark_opts, fn {index, schema} ->
                 if index == arg_index do
                   schema
@@ -134,15 +564,7 @@ defmodule Spark.ElixirSense.Plugin do
           end)
 
         if schema do
-          suggestions =
-            schema
-            |> Enum.filter(fn {key, _} ->
-              apply(Matcher, :match?, [to_string(key), hint])
-            end)
-            |> Enum.map(fn {key, config} ->
-              option_suggestions(key, config, :option)
-            end)
-          {:override, suggestions}
+          {:override, autocomplete_schema(schema, hint, info.value_type_path, opts)}
         else
           :ignore
         end
@@ -152,24 +574,17 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  # For some reason, the module store does not change when modules are defined
-  # so we are building our own fresh copy here. This is definitely a performance
-  # hit
-  defp add_module_store(opts) do
-    Map.put(opts, :module_store, apply(ElixirSense.Core.ModuleStore, :build, [all_loaded()]))
-  end
-
-  defp all_loaded do
-    :code.all_loaded()
-    |> Enum.filter(fn
-      {mod, _} when is_atom(mod) -> true
-      _ -> false
-    end)
-    |> Enum.map(&elem(&1, 0))
-  end
-
-  def get_suggestions(hint, opts, opt_path \\ [], type \\ nil) do
+  defp get_suggestions(hint, opts, scope_path, value_type_path) do
     dsl_mod = get_dsl_mod(opts)
+
+    {type, _value_type_path} =
+      case value_type_path do
+        [:do_block | rest] ->
+          {:builder, rest}
+
+        _ ->
+          {:option, value_type_path}
+      end
 
     if dsl_mod do
       extension_kinds =
@@ -177,63 +592,23 @@ defmodule Spark.ElixirSense.Plugin do
 
       extensions = default_extensions(dsl_mod) ++ parse_extensions(opts, extension_kinds)
 
-      scopes_to_lines =
-        Enum.reduce(opts.buffer_metadata.lines_to_env, %{}, fn {line, env}, acc ->
-          line = line - 1
-
-          Map.update(acc, env.scope_id, line, fn existing ->
-            if existing < line do
-              existing
-            else
-              line
-            end
-          end)
-        end)
-
-      scope_path = get_scope_path(opts, scopes_to_lines, nil, opt_path)
-
-      case get_constructors(extensions, scope_path, hint, type) do
+      case get_constructors(extensions, scope_path, hint) do
         [] ->
           :ignore
 
         constructors ->
           suggestions =
-            case find_option(constructors, type) do
+            Enum.map(constructors, fn
               {key, config} ->
-                option_values(key, config, hint, opts)
+                option_suggestions(key, config, type)
 
-              _ ->
-                # Check for an edge case where we are editing the first argument of a constructor
-                with {:value, option} <- type,
-                     entity when not is_nil(entity) <-
-                       find_building_entity(constructors, option),
-                     [arg | _] <- Spark.Dsl.Entity.arg_names(entity),
-                     config when not is_nil(config) <- entity.schema[arg] do
-                  option_values(arg, config, hint, opts)
-                else
-                  _ ->
-                    hint =
-                      case type do
-                        {:value, val} when not is_nil(val) ->
-                          to_string(val)
+              %{__struct__: Spark.Dsl.Entity} = entity ->
+                entity_suggestions(entity)
 
-                        _ ->
-                          nil
-                      end
-
-                    Enum.map(constructors, fn
-                      {key, config} ->
-                        option_suggestions(key, config, type)
-
-                      %{__struct__: Spark.Dsl.Entity} = entity ->
-                        entity_suggestions(entity)
-
-                      %{__struct__: Spark.Dsl.Section} = section ->
-                        section_suggestions(section)
-                    end)
-                    |> filter_matches(hint)
-                end
-            end
+              %{__struct__: Spark.Dsl.Section} = section ->
+                section_suggestions(section)
+            end)
+            |> filter_matches(hint)
 
           {:override, List.flatten(suggestions)}
       end
@@ -302,41 +677,6 @@ defmodule Spark.ElixirSense.Plugin do
     _ -> false
   end
 
-  defp find_building_entity(constructors, option) do
-    Enum.find(constructors, fn
-      %{__struct__: Spark.Dsl.Entity, name: ^option} ->
-        true
-
-      _ ->
-        false
-    end)
-  end
-
-  defp find_option(constructors, {:value, option}) do
-    Enum.find_value(constructors, fn
-      {^option, _} = opt ->
-        opt
-
-      %{__struct__: Spark.Dsl.Entity, name: ^option, args: [arg | _], schema: schema} ->
-        {arg, schema[arg]}
-
-      _ ->
-        false
-    end)
-  end
-
-  defp find_option(constructors, {:arg, arg_index}) do
-    Enum.find(constructors, fn
-      {_option, config} ->
-        config[:arg_index] == arg_index
-
-      _ ->
-        false
-    end)
-  end
-
-  defp find_option(_, _), do: nil
-
   defp section_suggestions(section) do
     %{
       type: :generic,
@@ -367,15 +707,10 @@ defmodule Spark.ElixirSense.Plugin do
     snippet = snippet_or_default(config[:snippet], default_snippet(config))
 
     snippet =
-      case type do
-        :option ->
-          "#{key}: #{snippet}"
-
-        {:arg, _} ->
-          "#{key}: #{snippet}"
-
-        _ ->
-          "#{key} #{snippet}"
+      if type == :option do
+        "#{key}: #{snippet}"
+      else
+        "#{key} #{snippet}"
       end
 
     config = Spark.Options.update_key_docs(config)
@@ -390,41 +725,7 @@ defmodule Spark.ElixirSense.Plugin do
     }
   end
 
-  defp get_option(text) when is_binary(text) do
-    case Regex.named_captures(~r/\s(?<option>[^\s]*):[[:blank:]]*$/, text) do
-      %{"option" => option} when option != "" ->
-        try do
-          String.to_existing_atom(option)
-        rescue
-          _ ->
-            nil
-        end
-
-      _ ->
-        nil
-    end
-  end
-
-  defp get_option(_), do: nil
-
-  defp get_section_option(text) when is_binary(text) do
-    case Regex.named_captures(~r/\n[[:blank:]]+(?<option>[^\s]*)[[:blank:]]*$/, text) do
-      %{"option" => option} when option != "" ->
-        try do
-          String.to_existing_atom(option)
-        rescue
-          _ ->
-            nil
-        end
-
-      _ ->
-        nil
-    end
-  end
-
-  defp get_section_option(_), do: nil
-
-  defp option_values(key, config, hint, opts) do
+  defp option_values(key, config, hint, opts, value_type_path) do
     case config[:type] do
       :boolean ->
         enum_suggestion([true, false], hint, "boolean")
@@ -453,7 +754,7 @@ defmodule Spark.ElixirSense.Plugin do
         Entity.find_spark_behaviour_impls(behaviour, builtins, hint, opts.module_store)
 
       {:behaviour, behaviour} ->
-        Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
+        Entity.find_behaviour_impls(behaviour, hint, opts.module_store)
 
       {:spark_behaviour, behaviour} ->
         Entity.find_spark_behaviour_impls(behaviour, nil, hint, opts.module_store)
@@ -463,8 +764,51 @@ defmodule Spark.ElixirSense.Plugin do
 
       {:or, subtypes} ->
         Enum.flat_map(subtypes, fn subtype ->
-          option_values(key, Keyword.put(config, :type, subtype), hint, opts)
+          option_values(key, Keyword.put(config, :type, subtype), hint, opts, value_type_path)
         end)
+
+      {:list, subtype} ->
+        case value_type_path do
+          [{:list_index, _, _} | value_type_path] ->
+            option_values(key, Keyword.put(config, :type, subtype), hint, opts, value_type_path)
+
+          _ ->
+            [
+              %{
+                type: :generic,
+                kind: :class,
+                snippet: inspect("[:$0]"),
+                insert_text: "",
+                detail: "list",
+                documentation: "[]"
+              }
+            ]
+        end
+
+      {:wrap_list, subtype} ->
+        case value_type_path do
+          [{:list_index, _, _} | value_type_path] ->
+            option_values(key, Keyword.put(config, :type, subtype), hint, opts, value_type_path)
+
+          _ ->
+            [
+              %{
+                type: :generic,
+                kind: :class,
+                snippet: inspect("[:$0]"),
+                insert_text: "",
+                detail: "list",
+                documentation: "[]"
+              }
+              | option_values(
+                  key,
+                  Keyword.put(config, :type, subtype),
+                  hint,
+                  opts,
+                  value_type_path
+                )
+            ]
+        end
 
       _ ->
         []
@@ -584,7 +928,7 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  defp get_constructors(extensions, [], hint, type) do
+  defp get_constructors(extensions, [], hint) do
     Enum.flat_map(
       extensions,
       fn extension ->
@@ -594,7 +938,7 @@ defmodule Spark.ElixirSense.Plugin do
             |> sections()
             |> Enum.filter(& &1.top_level?)
             |> Enum.flat_map(fn section ->
-              do_find_constructors(section, [], hint, type)
+              do_find_constructors(section, [], hint)
             end)
 
           extension.sections()
@@ -612,7 +956,7 @@ defmodule Spark.ElixirSense.Plugin do
     )
   end
 
-  defp get_constructors(extensions, [first | rest], hint, type) do
+  defp get_constructors(extensions, [first | rest], hint) do
     extensions
     |> Enum.flat_map(&sections/1)
     |> Enum.filter(& &1.top_level?)
@@ -628,7 +972,7 @@ defmodule Spark.ElixirSense.Plugin do
             try do
               Enum.flat_map(apply_dsl_patches(sections(extension), extensions), fn section ->
                 if section.name == first do
-                  do_find_constructors(section, rest, hint, type)
+                  do_find_constructors(section, rest, hint)
                 else
                   []
                 end
@@ -641,7 +985,7 @@ defmodule Spark.ElixirSense.Plugin do
         )
 
       top_level_section ->
-        do_find_constructors(top_level_section, [first | rest], hint, type)
+        do_find_constructors(top_level_section, [first | rest], hint)
     end
   end
 
@@ -678,50 +1022,19 @@ defmodule Spark.ElixirSense.Plugin do
     }
   end
 
-  defp do_find_constructors(entity_or_section, path, hint, type, recursives \\ [])
+  defp do_find_constructors(entity_or_section, path, hint, recursives \\ [])
 
   defp do_find_constructors(
          %{__struct__: Spark.Dsl.Entity} = entity,
          [],
          hint,
-         type,
          recursives
        ) do
-    case type do
-      {:value, _value} ->
-        Enum.reject(entity.schema, fn {key, _} ->
-          key in entity.args
-        end) ++
-          Enum.flat_map(entity.entities || [], &elem(&1, 1)) ++
-          Enum.uniq(recursives ++ List.wrap(recursive_for(entity)))
-
-      {:arg, arg_index} ->
-        if arg_index >= Enum.count(entity.args || []) do
-          find_opt_hints(entity, hint) ++
-            find_entity_hints(entity, hint, recursives)
-        else
-          Enum.map(entity.schema, fn {key, value} ->
-            arg_index = Enum.find_index(Spark.Dsl.Entity.arg_names(entity), &(&1 == key))
-
-            if arg_index do
-              {key, Keyword.put(value, :arg_index, arg_index)}
-            else
-              {key, value}
-            end
-          end) ++
-            Enum.uniq(
-              recursives ++
-                List.wrap(recursive_for(entity))
-            )
-        end
-
-      _ ->
-        find_opt_hints(entity, hint) ++
-          find_entity_hints(entity, hint, recursives)
-    end
+    find_opt_hints(entity, hint) ++
+      find_entity_hints(entity, hint, recursives)
   end
 
-  defp do_find_constructors(section, [], hint, _type, recursives) do
+  defp do_find_constructors(section, [], hint, recursives) do
     find_opt_hints(section, hint) ++
       find_entity_hints(section, hint, []) ++
       Enum.filter(section.sections, fn section ->
@@ -733,7 +1046,6 @@ defmodule Spark.ElixirSense.Plugin do
          %{__struct__: Spark.Dsl.Entity} = entity,
          [next | rest],
          hint,
-         type,
          recursives
        ) do
     entity.entities
@@ -747,24 +1059,23 @@ defmodule Spark.ElixirSense.Plugin do
         &1,
         rest,
         hint,
-        type,
         Enum.uniq(recursives ++ List.wrap(recursive_for(entity)))
       )
     )
     |> Enum.uniq()
   end
 
-  defp do_find_constructors(section, [first | rest], hint, type, recursives) do
+  defp do_find_constructors(section, [first | rest], hint, recursives) do
     Enum.flat_map(section.entities, fn entity ->
       if entity.name == first do
-        do_find_constructors(entity, rest, hint, type)
+        do_find_constructors(entity, rest, hint)
       else
         []
       end
     end) ++
       Enum.flat_map(section.sections, fn section ->
         if section.name == first do
-          do_find_constructors(section, rest, hint, type)
+          do_find_constructors(section, rest, hint)
         else
           []
         end
@@ -816,23 +1127,6 @@ defmodule Spark.ElixirSense.Plugin do
     Enum.filter(section.entities, fn entity ->
       apply(Matcher, :match?, [to_string(entity.name), hint])
     end)
-  end
-
-  defp get_scope_path(opts, scopes_to_lines, env, path) do
-    env = env || opts.env
-
-    with earliest_line when not is_nil(earliest_line) <-
-           scopes_to_lines[env.scope_id],
-         funcs <-
-           Enum.reject(opts.buffer_metadata.calls[earliest_line] || [], &(&1.func == :defmodule)),
-         %{func: func} <- List.last(funcs),
-         next_env when not is_nil(next_env) <-
-           opts.buffer_metadata.lines_to_env[earliest_line] do
-      get_scope_path(opts, scopes_to_lines, next_env, [func | path])
-    else
-      _other ->
-        path
-    end
   end
 
   defp spark_extension?(module) do
