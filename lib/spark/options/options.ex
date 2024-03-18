@@ -179,6 +179,8 @@ defmodule Spark.Options do
 
     * `{:struct, struct_name}` - An instance of the struct type given.
 
+    * `:struct` - An instance of any struct
+
     * `{:tagged_tuple, tag, inner_type}` - maps to `{tag, type}`
 
     * `{:spark_behaviour, behaviour}` - expects a module that implements the given behaviour, and can be specified with options, i.e `mod` or `{mod, [opt: :val]}`
@@ -369,6 +371,7 @@ defmodule Spark.Options do
     :reference,
     :literal,
     :quoted,
+    :struct,
     nil
   ]
 
@@ -1268,6 +1271,10 @@ defmodule Spark.Options do
     {:ok, value}
   end
 
+  defp validate_type(:struct, _key, value) when is_struct(value) do
+    {:ok, value}
+  end
+
   defp validate_type({:struct, mod}, _key, value) when is_struct(value, mod) do
     {:ok, value}
   end
@@ -1477,6 +1484,10 @@ defmodule Spark.Options do
 
   def validate_type({:mfa_or_fun, integer}) when is_integer(integer) and integer >= 0 do
     {:ok, {:mfa_or_fun, integer}}
+  end
+
+  def validate_type(:struct) do
+    {:ok, :struct}
   end
 
   def validate_type({:struct, module}) when is_atom(module) do

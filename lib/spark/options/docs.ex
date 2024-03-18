@@ -157,6 +157,7 @@ defmodule Spark.Options.Docs do
 
   defp get_raw_type_str({:behaviour, module}), do: "module that adopts `#{inspect(module)}`"
   defp get_raw_type_str({:struct, struct_type}), do: "struct of type `#{inspect(struct_type)}`"
+  defp get_raw_type_str(:struct), do: "struct"
   defp get_raw_type_str({:spark, module}), do: "`#{inspect(module)}`"
   defp get_raw_type_str({:mfa_or_fun, arity}), do: "mfa or function of arity #{arity}"
   defp get_raw_type_str({:spark_type, module, _}), do: "an `#{inspect(module)}`"
@@ -419,6 +420,9 @@ defmodule Spark.Options.Docs do
         subtypes |> Enum.map(&type_to_spec/1) |> unionize_quoted()
 
       {:struct, _struct_name} ->
+        quote(do: struct())
+
+      :struct ->
         quote(do: struct())
 
       {:tuple, tuple_types} ->
