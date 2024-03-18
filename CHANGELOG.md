@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.1](https://github.com/ash-project/spark/compare/v2.1.0...v2.1.1) (2024-03-18)
+
+
+
+
+### Improvements:
+
+* better, more type aware autocompletion
+
+* less crashing of elixir ls
+
 ## [v2.1.0](https://github.com/ash-project/spark/compare/v2.0.1...v2.1.0) (2024-03-15)
 
 
