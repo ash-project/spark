@@ -1,14 +1,34 @@
 defmodule Spark.Error.DslError do
   @moduledoc "Used when a DSL is incorrectly configured."
-  defexception [:module, :message, :path]
+  defexception [:module, :message, :path, :stacktrace]
 
   @type t :: %__MODULE__{
           __exception__: true,
           module: nil | module,
           message: String.t() | any,
-          path: [:atom]
+          path: [:atom],
+          stacktrace: any
         }
 
+  defmodule Stacktrace do
+    defstruct [:stacktrace]
+
+    defimpl Inspect do
+      def inspect(_, _) do
+        "%Stacktrace{}"
+      end
+    end
+  end
+
+  @impl true
+  def exception(opts) do
+    {:current_stacktrace, stacktrace} =
+      Process.info(self(), :current_stacktrace)
+
+    super(Keyword.put(opts, :stacktrace, %Stacktrace{stacktrace: stacktrace}))
+  end
+
+  @impl true
   def message(%{module: module, message: message, path: blank})
       when is_nil(blank) or blank == [] do
     "[#{normalize_module_name(module)}]\n #{get_message(message)}"

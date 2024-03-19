@@ -640,6 +640,9 @@ defmodule Spark.Dsl.Extension do
     end)
   end
 
+  defp raise_transformer_error(_transformer, %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error) when not is_nil(stacktrace) do
+    reraise error, stacktrace
+  end
   defp raise_transformer_error(transformer, error) do
     if is_exception(error) do
       raise error
