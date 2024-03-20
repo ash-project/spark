@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.3](https://github.com/ash-project/spark/compare/v2.1.2...v2.1.3) (2024-03-20)
+
+
+
+
+### Improvements:
+
+* handle single arg entities as options
+
+* capture stacktrace in dsl errors, reuse on raising
+
 ## [v2.1.2](https://github.com/ash-project/spark/compare/v2.1.1...v2.1.2) (2024-03-18)
 
 
