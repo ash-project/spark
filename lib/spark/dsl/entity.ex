@@ -235,24 +235,68 @@ defmodule Spark.Dsl.Entity do
           auto_set_fields: auto_set_fields,
           transform: transform,
           identifier: identifier,
-          singleton_entity_keys: singleton_entity_keys
+          singleton_entity_keys: singleton_entity_keys,
+          entities: nested_entity_definitions
         },
         opts,
         nested_entities
       ) do
-    {before_validate_auto, after_validate_auto} =
-      Keyword.split(auto_set_fields || [], Keyword.keys(schema))
-
-    with {:ok, opts} <-
+    with {:ok, opts, more_nested_entities} <-
+           fetch_single_argument_entities_from_opts(opts, nested_entity_definitions),
+         opts <- Keyword.new(opts),
+         {before_validate_auto, after_validate_auto} =
+           Keyword.split(auto_set_fields || [], Keyword.keys(schema)),
+         {:ok, opts} <-
            Spark.Options.validate(Keyword.merge(opts || [], before_validate_auto), schema),
          opts <- Keyword.merge(opts, after_validate_auto),
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
          built <- struct(target, opts),
-         built <- struct(built, nested_entities),
+         built <-
+           struct(
+             built,
+             Keyword.merge(Keyword.new(nested_entities), Keyword.new(more_nested_entities), fn _k, v1, v2 -> v1 ++ v2 end)
+           ),
          {:ok, built} <- validate_singleton_entity_keys(built, singleton_entity_keys),
          {:ok, built} <- transform(transform, built) do
       maybe_apply_identifier(built, identifier)
     end
+  end
+
+  defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions) do
+    Enum.reduce_while(nested_entity_definitions, {:ok, opts, []}, fn
+      {_key, entity_definitions}, {:ok, opts, more_nested_entities} ->
+      entity_definitions
+        |> Enum.filter(fn entity_definition -> Enum.count(entity_definition.args) == 1 end)
+        |> Enum.reduce_while(
+          {:ok, opts, more_nested_entities},
+          fn entity_definition, {:ok, opts, more_nested_entities} ->
+            values = Keyword.get_values(opts, entity_definition.name)
+            opts = Keyword.delete(opts, entity_definition.name)
+
+            Enum.reduce_while(values, {:ok, opts, more_nested_entities}, fn single_arg, {:ok, opts, more_nested_entities} ->
+              case build(entity_definition, [{Enum.at(entity_definition.args, 0), single_arg}], []) do
+                {:ok, built} ->
+                  {:cont, {:ok, opts, Keyword.update(more_nested_entities, entity_definition.name, [built], &[built | &1])}}
+
+                {:error, error} ->
+                  {:halt, {:error, error}}
+              end
+            end)
+            |> case do
+              {:ok, opts, more_nested_entities} ->
+                {:cont, {:ok, opts, more_nested_entities}}
+              {:error, error} ->
+                {:halt, {:error, error}}
+            end
+          end
+        )
+        |> case do
+          {:ok, opts, more_nested_entities} ->
+            {:cont, {:ok, opts, more_nested_entities}}
+          {:error, error} ->
+            {:halt, {:error, error}}
+        end
+    end)
   end
 
   defp validate_singleton_entity_keys(entity, []), do: {:ok, entity}

@@ -640,9 +640,14 @@ defmodule Spark.Dsl.Extension do
     end)
   end
 
-  defp raise_transformer_error(_transformer, %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error) when not is_nil(stacktrace) do
+  defp raise_transformer_error(
+         _transformer,
+         %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error
+       )
+       when not is_nil(stacktrace) do
     reraise error, stacktrace
   end
+
   defp raise_transformer_error(transformer, error) do
     if is_exception(error) do
       raise error
@@ -1023,7 +1028,7 @@ defmodule Spark.Dsl.Extension do
 
                 opts =
                   case Spark.Options.validate(
-                         current_config.opts,
+                      Keyword.new(current_config.opts),
                          Map.get(unquote(Macro.escape(section)), :schema, [])
                        ) do
                     {:ok, opts} ->
@@ -1318,7 +1323,7 @@ defmodule Spark.Dsl.Extension do
         {__MODULE__, :spark, section_path},
         %{
           current_config
-          | opts: Keyword.put(current_config.opts, field, value)
+          | opts: [{field, value} | current_config.opts]
         }
       )
     end
@@ -1500,7 +1505,7 @@ defmodule Spark.Dsl.Extension do
             {opts, opt_funs} =
               Enum.reduce(opts, {[], []}, fn {key, value}, {keyword, opt_funs} ->
                 {value, function} = Spark.CodeHelpers.lift_functions(value, key, __CALLER__)
-                keyword = Keyword.put(keyword, key, value)
+                keyword = [{key, value} | keyword]
 
                 if function do
                   {keyword, [function | opt_funs]}
@@ -1955,7 +1960,7 @@ defmodule Spark.Dsl.Extension do
 
       Process.put(
         {:builder_opts, nested_entity_path},
-        Keyword.put(current_opts, key, value)
+        [{key, value} | current_opts]
       )
     end
   end
