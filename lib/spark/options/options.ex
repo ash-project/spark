@@ -193,6 +193,8 @@ defmodule Spark.Options do
 
     * `{:behaviour, behaviour}` - expects a module that implements a given behaviour.
 
+    * `{:protocol, protocol}` - expects a value for which the protocol is implemented.
+
     * `{:spark, dsl_module}` - expects a module that is a `Spark.Dsl`
 
     * `{:mfa_or_fun, arity}` - expects a function or MFA of a corresponding arity.
@@ -407,6 +409,7 @@ defmodule Spark.Options do
           | {:spark_function_behaviour, module, {module, integer}}
           | {:spark_function_behaviour, module, module, {module, integer}}
           | {:behaviour, module}
+          | {:protocol, module}
           | {:spark, module}
           | {:mfa_or_fun, non_neg_integer()}
           | {:spark_type, module, builtin_function :: atom}
@@ -484,9 +487,6 @@ defmodule Spark.Options do
         {key, Keyword.put(value, :subsection, section)}
       end)
 
-    # Enum.reduce(new_right, left, fn {key, value}, left ->
-    #   Keyword.put(left, key, value)
-    # end)
     left ++ new_right
   end
 
@@ -970,17 +970,15 @@ defmodule Spark.Options do
     )
   end
 
-  defp validate_type(nil, key, value) do
-    if is_nil(value) do
-      {:ok, value}
-    else
+  defp validate_type(nil, _key, nil), do: {:ok, nil}
+
+  defp validate_type(nil, key, value),
+    do:
       error_tuple(
         key,
         value,
         "invalid value for #{render_key(key)}: expected nil, got: #{inspect(value)}"
       )
-    end
-  end
 
   defp validate_type({:custom, mod, fun, args}, key, value) do
     case apply(mod, fun, [value | args]) do
@@ -1139,6 +1137,22 @@ defmodule Spark.Options do
       value,
       "expected module that adopted #{inspect(module)} behaviour, or a module and options in #{render_key(key)}, got: #{inspect(value)}"
     )
+  end
+
+  defp validate_type({:protocol, protocol}, key, value) do
+    protocol.impl_for!(value)
+
+    {:ok, value}
+  rescue
+    Protocol.UndefinedError ->
+      error_tuple(
+        key,
+        value,
+        "expected a value which implements the `#{inspect(protocol)}` protocol"
+      )
+
+    UndefinedFunctionError ->
+      error_tuple(key, value, "expected `#{inspect(protocol)}` to be a protocol")
   end
 
   defp validate_type({type, _}, _key, value)
@@ -1501,6 +1515,8 @@ defmodule Spark.Options do
   def validate_type({:behaviour, module}) when is_atom(module) do
     {:ok, {:behaviour, module}}
   end
+
+  def validate_type({:protocol, module}) when is_atom(module), do: {:ok, {:protocol, module}}
 
   def validate_type({:spark_behaviour, module}) when is_atom(module) do
     {:ok, {:spark_behaviour, module}}

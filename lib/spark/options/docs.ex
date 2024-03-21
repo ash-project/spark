@@ -156,6 +156,10 @@ defmodule Spark.Options.Docs do
       "module that adopts `#{inspect(module)}`, a module and options, or a function of arity #{integer}"
 
   defp get_raw_type_str({:behaviour, module}), do: "module that adopts `#{inspect(module)}`"
+
+  defp get_raw_type_str({:protocol, module}),
+    do: "value that implements the `#{inspect(module)}` protocol"
+
   defp get_raw_type_str({:struct, struct_type}), do: "struct of type `#{inspect(struct_type)}`"
   defp get_raw_type_str(:struct), do: "struct"
   defp get_raw_type_str({:spark, module}), do: "`#{inspect(module)}`"
@@ -194,6 +198,7 @@ defmodule Spark.Options.Docs do
   end
 
   def dsl_docs_type({:behaviour, _mod}), do: "module"
+  def dsl_docs_type({:protocol, protocol}), do: "an `#{inspect(protocol)}` value"
   def dsl_docs_type({:spark, mod}), do: dsl_docs_type({:behaviour, mod})
   def dsl_docs_type({:spark_behaviour, mod}), do: dsl_docs_type({:behaviour, mod})
 
