@@ -484,9 +484,6 @@ defmodule Spark.Options do
         {key, Keyword.put(value, :subsection, section)}
       end)
 
-    # Enum.reduce(new_right, left, fn {key, value}, left ->
-    #   Keyword.put(left, key, value)
-    # end)
     left ++ new_right
   end
 

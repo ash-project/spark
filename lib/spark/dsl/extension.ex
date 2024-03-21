@@ -1028,7 +1028,7 @@ defmodule Spark.Dsl.Extension do
 
                 opts =
                   case Spark.Options.validate(
-                      Keyword.new(current_config.opts),
+                         Keyword.new(current_config.opts),
                          Map.get(unquote(Macro.escape(section)), :schema, [])
                        ) do
                     {:ok, opts} ->
