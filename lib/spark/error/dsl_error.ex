@@ -1,6 +1,7 @@
 defmodule Spark.Error.DslError do
   @moduledoc "Used when a DSL is incorrectly configured."
-  defexception [:module, :message, :path, :stacktrace]
+  @attrs [:module, :message, :path, :stacktrace]
+  defexception @attrs
 
   @type t :: %__MODULE__{
           __exception__: true,
@@ -11,6 +12,7 @@ defmodule Spark.Error.DslError do
         }
 
   defmodule Stacktrace do
+    @moduledoc false
     defstruct [:stacktrace]
 
     defimpl Inspect do
@@ -21,11 +23,19 @@ defmodule Spark.Error.DslError do
   end
 
   @impl true
+  def exception(message) when is_binary(message), do: exception(message: message)
+
   def exception(opts) do
     {:current_stacktrace, stacktrace} =
       Process.info(self(), :current_stacktrace)
 
-    super(Keyword.put(opts, :stacktrace, %Stacktrace{stacktrace: stacktrace}))
+    opts =
+      opts
+      |> Enum.to_list()
+      |> Keyword.put(:stacktrace, %Stacktrace{stacktrace: stacktrace})
+      |> Keyword.take(@attrs)
+
+    struct!(__MODULE__, opts)
   end
 
   @impl true
