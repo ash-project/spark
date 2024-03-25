@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.4](https://github.com/ash-project/spark/compare/v2.1.3...v2.1.4) (2024-03-25)
+
+
+
+
+### Improvements:
+
+* Add `{:protocol, module}` as a supported type. (#79)
+
 ## [v2.1.3](https://github.com/ash-project/spark/compare/v2.1.2...v2.1.3) (2024-03-20)
 
 
