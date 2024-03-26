@@ -13,6 +13,12 @@ defmodule Spark.Dsl.Fragment do
           ...
         end
       end
+
+  Then add the fragment to the parent resource.
+
+      defmodule MyApp.Resource do
+        use Ash.Resource, fragments: [MyApp.Resource.Graphql], ...
+      end
   """
 
   defmacro __using__(opts) do
