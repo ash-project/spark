@@ -64,7 +64,7 @@ defmodule Spark.ElixirSense.Plugin do
                   :ignore
 
                 completions ->
-                  {:override, completions}
+                  {:override, Enum.uniq(completions)}
               end
             else
               :ignore
@@ -165,6 +165,7 @@ defmodule Spark.ElixirSense.Plugin do
         container
         |> cursor_path()
         |> Enum.reverse()
+        |> rewrite_pipes()
         |> collapse_do_blocks()
         |> collapse_lists()
         |> Enum.reverse()
@@ -177,6 +178,16 @@ defmodule Spark.ElixirSense.Plugin do
         []
     end
   end
+
+  defp rewrite_pipes([{:|>, _, [params_1, {call, meta, params_rest}]}, _ | rest]) do
+    rewrite_pipes([{call, meta, [params_1 | params_rest || []]} | rest])
+  end
+
+  defp rewrite_pipes([first | rest]) do
+    [first | rewrite_pipes(rest)]
+  end
+
+  defp rewrite_pipes([]), do: []
 
   defp handle_dangling_do_blocks([%{value_type_path: [{:keyword_key, :do, []}]} = info | rest]) do
     [%{info | value_type_path: [:do_block]} | rest]
@@ -564,7 +575,7 @@ defmodule Spark.ElixirSense.Plugin do
           end)
 
         if schema do
-          {:override, autocomplete_schema(schema, hint, info.value_type_path, opts)}
+          {:override, Enum.uniq(autocomplete_schema(schema, hint, info.value_type_path, opts))}
         else
           :ignore
         end
@@ -610,7 +621,7 @@ defmodule Spark.ElixirSense.Plugin do
             end)
             |> filter_matches(hint)
 
-          {:override, List.flatten(suggestions)}
+          {:override, Enum.uniq(List.flatten(suggestions))}
       end
     else
       :ignore

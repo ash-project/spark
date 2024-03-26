@@ -235,6 +235,28 @@ defmodule Spark.ElixirSense.PluginTest do
              ] = suggestions(buffer, cursor)
     end
 
+    test "it autocompletes the opts when piping" do
+      buffer = """
+      1
+      |> ExampleOptions.func(2,
+         opt
+      #     ^
+      """
+
+      [cursor] = cursors(buffer)
+
+      assert [
+               %{
+                 label: "option",
+                 type: :generic,
+                 kind: :function,
+                 snippet: "option: \"$0\"",
+                 detail: "Option",
+                 documentation: "An option"
+               }
+             ] = suggestions(buffer, cursor)
+    end
+
     test "it ignores maps" do
       buffer = """
       ExampleOptions.func(1, 2, %{opt
