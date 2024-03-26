@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.6](https://github.com/ash-project/spark/compare/v2.1.5...v2.1.6) (2024-03-26)
+
+
+
+
+### Bug Fixes:
+
+* use the entity key, not the name, for placing entities
+
 ## [v2.1.5](https://github.com/ash-project/spark/compare/v2.1.4...v2.1.5) (2024-03-26)
 
 
