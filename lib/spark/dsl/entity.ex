@@ -267,7 +267,7 @@ defmodule Spark.Dsl.Entity do
 
   defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions) do
     Enum.reduce_while(nested_entity_definitions, {:ok, opts, []}, fn
-      {_key, entity_definitions}, {:ok, opts, more_nested_entities} ->
+      {key, entity_definitions}, {:ok, opts, more_nested_entities} ->
         entity_definitions
         |> Enum.filter(fn entity_definition -> Enum.count(entity_definition.args) == 1 end)
         |> Enum.reduce_while(
@@ -289,7 +289,7 @@ defmodule Spark.Dsl.Entity do
                    {:ok, opts,
                     Keyword.update(
                       more_nested_entities,
-                      entity_definition.name,
+                      key,
                       [built],
                       &[built | &1]
                     )}}
