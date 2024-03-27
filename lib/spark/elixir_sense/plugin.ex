@@ -363,7 +363,7 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp get_mod_fun([{:@, _, [{name, _, nil}]}, fun], binding_env) when is_atom(name) do
-    case ElixirSense.Core.Binding.expand(binding_env, {:attribute, name}) do
+    case apply(ElixirSense.Core.Binding, :expand, [binding_env, {:attribute, name}]) do
       {:atom, atom} ->
         {{atom, false}, fun}
 
@@ -373,7 +373,7 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp get_mod_fun([{name, _, nil}, fun], binding_env) when is_atom(name) do
-    case ElixirSense.Core.Binding.expand(binding_env, {:variable, name}) do
+    case apply(ElixirSense.Core.Binding, :expand, [binding_env, {:variable, name}]) do
       {:atom, atom} ->
         {{atom, false}, fun}
 
@@ -406,9 +406,9 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp get_mod([{:@, _, [{name, _, nil}]} | rest], binding_env) when is_atom(name) do
-    case ElixirSense.Core.Binding.expand(binding_env, {:attribute, name}) do
+    case apply(ElixirSense.Core.Binding, :expand, [binding_env, {:attribute, name}]) do
       {:atom, atom} ->
-        if ElixirSense.Core.Introspection.elixir_module?(atom) do
+        if apply(ElixirSense.Core.Introspection, :elixir_module?, [atom]) do
           mod =
             atom
             |> Module.split()
