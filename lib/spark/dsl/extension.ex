@@ -1323,7 +1323,7 @@ defmodule Spark.Dsl.Extension do
         {__MODULE__, :spark, section_path},
         %{
           current_config
-          | opts: [{field, value} | current_config.opts]
+          | opts: Keyword.put(current_config.opts, field, value)
         }
       )
     end
@@ -1960,7 +1960,7 @@ defmodule Spark.Dsl.Extension do
 
       Process.put(
         {:builder_opts, nested_entity_path},
-        [{key, value} | current_opts]
+        Keyword.put(current_opts, key, value)
       )
     end
   end

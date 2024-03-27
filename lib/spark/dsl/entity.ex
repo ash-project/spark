@@ -253,11 +253,13 @@ defmodule Spark.Dsl.Entity do
          built <-
            struct(
              built,
-             Keyword.merge(Keyword.new(nested_entities), Keyword.new(more_nested_entities), fn _k,
-                                                                                               v1,
-                                                                                               v2 ->
-               v1 ++ v2
-             end)
+             Keyword.merge(
+               Keyword.new(nested_entities),
+               Keyword.new(more_nested_entities),
+               fn _k, v1, v2 ->
+                 v1 ++ v2
+               end
+             )
            ),
          {:ok, built} <- validate_singleton_entity_keys(built, singleton_entity_keys),
          {:ok, built} <- transform(transform, built) do
