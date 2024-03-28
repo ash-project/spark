@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.9](https://github.com/ash-project/spark/compare/v2.1.8...v2.1.9) (2024-03-28)
+
+
+
+
+### Bug Fixes:
+
+* `nil` is not a valid module for spark function behaviour
+
 ## [v2.1.8](https://github.com/ash-project/spark/compare/v2.1.7...v2.1.8) (2024-03-27)
 
 
