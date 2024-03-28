@@ -1182,8 +1182,8 @@ defmodule Spark.Options do
     error_tuple(key, value, "expected module in #{render_key(key)}, got: #{inspect(value)}")
   end
 
-  defp validate_type({:spark_function_behaviour, _module, {_function_mod, _arity}}, _key, nil) do
-    {:ok, nil}
+  defp validate_type({:spark_function_behaviour, _module, {_function_mod, _arity}}, key, nil) do
+    error_tuple(key, nil, "expected module and opts, or a module in #{render_key(key)}, got: nil")
   end
 
   defp validate_type({:spark_function_behaviour, _module, {_function_mod, _arity}}, _key, value)
