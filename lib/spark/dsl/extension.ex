@@ -2161,23 +2161,32 @@ defmodule Spark.Dsl.Extension do
   end
 
   def shuffle_opts_to_end(keyword, entity_args, nil) do
+    count_required_args =
+      entity_args
+      |> Enum.take_while(&is_atom/1)
+      |> Enum.count()
+
     case Enum.find_index(keyword, fn {_key, value} -> Keyword.keyword?(value) end) do
       nil ->
         {keyword, []}
 
       index ->
-        key = keyword |> Enum.at(index) |> elem(0)
+        if index <= count_required_args - 1 do
+          {keyword, []}
+        else
+          key = keyword |> Enum.at(index) |> elem(0)
 
-        default =
-          Enum.find_value(entity_args, fn
-            {:optional, ^key, default} ->
-              default
+          default =
+            Enum.find_value(entity_args, fn
+              {:optional, ^key, default} ->
+                default
 
-            _ ->
-              nil
-          end)
+              _ ->
+                nil
+            end)
 
-        {List.replace_at(keyword, index, {key, default}), keyword |> Enum.at(index) |> elem(1)}
+          {List.replace_at(keyword, index, {key, default}), keyword |> Enum.at(index) |> elem(1)}
+        end
     end
   end
 

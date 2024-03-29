@@ -293,6 +293,21 @@ defmodule Spark.DslTest do
       end
     end
 
+    test "entities with required arguments don't assume an argument is opts if its a keyword list" do
+      defmodule BethSanchez do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset :foo do
+            singleton(foo: :bar)
+          end
+        end
+      end
+
+      assert [%{singleton: %Spark.Test.Contact.Dsl.Singleton{value: [foo: :bar]}}] = Spark.Test.Contact.Info.presets(BethSanchez)
+    end
+
     test "singleton entities are unwrapped" do
       defmodule MortySanchez do
         @moduledoc false
