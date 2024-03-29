@@ -101,13 +101,12 @@ defmodule Spark.MixProject do
       {:jason, "~> 1.4"},
       # Dev/Test dependencies
       {:ex_doc, github: "elixir-lang/ex_doc", only: [:dev, :test], runtime: false},
-      {:ex_check, "~> 0.12.0", only: [:dev, :test]},
+      {:ex_check, "~> 0.12", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
-      {:git_ops, "~> 2.4.4", only: [:dev, :test]},
+      {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:parse_trans, "3.3.0", only: [:dev, :test], override: true},
       {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:test, :dev, :docs]}
     ]
   end

@@ -48,7 +48,7 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   def suggestions(hint, opts) do
-    is_spark_entity? = is_dsl?(opts.env) || is_fragment?(opts.env)
+    is_spark_entity? = do_dsl?(opts.env) || fragment?(opts.env)
 
     if is_spark_entity? do
       case func_call_chain(opts.cursor_context.text_before, opts.env) do
@@ -638,7 +638,7 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  defp is_dsl?(env) do
+  defp do_dsl?(env) do
     Enum.any?(env.attributes, &(&1.name == :spark_is)) ||
       Enum.any?(env.requires, fn module ->
         try do
@@ -656,7 +656,7 @@ defmodule Spark.ElixirSense.Plugin do
       end)
   end
 
-  defp is_fragment?(env) do
+  defp fragment?(env) do
     Enum.any?(env.attributes, &(&1.name == :spark_fragment_of)) ||
       Spark.Dsl.Fragment in env.requires
   end

@@ -305,7 +305,8 @@ defmodule Spark.DslTest do
         end
       end
 
-      assert [%{singleton: %Spark.Test.Contact.Dsl.Singleton{value: [foo: :bar]}}] = Spark.Test.Contact.Info.presets(BethSanchez)
+      assert [%{singleton: %Spark.Test.Contact.Dsl.Singleton{value: [foo: :bar]}}] =
+               Spark.Test.Contact.Info.presets(BethSanchez)
     end
 
     test "singleton entities are unwrapped" do

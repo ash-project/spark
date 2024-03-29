@@ -1857,7 +1857,7 @@ defmodule Spark.Dsl.Extension do
         @moduledoc false
 
         for {key, config} <- entity.schema,
-            !Spark.Dsl.Extension.is_required_arg?(key, entity.args) do
+            !Spark.Dsl.Extension.required_arg?(key, entity.args) do
           defmacro unquote(key)(value) do
             key = unquote(key)
             modules = unquote(entity.modules)
@@ -1966,7 +1966,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def is_required_arg?(key, args) do
+  def required_arg?(key, args) do
     key in args
   end
 
