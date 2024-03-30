@@ -4,7 +4,7 @@ defmodule Spark.Dsl.Transformer do
 
   It's `transform/1` takes a `map`, which is just the values/configurations at each point
   of the DSL. Don't manipulate it directly, if possible, instead use functions like
-  `get_entities/3` and `replace_entity/5` to manipulate it.
+  `get_entities/3` and `replace_entity/4` to manipulate it.
 
   Use the `after?/1` and `before?/1` callbacks to ensure that your transformer
   runs either before or after some other transformer.
@@ -256,8 +256,8 @@ defmodule Spark.Dsl.Transformer do
             record.__identifier__ == replacement.__identifier__
         end
 
-    Map.update(dsl_state, path, %{entities: [replacement], opts: []}, fn config ->
-      Map.update(config, :entities, [replacement], fn entities ->
+    Map.replace_lazy(dsl_state, path, fn config ->
+      Map.replace_lazy(config, :entities, fn entities ->
         replace_match(entities, replacement, matcher)
       end)
     end)
