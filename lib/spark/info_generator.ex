@@ -233,7 +233,10 @@ defmodule Spark.InfoGenerator do
         end
       end
 
-      defoverridable [{unquote(option.function_name), 1}, {unquote(:"#{option.function_name}!"), 1}]
+      defoverridable [
+        {unquote(option.function_name), 1},
+        {unquote(:"#{option.function_name}!"), 1}
+      ]
     end
   end
 
