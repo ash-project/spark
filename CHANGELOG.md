@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.12](https://github.com/ash-project/spark/compare/v2.1.11...v2.1.12) (2024-04-05)
+
+
+
+
+### Bug Fixes:
+
+* don't put do blocks into option values
+
+* `replace_entity` should not add an entity if none are present (#82)
+
+### Improvements:
+
+* allow overriding generated info functions
+
 ## [v2.1.11](https://github.com/ash-project/spark/compare/v2.1.10...v2.1.11) (2024-03-29)
 
 
