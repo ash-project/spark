@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.13](https://github.com/ash-project/spark/compare/v2.1.12...v2.1.13) (2024-04-05)
+
+
+
+
+### Bug Fixes:
+
+* still nailing down the opts list shuffling to end behavior
+
 ## [v2.1.12](https://github.com/ash-project/spark/compare/v2.1.11...v2.1.12) (2024-04-05)
 
 
