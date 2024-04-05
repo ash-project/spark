@@ -72,6 +72,8 @@ defmodule Spark.InfoGenerator do
           |> Stream.reject(&is_nil(elem(&1, 1)))
           |> Map.new()
         end
+
+        defoverridable [{unquote(function_name), 1}]
       end
     end
   end
@@ -102,6 +104,8 @@ defmodule Spark.InfoGenerator do
 
           get_entities(dsl_or_extended, unquote(path))
         end
+
+        defoverridable [{unquote(function_name), 1}]
       end
     end
   end
@@ -181,6 +185,8 @@ defmodule Spark.InfoGenerator do
           unquote(option.default)
         )
       end
+
+      defoverridable [{unquote(function_name), 1}]
     end
   end
 
@@ -226,6 +232,8 @@ defmodule Spark.InfoGenerator do
             value
         end
       end
+
+      defoverridable [{unquote(option.function_name), 1}, {unquote(:"#{option.function_name}!"), 1}]
     end
   end
 

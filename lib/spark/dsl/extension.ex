@@ -2171,7 +2171,8 @@ defmodule Spark.Dsl.Extension do
         {keyword, []}
 
       index ->
-        if index <= count_required_args - 1 do
+        item = keyword |> Enum.at(index) |> elem(1)
+        if !match?({:__block__, _, _}, item[:do]) and index <= count_required_args do
           {keyword, []}
         else
           key = keyword |> Enum.at(index) |> elem(0)
