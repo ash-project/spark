@@ -18,7 +18,7 @@ defmodule Spark.Test.Contact do
           doc: "A function that wil contact this person with a message",
           type:
             {:spark_function_behaviour, Spark.Test.Contact.Contacter,
-             {Spark.Test.Contact.Contacter.Function, 1}}
+             Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}
         ]
       ]
     }
@@ -95,7 +95,7 @@ defmodule Spark.Test.Contact do
         contacter: [
           type:
             {:spark_function_behaviour, Spark.Test.Contact.Contacter,
-             {Spark.Test.Contact.Contacter.Function, 1}}
+             Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}
         ]
       ]
     }
@@ -119,7 +119,7 @@ defmodule Spark.Test.Contact do
         contacter: [
           type:
             {:spark_function_behaviour, Spark.Test.Contact.Contacter,
-             {Spark.Test.Contact.Contacter.Function, 1}}
+             Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}
         ]
       ]
     }
@@ -153,7 +153,7 @@ defmodule Spark.Test.Contact do
         contacter: [
           type:
             {:spark_function_behaviour, Spark.Test.Contact.Contacter,
-             {Spark.Test.Contact.Contacter.Function, 1}}
+             Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}
         ]
       ]
     }

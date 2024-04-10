@@ -42,9 +42,10 @@ defmodule Spark.ElixirSense.Plugin do
       suggestions ->
         suggestions
     end
-  rescue
-    _ ->
-      :ignore
+
+    # rescue
+    #   _ ->
+    #     :ignore
   end
 
   def suggestions(hint, opts) do
@@ -109,9 +110,10 @@ defmodule Spark.ElixirSense.Plugin do
           :ignore
       end
     end
-  rescue
-    _e ->
-      :ignore
+
+    # rescue
+    #   _e ->
+    #     :ignore
   end
 
   defp autocomplete_schema(
@@ -609,18 +611,18 @@ defmodule Spark.ElixirSense.Plugin do
 
         constructors ->
           suggestions =
-            Enum.map(constructors, fn
+            Enum.flat_map(constructors, fn
               {:value, key, config} ->
-                option_values(key, config, hint, opts, value_type_path)
+                List.wrap(option_values(key, config, hint, opts, value_type_path))
 
               {key, config} ->
-                option_suggestions(key, config, type)
+                List.wrap(option_suggestions(key, config, type))
 
               %{__struct__: Spark.Dsl.Entity} = entity ->
-                entity_suggestions(entity)
+                List.wrap(entity_suggestions(entity))
 
               %{__struct__: Spark.Dsl.Section} = section ->
-                section_suggestions(section)
+                List.wrap(section_suggestions(section))
             end)
             |> filter_matches(hint)
 
@@ -633,8 +635,12 @@ defmodule Spark.ElixirSense.Plugin do
 
   defp filter_matches(hints, match) do
     if match do
-      Enum.filter(hints, fn %{label: label} ->
-        apply(Matcher, :match?, [label, match])
+      Enum.filter(hints, fn
+        %{label: label} ->
+          apply(Matcher, :match?, [label, match])
+
+        %{name: name} ->
+          apply(Matcher, :match?, [name, match])
       end)
     else
       hints
@@ -728,8 +734,6 @@ defmodule Spark.ElixirSense.Plugin do
       end
 
     config = Spark.Options.update_key_docs(config)
-
-
 
     %{
       type: :generic,

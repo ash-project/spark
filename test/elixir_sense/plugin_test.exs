@@ -142,8 +142,8 @@ defmodule Spark.ElixirSense.PluginTest do
       use Spark.Test.Contact
 
       presets do
-        preset_with_snippet(
-    #                       ^
+        preset_with_fn_arg :foo,
+    #                            ^
         end
       end
     end
@@ -151,14 +151,32 @@ defmodule Spark.ElixirSense.PluginTest do
 
     [cursor] = cursors(buffer)
 
-    refute %{
-        label: "thing",
-        type: :generic,
-        kind: :function,
-        detail: "Option",
-        documentation: "",
-        snippet: "thing: \"$0\""
-      } in  Enum.take(suggestions(buffer, cursor), 1)
+    assert [
+             %{
+               label: "ExampleContacter",
+               type: :generic,
+               kind: :class,
+               insert_text: "ExampleContacter",
+               detail: "Spark.Test.Contact.Contacter",
+               documentation: ""
+             },
+             %{
+               args: "",
+               arity: 0,
+               name: "example",
+               type: :function,
+               origin: "Spark.Test.ContacterBuiltins",
+               spec: "",
+               metadata: %{app: :spark},
+               args_list: [],
+               summary: "",
+               snippet: nil,
+               def_arity: 0,
+               visibility: :public,
+               needed_import: nil,
+               needed_require: nil
+             }
+           ] = Enum.sort(suggestions(buffer, cursor))
   end
 
   describe "using opts" do
