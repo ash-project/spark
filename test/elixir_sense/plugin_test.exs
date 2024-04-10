@@ -136,6 +136,33 @@ defmodule Spark.ElixirSense.PluginTest do
            ] = Enum.take(suggestions(buffer, cursor), 1)
   end
 
+  test "entity snippets show arguments before options" do
+    buffer = """
+    defmodule DocBrown do
+      use Spark.Test.Contact
+
+      presets do
+        preset_with_snippet(
+    #                       ^
+        end
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+
+    assert [
+             %{
+               label: "name",
+               type: :generic,
+               kind: :function,
+               detail: "name",
+               documentation: "",
+               snippet: ":$0"
+             }
+           ] = Enum.take(suggestions(buffer, cursor), 1)
+  end
+
   describe "using opts" do
     test "opts to `__using__` are autocompleted" do
       buffer = """

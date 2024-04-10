@@ -94,7 +94,7 @@ defmodule Spark.ElixirSense.Plugin do
                 |> Enum.map(fn %{candidate: {_, function_call}} -> function_call end)
                 |> Enum.reverse()
 
-              get_suggestions(hint, opts, scope_path, info.value_type_path)
+              get_suggestions(hint, opts, scope_path, info.value_type_path, arg_index)
           end
 
         _ ->
@@ -585,7 +585,7 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  defp get_suggestions(hint, opts, scope_path, value_type_path) do
+  defp get_suggestions(hint, opts, scope_path, value_type_path, arg_index) do
     dsl_mod = get_dsl_mod(opts)
 
     {type, _value_type_path} =
@@ -603,13 +603,16 @@ defmodule Spark.ElixirSense.Plugin do
 
       extensions = default_extensions(dsl_mod) ++ parse_extensions(opts, extension_kinds)
 
-      case get_constructors(extensions, scope_path, hint) do
+      case get_constructors(extensions, scope_path, hint, arg_index) do
         [] ->
           :ignore
 
         constructors ->
           suggestions =
             Enum.map(constructors, fn
+              {:value, key, config} ->
+                option_suggestions(key, config, type, true)
+
               {key, config} ->
                 option_suggestions(key, config, type)
 
@@ -714,24 +717,35 @@ defmodule Spark.ElixirSense.Plugin do
     }
   end
 
-  defp option_suggestions(key, config, type) do
+  defp option_suggestions(key, config, type, value_only? \\ false) do
     snippet = snippet_or_default(config[:snippet], default_snippet(config))
 
     snippet =
-      if type == :option do
-        "#{key}: #{snippet}"
+      if value_only? do
+        snippet
       else
-        "#{key} #{snippet}"
+        if type == :option do
+          "#{key}: #{snippet}"
+        else
+          "#{key} #{snippet}"
+        end
       end
 
     config = Spark.Options.update_key_docs(config)
+
+    detail =
+      if value_only? do
+        to_string(key)
+      else
+        "Option"
+      end
 
     %{
       type: :generic,
       kind: :function,
       label: to_string(key),
       snippet: snippet,
-      detail: "Option",
+      detail: detail,
       documentation: config[:doc]
     }
   end
@@ -939,7 +953,7 @@ defmodule Spark.ElixirSense.Plugin do
     end
   end
 
-  defp get_constructors(extensions, [], hint) do
+  defp get_constructors(extensions, [], hint, arg_index) do
     Enum.flat_map(
       extensions,
       fn extension ->
@@ -949,7 +963,7 @@ defmodule Spark.ElixirSense.Plugin do
             |> sections()
             |> Enum.filter(& &1.top_level?)
             |> Enum.flat_map(fn section ->
-              do_find_constructors(section, [], hint)
+              do_find_constructors(section, [], hint, arg_index)
             end)
 
           extension.sections()
@@ -960,14 +974,14 @@ defmodule Spark.ElixirSense.Plugin do
           end)
           |> Enum.concat(top_level_constructors)
         rescue
-          _ ->
+          _e ->
             []
         end
       end
     )
   end
 
-  defp get_constructors(extensions, [first | rest], hint) do
+  defp get_constructors(extensions, [first | rest], hint, arg_index) do
     extensions
     |> Enum.flat_map(&sections/1)
     |> Enum.filter(& &1.top_level?)
@@ -983,20 +997,20 @@ defmodule Spark.ElixirSense.Plugin do
             try do
               Enum.flat_map(apply_dsl_patches(sections(extension), extensions), fn section ->
                 if section.name == first do
-                  do_find_constructors(section, rest, hint)
+                  do_find_constructors(section, rest, hint, arg_index)
                 else
                   []
                 end
               end)
             rescue
-              _ ->
+              _e ->
                 []
             end
           end
         )
 
       top_level_section ->
-        do_find_constructors(top_level_section, [first | rest], hint)
+        do_find_constructors(top_level_section, [first | rest], hint, arg_index)
     end
   end
 
@@ -1033,19 +1047,31 @@ defmodule Spark.ElixirSense.Plugin do
     }
   end
 
-  defp do_find_constructors(entity_or_section, path, hint, recursives \\ [])
+  defp do_find_constructors(entity_or_section, path, hint, arg_index, recursives \\ [])
 
   defp do_find_constructors(
          %{__struct__: Spark.Dsl.Entity} = entity,
          [],
          hint,
+         arg_index,
          recursives
        ) do
-    find_opt_hints(entity, hint) ++
-      find_entity_hints(entity, hint, recursives)
+    case argument_or_option(entity, arg_index) do
+      {:argument, key, config} ->
+        [{:value, key, config}]
+
+      :option ->
+        find_opt_hints(entity, hint) ++
+          find_entity_hints(entity, hint, recursives)
+
+      {:both, key, config} ->
+        [{:value, key, config}] ++
+          find_opt_hints(entity, hint) ++
+          find_entity_hints(entity, hint, recursives)
+    end
   end
 
-  defp do_find_constructors(section, [], hint, recursives) do
+  defp do_find_constructors(section, [], hint, _arg_index, recursives) do
     find_opt_hints(section, hint) ++
       find_entity_hints(section, hint, []) ++
       Enum.filter(section.sections, fn section ->
@@ -1057,6 +1083,7 @@ defmodule Spark.ElixirSense.Plugin do
          %{__struct__: Spark.Dsl.Entity} = entity,
          [next | rest],
          hint,
+         arg_index,
          recursives
        ) do
     entity.entities
@@ -1070,27 +1097,44 @@ defmodule Spark.ElixirSense.Plugin do
         &1,
         rest,
         hint,
+        arg_index,
         Enum.uniq(recursives ++ List.wrap(recursive_for(entity)))
       )
     )
     |> Enum.uniq()
   end
 
-  defp do_find_constructors(section, [first | rest], hint, recursives) do
+  defp do_find_constructors(section, [first | rest], hint, arg_index, recursives) do
     Enum.flat_map(section.entities, fn entity ->
       if entity.name == first do
-        do_find_constructors(entity, rest, hint)
+        do_find_constructors(entity, rest, hint, arg_index)
       else
         []
       end
     end) ++
       Enum.flat_map(section.sections, fn section ->
         if section.name == first do
-          do_find_constructors(section, rest, hint)
+          do_find_constructors(section, rest, hint, arg_index)
         else
           []
         end
       end) ++ recursives
+  end
+
+  defp argument_or_option(entity, arg_index) do
+    case Enum.at(entity.args || [], arg_index) do
+      nil ->
+        :option
+
+      {:optional, key} ->
+        {:both, key, entity.schema[key]}
+
+      {:optional, key, _value} ->
+        {:both, key, entity.schema[key]}
+
+      key when is_atom(key) ->
+        {:argument, key, entity.schema[key]}
+    end
   end
 
   defp recursive_for(entity) do
