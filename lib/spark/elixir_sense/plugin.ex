@@ -611,7 +611,7 @@ defmodule Spark.ElixirSense.Plugin do
           suggestions =
             Enum.map(constructors, fn
               {:value, key, config} ->
-                option_suggestions(key, config, type, true)
+                option_values(key, config, hint, opts, value_type_path)
 
               {key, config} ->
                 option_suggestions(key, config, type)
@@ -717,35 +717,26 @@ defmodule Spark.ElixirSense.Plugin do
     }
   end
 
-  defp option_suggestions(key, config, type, value_only? \\ false) do
+  defp option_suggestions(key, config, type) do
     snippet = snippet_or_default(config[:snippet], default_snippet(config))
 
     snippet =
-      if value_only? do
-        snippet
+      if type == :option do
+        "#{key}: #{snippet}"
       else
-        if type == :option do
-          "#{key}: #{snippet}"
-        else
-          "#{key} #{snippet}"
-        end
+        "#{key} #{snippet}"
       end
 
     config = Spark.Options.update_key_docs(config)
 
-    detail =
-      if value_only? do
-        to_string(key)
-      else
-        "Option"
-      end
+
 
     %{
       type: :generic,
       kind: :function,
       label: to_string(key),
       snippet: snippet,
-      detail: detail,
+      detail: "Option",
       documentation: config[:doc]
     }
   end

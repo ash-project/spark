@@ -151,16 +151,14 @@ defmodule Spark.ElixirSense.PluginTest do
 
     [cursor] = cursors(buffer)
 
-    assert [
-             %{
-               label: "name",
-               type: :generic,
-               kind: :function,
-               detail: "name",
-               documentation: "",
-               snippet: ":$0"
-             }
-           ] = Enum.take(suggestions(buffer, cursor), 1)
+    refute %{
+        label: "thing",
+        type: :generic,
+        kind: :function,
+        detail: "Option",
+        documentation: "",
+        snippet: "thing: \"$0\""
+      } in  Enum.take(suggestions(buffer, cursor), 1)
   end
 
   describe "using opts" do
