@@ -26,8 +26,6 @@ defmodule Spark.ElixirSense.Entity do
     builtins =
       if builtins && !String.contains?(hint, ".") && lowercase_string?(hint) do
         if function_exported?(Complete, :complete, 4) do
-          ElixirSense.Core.Normalized.Code.Fragment.cursor_context("#{inspect(builtins)}.#{hint}")
-
           apply(Complete, :complete, [
             to_string("#{inspect(builtins)}.#{hint}"),
             apply(ElixirSense.Core.State.Env, :__struct__, []),
