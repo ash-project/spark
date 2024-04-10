@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.14](https://github.com/ash-project/spark/compare/v2.1.13...v2.1.14) (2024-04-10)
+
+
+
+
+### Bug Fixes:
+
+* properly autocomplete entity argument values
+
 ## [v2.1.13](https://github.com/ash-project/spark/compare/v2.1.12...v2.1.13) (2024-04-05)
 
 
