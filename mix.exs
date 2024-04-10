@@ -100,7 +100,7 @@ defmodule Spark.MixProject do
       {:sourceror, "~> 1.0"},
       {:jason, "~> 1.4"},
       # Dev/Test dependencies
-      {:ex_doc, github: "elixir-lang/ex_doc", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.32.0", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.12", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
