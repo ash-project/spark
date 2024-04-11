@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.17](https://github.com/ash-project/spark/compare/v2.1.16...v2.1.17) (2024-04-11)
+
+
+
+
+### Bug Fixes:
+
+* don't order sections unless an explicit order is given
+
 ## [v2.1.16](https://github.com/ash-project/spark/compare/v2.1.15...v2.1.16) (2024-04-10)
 
 
