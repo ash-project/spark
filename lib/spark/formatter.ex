@@ -150,10 +150,13 @@ defmodule Spark.Formatter do
       end)
 
     new_sections =
-      section_exprs
-      |> Enum.sort_by(fn {{name, _, _}, _} ->
-        Enum.find_index(section_names, &(&1 == name))
-      end)
+      if config[using][:section_order] && config[using][:section_order] != [] do
+        Enum.sort_by(section_exprs, fn {{name, _, _}, _} ->
+          Enum.find_index(section_names, &(&1 == name))
+        end)
+      else
+        section_exprs
+      end
 
     new_section_indexes =
       section_exprs
@@ -218,6 +221,7 @@ defmodule Spark.Formatter do
   end
 
   defp sort_sections(sections, nil), do: sections
+  defp sort_sections(sections, []), do: sections
 
   defp sort_sections(sections, section_order) do
     {ordered, unordered} =
