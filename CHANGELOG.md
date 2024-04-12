@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.18](https://github.com/ash-project/spark/compare/v2.1.17...v2.1.18) (2024-04-12)
+
+
+
+
+### Improvements:
+
+* solve for compile time dependency issues
+
 ## [v2.1.17](https://github.com/ash-project/spark/compare/v2.1.16...v2.1.17) (2024-04-11)
 
 
