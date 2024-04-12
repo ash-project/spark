@@ -124,6 +124,8 @@ defmodule Spark.CodeHelpers do
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, arity, caller, context1, context2)
 
+    value = Spark.Dsl.Extension.expand_alias(value, caller)
+
     {function,
      quote generated: true do
        unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
@@ -140,6 +142,8 @@ defmodule Spark.CodeHelpers do
     fn_args = generate_captured_arguments(fn_args, caller)
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
+
+    value = Spark.Dsl.Extension.expand_alias(value, caller)
 
     {function,
      quote generated: true do
@@ -163,6 +167,8 @@ defmodule Spark.CodeHelpers do
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
 
+    value = Spark.Dsl.Extension.expand_alias(value, caller)
+
     {function,
      quote generated: true do
        unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
@@ -179,6 +185,7 @@ defmodule Spark.CodeHelpers do
     fn_args = generate_captured_arguments(body, caller)
     fn_name = generate_unique_function_name(value, key)
     function = generate_captured_function_caller(fn_name, fn_args, caller)
+    value = Spark.Dsl.Extension.expand_alias(value, caller)
 
     {function,
      quote generated: true do
@@ -207,6 +214,7 @@ defmodule Spark.CodeHelpers do
           {:->, _, [[{:when, _, args_with_clause}], body]} ->
             args = :lists.droplast(args_with_clause)
             clause = List.last(args_with_clause)
+            body = Spark.Dsl.Extension.expand_alias(body, caller)
 
             quote do
               def unquote(fn_name)(unquote_splicing(args)) when unquote(clause) do
@@ -215,6 +223,8 @@ defmodule Spark.CodeHelpers do
             end
 
           {:->, _, [args, body]} ->
+            body = Spark.Dsl.Extension.expand_alias(body, caller)
+
             quote do
               def unquote(fn_name)(unquote_splicing(args)) do
                 unquote(body)

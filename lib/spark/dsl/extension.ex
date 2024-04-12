@@ -1989,26 +1989,6 @@ defmodule Spark.Dsl.Extension do
   def expand_alias(ast, %Macro.Env{} = env) do
     Macro.prewalk(ast, fn
       {:%, meta, [left, right]} ->
-        left =
-          case expand_alias(left, env) do
-            atom when is_atom(atom) ->
-              try do
-                Code.ensure_compiled!(atom)
-              rescue
-                e ->
-                  case env.function do
-                    {fun, arity} ->
-                      reraise e, [{env.module, fun, arity, meta} | __STACKTRACE__]
-
-                    _ ->
-                      reraise e, __STACKTRACE__
-                  end
-              end
-
-            _ ->
-              left
-          end
-
         {:%, meta, [left, expand_alias(right, env)]}
 
       {:__aliases__, _, _} = node ->
@@ -2023,26 +2003,6 @@ defmodule Spark.Dsl.Extension do
   def expand_alias_no_require(ast, env) do
     Macro.prewalk(ast, fn
       {:%, meta, [left, right]} ->
-        left =
-          case expand_alias_no_require(left, env) do
-            atom when is_atom(atom) ->
-              try do
-                Code.ensure_compiled!(atom)
-              rescue
-                e ->
-                  case env.function do
-                    {fun, arity} ->
-                      reraise e, [{env.module, fun, arity, meta} | __STACKTRACE__]
-
-                    _ ->
-                      reraise e, __STACKTRACE__
-                  end
-              end
-
-            _ ->
-              left
-          end
-
         {:%, meta, [left, expand_alias_no_require(right, env)]}
 
       {:__aliases__, _, parts} = node ->

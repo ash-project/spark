@@ -326,7 +326,15 @@ defmodule Spark.Dsl do
             @extensions unquote(extensions)
 
             opts =
-              unquote(opts)
+              unquote(
+                opts
+                |> Keyword.take([:extensions] ++ @spark_extension_kinds)
+                |> Keyword.merge(
+                  opts
+                  |> Keyword.drop([:extensions] ++ @spark_extension_kinds)
+                  |> Spark.Dsl.Extension.expand_alias_no_require(__CALLER__)
+                )
+              )
               |> Spark.Options.validate!(unquote(their_opt_schema))
               |> unquote(__MODULE__).init()
               |> Spark.Dsl.unwrap()
