@@ -42,10 +42,9 @@ defmodule Spark.ElixirSense.Plugin do
       suggestions ->
         suggestions
     end
-
-    # rescue
-    #   _ ->
-    #     :ignore
+  rescue
+    _ ->
+      :ignore
   end
 
   def suggestions(hint, opts) do
@@ -602,7 +601,12 @@ defmodule Spark.ElixirSense.Plugin do
       extension_kinds =
         List.flatten(dsl_mod.module_info[:attributes][:spark_extension_kinds] || [])
 
-      extensions = default_extensions(dsl_mod) ++ parse_extensions(opts, extension_kinds)
+      extensions =
+        default_extensions(dsl_mod)
+        |> Enum.concat(parse_extensions(opts, extension_kinds))
+        |> Enum.flat_map(fn extension ->
+          [extension | extension.add_extensions()]
+        end)
 
       case get_constructors(extensions, scope_path, hint, arg_index) do
         [] ->
@@ -989,7 +993,10 @@ defmodule Spark.ElixirSense.Plugin do
           extensions,
           fn extension ->
             try do
-              Enum.flat_map(apply_dsl_patches(sections(extension), extensions), fn section ->
+              extension
+              |> sections()
+              |> apply_dsl_patches(extensions)
+              |> Enum.flat_map(fn section ->
                 if section.name == first do
                   do_find_constructors(section, rest, hint, arg_index)
                 else

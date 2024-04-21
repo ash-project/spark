@@ -175,8 +175,20 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @nested_preset %Spark.Dsl.Section{
+      name: :nested_preset,
+      schema: [
+        name: [
+          type: :atom
+        ]
+      ]
+    }
+
     @presets %Spark.Dsl.Section{
       name: :presets,
+      sections: [
+        @nested_preset
+      ],
       entities: [
         @preset,
         @preset_with_fn_arg,

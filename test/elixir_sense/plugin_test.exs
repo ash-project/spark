@@ -63,6 +63,76 @@ defmodule Spark.ElixirSense.PluginTest do
            ] = result
   end
 
+  test "suggesting patched entities two levels deep" do
+    buffer = """
+    defmodule MartyMcfly do
+      use Spark.Test.Contact,
+        extensions: [Spark.Test.ContactPatcher]
+
+      presets do
+        nested_preset do
+
+      #   ^
+        end
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+
+    result = suggestions(buffer, cursor)
+
+    assert [
+             %{
+               detail: "Option",
+               documentation: "",
+               kind: :function,
+               label: "name",
+               snippet: "name :$0",
+               type: :generic
+             },
+             %{
+               label: "special_preset",
+               type: :generic,
+               kind: :function,
+               detail: "Dsl Entity",
+               documentation: "",
+               snippet: "special_preset ${1:name}"
+             }
+           ] = result
+  end
+
+  test "suggesting options inside of patched entities" do
+    buffer = """
+    defmodule MartyMcfly do
+      use Spark.Test.Contact,
+        extensions: [Spark.Test.ContactPatcher]
+
+      presets do
+        special_preset :thing do
+          f
+    #      ^
+        end
+      end
+    end
+    """
+
+    [cursor] = cursors(buffer)
+
+    result = suggestions(buffer, cursor)
+
+    assert [
+             %{
+               detail: "Option",
+               documentation: "",
+               kind: :function,
+               label: "foo",
+               snippet: "foo :$0",
+               type: :generic
+             }
+           ] = result
+  end
+
   test "entity snippets are correctly shown" do
     buffer = """
     defmodule DocBrown do
