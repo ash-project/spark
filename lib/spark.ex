@@ -26,11 +26,27 @@ defmodule Spark do
   def implements_behaviour?(module, behaviour) do
     :attributes
     |> module.module_info()
-    |> Enum.flat_map(fn
-      {:behaviour, value} -> List.wrap(value)
-      _ -> []
+    |> Enum.any?(fn
+      {:behaviour, ^behaviour} ->
+        true
+
+      # optimizations, probably extremely minor but this is in a tight loop in some places
+      {:behaviour, [^behaviour | _]} ->
+        true
+
+      {:behaviour, [_, ^behaviour | _]} ->
+        true
+
+      {:behaviour, [_, _, ^behaviour | _]} ->
+        true
+
+      # never seen a module with three behaviours in real life, let alone four.
+      {:behaviour, behaviours} when is_list(behaviours) ->
+        module in behaviours
+
+      _ ->
+        false
     end)
-    |> Enum.any?(&(&1 == behaviour))
   rescue
     _ ->
       false

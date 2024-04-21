@@ -110,10 +110,9 @@ defmodule Spark.ElixirSense.Plugin do
           :ignore
       end
     end
-
-    # rescue
-    #   _e ->
-    #     :ignore
+  rescue
+    _e ->
+      :ignore
   end
 
   defp autocomplete_schema(
