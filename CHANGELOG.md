@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.19](https://github.com/ash-project/spark/compare/v2.1.18...v2.1.19) (2024-04-21)
+
+
+
+
+### Improvements:
+
+* handle more errors in elixir_sense plugin
+
 ## [v2.1.18](https://github.com/ash-project/spark/compare/v2.1.17...v2.1.18) (2024-04-12)
 
 
