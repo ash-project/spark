@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.20](https://github.com/ash-project/spark/compare/v2.1.19...v2.1.20) (2024-04-21)
+
+
+
+
+### Bug Fixes:
+
+* honor the `add_extensions` option for DSL extensions
+
 ## [v2.1.19](https://github.com/ash-project/spark/compare/v2.1.18...v2.1.19) (2024-04-21)
 
 
