@@ -173,6 +173,7 @@ defmodule Spark.Dsl do
 
       @their_opt_schema their_opt_schema
 
+      @doc false
       def opt_schema, do: @their_opt_schema
 
       cond do
