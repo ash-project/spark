@@ -192,22 +192,38 @@ defmodule Spark.InfoGenerator do
 
   # sobelow_skip ["DOS.BinToAtom"]
   defp generate_config_function(option) do
+    option = Map.put_new(option, :default, nil)
+
     quote location: :keep do
       @doc unquote(Map.get(option, :doc, false))
       @spec unquote(option.function_name)(dsl_or_extended :: module | map) ::
               {:ok, unquote(option.type)} | :error
 
-      def unquote(option.function_name)(dsl_or_extended) do
-        import Spark.Dsl.Extension, only: [get_opt: 4]
+      if unquote(is_nil(option.default)) do
+        def unquote(option.function_name)(dsl_or_extended) do
+          import Spark.Dsl.Extension, only: [get_opt: 3]
 
-        case get_opt(
-               dsl_or_extended,
-               unquote(option.path),
-               unquote(option.name),
-               unquote(Map.get(option, :default, :error))
-             ) do
-          :error -> :error
-          value -> {:ok, value}
+          case get_opt(
+                 dsl_or_extended,
+                 unquote(option.path),
+                 unquote(option.name)
+               ) do
+            :error -> :error
+            value -> {:ok, value}
+          end
+        end
+      else
+        def unquote(option.function_name)(dsl_or_extended) do
+          import Spark.Dsl.Extension, only: [fetch_opt: 3]
+
+          case fetch_opt(
+                 dsl_or_extended,
+                 unquote(option.path),
+                 unquote(option.name)
+               ) do
+            :error -> {:ok, unquote(option.default)}
+            value -> {:ok, value}
+          end
         end
       end
 
@@ -215,21 +231,38 @@ defmodule Spark.InfoGenerator do
       @doc unquote(Map.get(option, :doc, false))
       @spec unquote(:"#{option.function_name}!")(dsl_or_extended :: module | map) ::
               unquote(option.type) | no_return
-      def unquote(:"#{option.function_name}!")(dsl_or_extended) do
-        import Spark.Dsl.Extension, only: [get_opt: 4, get_persisted: 2]
+      if unquote(is_nil(option.default)) do
+        def unquote(:"#{option.function_name}!")(dsl_or_extended) do
+          import Spark.Dsl.Extension, only: [fetch_opt: 3, get_persisted: 2]
 
-        case get_opt(
-               dsl_or_extended,
-               unquote(option.path),
-               unquote(option.name),
-               unquote(Map.get(option, :default, :error))
-             ) do
-          :error ->
-            on = get_persisted(dsl_or_extended, :module)
-            raise "No configuration for `#{unquote(option.name)}` present on #{inspect(on)}"
+          case fetch_opt(
+                 dsl_or_extended,
+                 unquote(option.path),
+                 unquote(option.name)
+               ) do
+            :error ->
+              on = get_persisted(dsl_or_extended, :module)
+              raise "No configuration for `#{unquote(option.name)}` present on #{inspect(on)}"
 
-          value ->
-            value
+            value ->
+              value
+          end
+        end
+      else
+        def unquote(:"#{option.function_name}!")(dsl_or_extended) do
+          import Spark.Dsl.Extension, only: [fetch_opt: 3, get_persisted: 2]
+
+          case fetch_opt(
+                 dsl_or_extended,
+                 unquote(option.path),
+                 unquote(option.name)
+               ) do
+            :error ->
+              unquote(option.default)
+
+            value ->
+              value
+          end
         end
       end
 
