@@ -371,7 +371,7 @@ defmodule Spark.Options.Docs do
         quote(do: timeout())
 
       :string ->
-        quote(do: binary())
+        quote(do: String.t())
 
       :mfa ->
         quote(do: {module(), atom(), [term()]})
@@ -402,8 +402,17 @@ defmodule Spark.Options.Docs do
           do: %{optional(unquote(type_to_spec(key_type))) => unquote(type_to_spec(value_type))}
         )
 
-      {:fun, arity} ->
+      :fun ->
+        quote do: (... -> term())
+
+      {:fun, arity} when is_integer(arity) ->
         function_spec(arity)
+
+      {:fun, arg_types} ->
+        function_spec(arg_types)
+
+      {:fun, arg_types, return_type} ->
+        function_spec(arg_types, return_type)
 
       {:in, %Range{first: first, last: last} = range} ->
         if Map.get(range, :step) in [nil, 1] do
@@ -413,7 +422,7 @@ defmodule Spark.Options.Docs do
         end
 
       {:in, _choices} ->
-        quote(do: term())
+        quote(do: [term()])
 
       {:custom, _mod, _fun, _args} ->
         quote(do: term())
@@ -421,7 +430,7 @@ defmodule Spark.Options.Docs do
       {:list, subtype} ->
         quote(do: [unquote(type_to_spec(subtype))])
 
-      {:or, subtypes} ->
+      {one_of, subtypes} when one_of in [:one_of, :or] ->
         subtypes |> Enum.map(&type_to_spec/1) |> unionize_quoted()
 
       {:struct, _struct_name} ->
@@ -435,14 +444,70 @@ defmodule Spark.Options.Docs do
           [type1, type2] -> quote(do: {unquote(type1), unquote(type2)})
           types -> quote do: {unquote_splicing(types)}
         end
+
+      {:tagged_tuple, tag, subtype} ->
+        quote do: {unquote(tag), unquote(type_to_spec(subtype))}
+
+      {tag, _} when tag in [:behaviour, :spark_behaviour, :protocol, :spark] ->
+        quote(do: module())
+
+      {:spark_function_behaviour, _, _} ->
+        quote(do: module())
+
+      {:spark_function_behaviour, _, _, _} ->
+        quote(do: module())
+
+      {:spark_type, _, _} ->
+        quote(do: module)
+
+      {:spark_type, _, _, _} ->
+        quote(do: module)
+
+      {:mfa_or_fun, arity} ->
+        quote do: unquote(type_to_spec(:mfa)) | unquote(type_to_spec({:fun, arity}))
+
+      {:struct, module} ->
+        quote do: unquote(module).t()
+
+      {:wrap_list, type} ->
+        quote do: unquote(type_to_spec(type)) | [unquote(type_to_spec(type))]
+
+      :literal ->
+        quote do: term()
+
+      {:literal, atom} when is_atom(atom) ->
+        atom
+
+      {:literal, _} ->
+        quote do: term()
+
+      :quoted ->
+        quote do: Macro.t()
     end
   end
 
-  defp function_spec(arity) do
+  defp function_spec(arity) when is_integer(arity) do
     args = List.duplicate(quote(do: term()), arity)
 
     quote do
       unquote_splicing(args) -> term()
+    end
+  end
+
+  defp function_spec(arg_types) when is_list(arg_types) do
+    arg_types = arg_types |> Enum.map(&type_to_spec/1)
+
+    quote do
+      unquote_splicing(arg_types) -> term()
+    end
+  end
+
+  defp function_spec(arg_types, return_type) when is_list(arg_types) do
+    arg_types = arg_types |> Enum.map(&type_to_spec/1)
+    return_type = type_to_spec(return_type)
+
+    quote do
+      unquote_splicing(arg_types) -> unquote(return_type)
     end
   end
 
