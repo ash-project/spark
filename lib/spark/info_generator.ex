@@ -201,15 +201,15 @@ defmodule Spark.InfoGenerator do
 
       if unquote(is_nil(option.default)) do
         def unquote(option.function_name)(dsl_or_extended) do
-          import Spark.Dsl.Extension, only: [get_opt: 3]
+          import Spark.Dsl.Extension, only: [fetch_opt: 3]
 
-          case get_opt(
+          case fetch_opt(
                  dsl_or_extended,
                  unquote(option.path),
                  unquote(option.name)
                ) do
             :error -> :error
-            value -> {:ok, value}
+            {:ok, value} -> {:ok, value}
           end
         end
       else
@@ -222,7 +222,7 @@ defmodule Spark.InfoGenerator do
                  unquote(option.name)
                ) do
             :error -> {:ok, unquote(option.default)}
-            value -> {:ok, value}
+            {:ok, value} -> {:ok, value}
           end
         end
       end
@@ -244,7 +244,7 @@ defmodule Spark.InfoGenerator do
               on = get_persisted(dsl_or_extended, :module)
               raise "No configuration for `#{unquote(option.name)}` present on #{inspect(on)}"
 
-            value ->
+            {:ok, value} ->
               value
           end
         end
@@ -260,7 +260,7 @@ defmodule Spark.InfoGenerator do
             :error ->
               unquote(option.default)
 
-            value ->
+            {:ok, value} ->
               value
           end
         end
