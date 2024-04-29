@@ -227,11 +227,11 @@ defmodule Spark.InfoGenerator do
         end
       end
 
-      # sobelow_skip ["DOS.BinToAtom"]
       @doc unquote(Map.get(option, :doc, false))
       @spec unquote(:"#{option.function_name}!")(dsl_or_extended :: module | map) ::
               unquote(option.type) | no_return
       if unquote(is_nil(option.default)) do
+        # sobelow_skip ["DOS.BinToAtom"]
         def unquote(:"#{option.function_name}!")(dsl_or_extended) do
           import Spark.Dsl.Extension, only: [fetch_opt: 3, get_persisted: 2]
 
@@ -249,6 +249,7 @@ defmodule Spark.InfoGenerator do
           end
         end
       else
+        # sobelow_skip ["DOS.BinToAtom"]
         def unquote(:"#{option.function_name}!")(dsl_or_extended) do
           import Spark.Dsl.Extension, only: [fetch_opt: 3, get_persisted: 2]
 
