@@ -171,7 +171,13 @@ defmodule Spark.Options do
       Usually used for process initialization using `start_link` and similar. The
       second element of the tuple can be any term.
 
+    * `:fun` - Any function.
+
     * `{:fun, arity}` - Any function with the specified arity.
+
+    * `{:fun, args_types}` - A function with the specified arguments.
+
+    * `{:fun, args_types, return_type}` - A function with the specified arguments and return type.
 
     * `{:in, choices}` or `{:one_of, choices}` - A value that is a member of one of the `choices`. `choices`
       should be a list of terms or a `Range`. The value is an element in said
@@ -202,8 +208,6 @@ defmodule Spark.Options do
     * `{:spark_type, module, builtin_function}` - a behaviour that defines `builtin_function/0` that returns a list of atoms that map to built in variations of that thing.
 
     * `{:spark_type, module, builtin_function, templates}` - same as the above, but includes additional templates for elixir_sense autocomplete
-
-    * `:fun` - a function of any arity
 
     * `:literal` -> any literal value. Maps to `:any`, but is used for documentation.
 
@@ -395,7 +399,10 @@ defmodule Spark.Options do
           | :reference
           | :mfa
           | :mod_arg
+          | :fun
           | {:fun, arity :: non_neg_integer}
+          | {:fun, list(type)}
+          | {:fun, list(type), type}
           | {:in, [any] | Range.t()}
           | {:or,
              [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}]}
@@ -415,9 +422,6 @@ defmodule Spark.Options do
           | {:spark_type, module, builtin_function :: atom}
           | {:spark_type, module, builtin_function :: atom, templates :: [String.t()]}
           | {:struct, module}
-          | :fun
-          | {:fun, list(type)}
-          | {:fun, list(type), type}
           | {:wrap_list, type}
           | :literal
           | {:literal, any}
@@ -948,6 +952,22 @@ defmodule Spark.Options do
     )
   end
 
+  defp validate_type(:fun, _key, value) when is_function(value) do
+    {:ok, value}
+  end
+
+  defp validate_type(:fun, key, value) do
+    error_tuple(key, value, "expected function in #{render_key(key)}, got: #{inspect(value)}")
+  end
+
+  defp validate_type({:fun, args}, key, value) when is_list(args) do
+    validate_type({:fun, length(args)}, key, value)
+  end
+
+  defp validate_type({:fun, args, _}, key, value) when is_list(args) do
+    validate_type({:fun, length(args)}, key, value)
+  end
+
   defp validate_type({:fun, arity}, _key, value) when is_function(value, arity) do
     {:ok, value}
   end
@@ -1300,41 +1320,6 @@ defmodule Spark.Options do
       value,
       "expected instance of struct #{inspect(mod)} in #{render_key(key)}, got: #{inspect(value)}"
     )
-  end
-
-  defp validate_type(:fun, _key, value) when is_function(value) do
-    {:ok, value}
-  end
-
-  defp validate_type(:fun, key, value) when is_function(value) do
-    error_tuple(key, value, "expected function in #{render_key(key)}, got: #{inspect(value)}")
-  end
-
-  defp validate_type({:fun, args}, key, value) when is_function(value) do
-    expected_arity = Enum.count(args)
-    {:arity, actual_arity} = :erlang.fun_info(value, :arity)
-
-    if actual_arity == expected_arity do
-      {:ok, value}
-    else
-      error_tuple(
-        key,
-        value,
-        "expected function of arity #{expected_arity} #{render_key(key)}, got a function of #{actual_arity} arity"
-      )
-    end
-  end
-
-  defp validate_type({:fun, args}, key, value) do
-    error_tuple(
-      key,
-      value,
-      "expected function of arity #{Enum.count(args)} #{render_key(key)}, got: #{inspect(value)}"
-    )
-  end
-
-  defp validate_type({:fun, args, _}, key, value) when is_function(value) do
-    validate_type({:fun, args}, key, value)
   end
 
   defp validate_type({:wrap_list, type}, key, value) when not is_list(value) do
