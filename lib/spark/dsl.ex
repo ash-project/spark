@@ -44,6 +44,14 @@ defmodule Spark.Dsl do
       doc: """
       A schema for additional options to accept when calling `use YourSpark`
       """
+    ],
+    opts_to_document: [
+      type: {:or, [{:literal, :all}, {:list, :atom}]},
+      default: :all,
+      doc: """
+      A list of `t:atom/0` or `:all`. Spark automatically detects options and documents them in `@moduledoc`.
+      You can instruct Spark to use only a subset of options, e.g. `opts_to_document: [:fragments]`.
+      """
     ]
   ]
 
@@ -107,7 +115,7 @@ defmodule Spark.Dsl do
          default: opts[:default_extensions][extension_kind],
          doc:
            opts[:extension_kind_docs][extension_kind] ||
-             "#{extension_kind} extensions to add to the #{__MODULE__}"}
+             "#{extension_kind} extensions to add to the `#{inspect(__MODULE__)}`"}
       end) ++
         Enum.map(opts[:many_extension_kinds], fn extension_kind ->
           {extension_kind,
@@ -118,7 +126,7 @@ defmodule Spark.Dsl do
              default: [],
              doc:
                opts[:extension_kind_docs][extension_kind] ||
-                 "#{extension_kind} extensions to add to the #{__MODULE__}"
+                 "#{extension_kind} extensions to add to the `#{inspect(__MODULE__)}`"
            ]}
         end)
 
@@ -126,7 +134,7 @@ defmodule Spark.Dsl do
       if opts[:untyped_extensions?] do
         Keyword.put(their_opt_schema, :extensions,
           type: {:list, {:behaviour, Spark.Dsl.Extension}},
-          doc: "A list of DSL extensions to add to the #{inspect(__MODULE__)}"
+          doc: "A list of DSL extensions to add to the `#{inspect(__MODULE__)}`"
         )
       else
         their_opt_schema
@@ -137,14 +145,17 @@ defmodule Spark.Dsl do
         otp_app: [type: :atom, doc: "The otp_app to use for any application configurable options"],
         fragments: [
           type: {:list, :module},
-          doc: "Fragments to include in the #{__MODULE__}. See the fragments guide for more."
+          doc:
+            "Fragments to include in the `#{inspect(__MODULE__)}`. See the fragments guide for more."
         ]
       )
 
     their_opt_schema = Keyword.merge(opts[:opt_schema] || [], their_opt_schema)
+    opts_to_document = opts[:opts_to_document]
 
     quote bind_quoted: [
             their_opt_schema: their_opt_schema,
+            opts_to_document: opts_to_document,
             parent_opts: opts,
             parent: __CALLER__.module
           ],
@@ -176,8 +187,15 @@ defmodule Spark.Dsl do
       @doc false
       def opt_schema, do: @their_opt_schema
 
+      schema_to_document =
+        if is_list(opts_to_document) do
+          Enum.filter(@their_opt_schema, fn {opt, _} -> opt in opts_to_document end)
+        else
+          @their_opt_schema
+        end
+
       cond do
-        @moduledoc == false ->
+        @moduledoc == false or schema_to_document == [] ->
           :ok
 
         @moduledoc ->
@@ -186,14 +204,14 @@ defmodule Spark.Dsl do
 
           ### Options
 
-          #{Spark.Options.docs(@their_opt_schema)}
+          #{Spark.Options.docs(schema_to_document)}
           """
 
         true ->
           @moduledoc """
           ### Options
 
-          #{Spark.Options.docs(@their_opt_schema)}
+          #{Spark.Options.docs(schema_to_document)}
           """
       end
 
