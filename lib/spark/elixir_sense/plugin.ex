@@ -599,7 +599,7 @@ defmodule Spark.ElixirSense.Plugin do
 
     if dsl_mod do
       extension_kinds =
-        List.flatten(dsl_mod.module_info[:attributes][:spark_extension_kinds] || [])
+        List.flatten(dsl_mod.module_info()[:attributes][:spark_extension_kinds] || [])
 
       extensions =
         default_extensions(dsl_mod)
@@ -1192,7 +1192,7 @@ defmodule Spark.ElixirSense.Plugin do
   end
 
   defp default_extensions(dsl_mod) do
-    dsl_mod.module_info[:attributes][:spark_default_extensions]
+    dsl_mod.module_info()[:attributes][:spark_default_extensions]
     |> List.wrap()
     |> List.flatten()
   end
