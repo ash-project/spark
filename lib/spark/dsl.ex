@@ -366,7 +366,6 @@ defmodule Spark.Dsl do
 
             @opts opts
             @before_compile Spark.Dsl
-            @after_compile __MODULE__
 
             Module.register_attribute(__MODULE__, :spark_is, persist: true)
 
@@ -374,48 +373,6 @@ defmodule Spark.Dsl do
             @spark_parent parent
 
             def spark_is, do: @spark_is
-
-            defmacro __after_compile__(_, _) do
-              quote do
-                # This is here because dialyzer complains
-                # this is really dumb but it works so 🤷‍♂️
-                if @after_compile_transformers do
-                  transformers_to_run =
-                    @extensions
-                    |> Enum.flat_map(& &1.transformers())
-                    |> Spark.Dsl.Transformer.sort()
-                    |> Enum.filter(& &1.after_compile?())
-
-                  @extensions
-                  |> Enum.flat_map(& &1.verifiers())
-                  |> Enum.each(fn verifier ->
-                    case verifier.verify(@spark_dsl_config) do
-                      :ok ->
-                        :ok
-
-                      {:warn, warnings} ->
-                        warnings
-                        |> List.wrap()
-                        |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
-
-                      {:error, error} ->
-                        if is_exception(error) do
-                          raise error
-                        else
-                          raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
-                        end
-                    end
-                  end)
-
-                  __MODULE__
-                  |> Spark.Dsl.Extension.run_transformers(
-                    transformers_to_run,
-                    @spark_dsl_config,
-                    __ENV__
-                  )
-                end
-              end
-            end
 
             Module.register_attribute(__MODULE__, :persist, accumulate: true)
 
@@ -496,63 +453,52 @@ defmodule Spark.Dsl do
     end)
   end
 
-  @after_verify_supported Version.match?(System.version(), ">= 1.14.0")
-
   defmacro __before_compile__(env) do
     parent = Module.get_attribute(env.module, :spark_parent)
     opts = Module.get_attribute(env.module, :opts)
     parent_code = parent.handle_before_compile(opts)
 
-    # This `to_string() == "true"` bit is to appease dialyzer
-    # It is very dumb but it works so 🤷‍♂️
     verify_code =
-      if to_string(@after_verify_supported) == "true" do
-        quote generated: true do
-          @after_compile_transformers false
-          @after_verify {__MODULE__, :__verify_spark_dsl__}
+      quote generated: true do
+        @after_verify {__MODULE__, :__verify_spark_dsl__}
 
-          @doc false
-          def __verify_spark_dsl__(module) do
-            unquote(parent).verify(module, @opts)
+        @doc false
+        def __verify_spark_dsl__(module) do
+          unquote(parent).verify(module, @opts)
 
-            transformers_to_run =
-              @extensions
-              |> Enum.flat_map(& &1.transformers())
-              |> Spark.Dsl.Transformer.sort()
-              |> Enum.filter(& &1.after_compile?())
-
+          transformers_to_run =
             @extensions
-            |> Enum.flat_map(& &1.verifiers())
-            |> Enum.each(fn verifier ->
-              case verifier.verify(@spark_dsl_config) do
-                :ok ->
-                  :ok
+            |> Enum.flat_map(& &1.transformers())
+            |> Spark.Dsl.Transformer.sort()
+            |> Enum.filter(& &1.after_compile?())
 
-                {:warn, warnings} ->
-                  warnings
-                  |> List.wrap()
-                  |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+          @extensions
+          |> Enum.flat_map(& &1.verifiers())
+          |> Enum.each(fn verifier ->
+            case verifier.verify(@spark_dsl_config) do
+              :ok ->
+                :ok
 
-                {:error, error} ->
-                  if is_exception(error) do
-                    raise error
-                  else
-                    raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
-                  end
-              end
-            end)
+              {:warn, warnings} ->
+                warnings
+                |> List.wrap()
+                |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
 
-            __MODULE__
-            |> Spark.Dsl.Extension.run_transformers(
-              transformers_to_run,
-              @spark_dsl_config,
-              __ENV__
-            )
-          end
-        end
-      else
-        quote do
-          @after_compile_transformers true
+              {:error, error} ->
+                if is_exception(error) do
+                  raise error
+                else
+                  raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
+                end
+            end
+          end)
+
+          __MODULE__
+          |> Spark.Dsl.Extension.run_transformers(
+            transformers_to_run,
+            @spark_dsl_config,
+            __ENV__
+          )
         end
       end
 
