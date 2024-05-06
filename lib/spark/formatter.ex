@@ -174,7 +174,7 @@ defmodule Spark.Formatter do
     |> Enum.map(&elem(&1, 0))
     |> then(fn sections ->
       if config[:remove_parens?] do
-        de_paren(sections, Enum.flat_map(extensions, & &1.sections), extensions)
+        de_paren(sections, Enum.flat_map(extensions, & &1.sections()), extensions)
       else
         sections
       end

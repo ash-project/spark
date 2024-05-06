@@ -13,8 +13,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
     dsl_state
     |> Verifier.get_persisted(:extensions)
     |> Enum.each(fn extension ->
-      extension.sections
-      |> Enum.each(fn section ->
+      Enum.each(extension.sections(), fn section ->
         verify_entity_uniqueness(module, section, dsl_state)
       end)
     end)
