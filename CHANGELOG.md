@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.21](https://github.com/ash-project/spark/compare/v2.1.20...v2.1.21) (2024-05-10)
+
+
+
+
+### Bug Fixes:
+
+* properly match on `fetch_opt` in  Spark.InfoGenerator (#90)
+
+### Improvements:
+
+* better handling around default values for dsl options in info generator (#88)
+
 ## [v2.1.20](https://github.com/ash-project/spark/compare/v2.1.19...v2.1.20) (2024-04-21)
 
 
