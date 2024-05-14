@@ -2,8 +2,18 @@ defmodule Spark.ElixirSense.Types do
   @moduledoc false
 
   alias ElixirSense.Core.Introspection
-  alias ElixirSense.Plugins.Util
-  alias ElixirSense.Providers.Suggestion.Matcher
+
+  if Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) do
+    @util ElixirLS.LanguageServer.Plugins.Util
+  else
+    @util ElixirSense.Plugins.Util
+  end
+
+  if Code.ensure_loaded?(ElixirLS.Utils.Matcher) do
+    @matcher ElixirLS.Utils.Matcher
+  else
+    @matcher ElixirSense.Providers.Suggestion.Matcher
+  end
 
   def find_builtin_types(module, func, hint, cursor_context, templates \\ []) do
     text_before = cursor_context.text_before
@@ -19,7 +29,7 @@ defmodule Spark.ElixirSense.Types do
     with true <- Code.ensure_loaded?(module),
          true <- :erlang.function_exported(module, func, 0) do
       for {name, _, _} = type <- builtin_types(module, func, templates),
-          apply(Matcher, :match?, [name, actual_hint]) do
+          apply(@matcher, :match?, [name, actual_hint]) do
         buitin_type_to_suggestion(type, module, actual_hint, text_after)
       end
     end
@@ -40,7 +50,7 @@ defmodule Spark.ElixirSense.Types do
     for module <- module_store.by_behaviour[type_module] || [],
         module not in builtin_types,
         type_str = inspect(module),
-        apply(Util, :match_module?, [type_str, hint]) do
+        apply(@util, :match_module?, [type_str, hint]) do
       custom_type_to_suggestion(module, type_module, hint)
     end
   end

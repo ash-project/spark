@@ -1,21 +1,26 @@
 defmodule Spark.ElixirSense.Entity do
   @moduledoc false
   alias ElixirSense.Core.Introspection
-  alias ElixirSense.Plugins.Util
   alias ElixirSense.Providers.Suggestion.Complete
+
+  if Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) do
+    @util ElixirLS.LanguageServer.Plugins.Util
+  else
+    @util ElixirSense.Plugins.Util
+  end
 
   def find_entities(type, hint) do
     for {module, _} <- :code.all_loaded(),
         type in (module.module_info(:attributes)[:spark_is] || []),
         mod_str = inspect(module),
-        apply(Util, :match_module?, [mod_str, hint]) do
+        apply(@util, :match_module?, [mod_str, hint]) do
       {doc, _} = apply(Introspection, :get_module_docs_summary, [module])
 
       %{
         type: :generic,
         kind: :class,
         label: mod_str,
-        insert_text: apply(Util, :trim_leading_for_insertion, [hint, mod_str]),
+        insert_text: apply(@util, :trim_leading_for_insertion, [hint, mod_str]),
         detail: "Spark resource",
         documentation: doc
       }
@@ -25,18 +30,28 @@ defmodule Spark.ElixirSense.Entity do
   def find_spark_behaviour_impls(behaviour, builtins, hint, module_store) do
     builtins =
       if builtins && !String.contains?(hint, ".") && lowercase_string?(hint) do
-        if function_exported?(Complete, :complete, 4) do
-          apply(Complete, :complete, [
-            to_string("#{inspect(builtins)}.#{hint}"),
-            apply(ElixirSense.Core.State.Env, :__struct__, []),
-            apply(ElixirSense.Core.Metadata, :__struct__, []),
-            0
-          ])
-        else
-          apply(Complete, :complete, [
-            to_string("#{inspect(builtins)}.#{hint}"),
-            apply(Complete.Env, :__struct__, [])
-          ])
+        cond do
+          Code.ensure_loaded?(ElixirLS.Utils.CompletionEngine) ->
+            apply(ElixirLS.Utils.CompletionEngine, :complete, [
+              to_string("#{inspect(builtins)}.#{hint}"),
+              apply(ElixirSense.Core.State.Env, :__struct__, []),
+              apply(ElixirSense.Core.Metadata, :__struct__, []),
+              0
+            ])
+
+          function_exported?(Complete, :complete, 4) ->
+            apply(Complete, :complete, [
+              to_string("#{inspect(builtins)}.#{hint}"),
+              apply(ElixirSense.Core.State.Env, :__struct__, []),
+              apply(ElixirSense.Core.Metadata, :__struct__, []),
+              0
+            ])
+
+          true ->
+            apply(Complete, :complete, [
+              to_string("#{inspect(builtins)}.#{hint}"),
+              apply(Complete.Env, :__struct__, [])
+            ])
         end
       else
         []
@@ -83,14 +98,14 @@ defmodule Spark.ElixirSense.Entity do
       for module <- module_store.by_behaviour[behaviour] || [],
           mod_str = inspect(module),
           !String.starts_with?(mod_str, "#{first}."),
-          apply(Util, :match_module?, [mod_str, hint]) do
+          apply(@util, :match_module?, [mod_str, hint]) do
         {doc, _} = apply(Introspection, :get_module_docs_summary, [module])
 
         %{
           type: :generic,
           kind: :class,
           label: mod_str,
-          insert_text: apply(Util, :trim_leading_for_insertion, [hint, mod_str]),
+          insert_text: apply(@util, :trim_leading_for_insertion, [hint, mod_str]),
           detail: "#{inspect(behaviour)}",
           documentation: doc
         }
@@ -102,7 +117,7 @@ defmodule Spark.ElixirSense.Entity do
   def find_behaviour_impls(behaviour, hint, module_store) do
     for module <- module_store.by_behaviour[behaviour] || [],
         mod_str = inspect(module),
-        apply(Util, :match_module?, [mod_str, hint]),
+        apply(@util, :match_module?, [mod_str, hint]),
         !asks_to_skip?(module) do
       {doc, _} = apply(Introspection, :get_module_docs_summary, [module])
 
@@ -110,7 +125,7 @@ defmodule Spark.ElixirSense.Entity do
         type: :generic,
         kind: :class,
         label: mod_str,
-        insert_text: apply(Util, :trim_leading_for_insertion, [hint, mod_str]),
+        insert_text: apply(@util, :trim_leading_for_insertion, [hint, mod_str]),
         detail: "#{inspect(behaviour)}",
         documentation: doc
       }

@@ -4,27 +4,44 @@ defmodule Spark.ElixirSense.Plugin do
   Module.register_attribute(__MODULE__, :is_elixir_sense_plugin, persist: true)
   @is_elixir_sense_plugin true
 
+  @generic_reducer nil
+
+  @matcher ElixirSense.Providers.Suggestion.Matcher
+
   case Code.ensure_compiled(ElixirSense.Plugin) do
     {:module, _} ->
       @behaviour ElixirSense.Plugin
       @behaviour ElixirSense.Providers.Suggestion.GenericReducer
+      @generic_reducer ElixirSense.Providers.Suggestion.GenericReducer
 
     _ ->
       :ok
   end
 
-  def reduce(hint, env, buffer_metadata, cursor_context, acc) do
-    apply(ElixirSense.Providers.Suggestion.GenericReducer, :reduce, [
-      __MODULE__,
-      hint,
-      env,
-      buffer_metadata,
-      cursor_context,
-      acc
-    ])
+  case Code.ensure_compiled(ElixirLS.LanguageServer.Plugin) do
+    {:module, _} ->
+      @behaviour ElixirLS.LanguageServer.Plugin
+      @behaviour ElixirLS.LanguageServer.Providers.Completion.GenericReducer
+      @generic_reducer ElixirLS.LanguageServer.Providers.Completion.GenericReducer
+      @matcher ElixirLS.Utils.Matcher
+
+    _ ->
+      :ok
   end
 
-  alias ElixirSense.Providers.Suggestion.Matcher
+  if @generic_reducer do
+    def reduce(hint, env, buffer_metadata, cursor_context, acc) do
+      apply(@generic_reducer, :reduce, [
+        __MODULE__,
+        hint,
+        env,
+        buffer_metadata,
+        cursor_context,
+        acc
+      ])
+    end
+  end
+
   alias Spark.ElixirSense.Entity
   alias Spark.ElixirSense.Types
 
@@ -138,7 +155,7 @@ defmodule Spark.ElixirSense.Plugin do
     schema
     |> Keyword.drop(other_keys)
     |> Enum.filter(fn {key, _} ->
-      apply(Matcher, :match?, [to_string(key), hint])
+      apply(@matcher, :match?, [to_string(key), hint])
     end)
     |> Enum.map(fn {key, config} ->
       option_suggestions(key, config, :option)
@@ -148,7 +165,7 @@ defmodule Spark.ElixirSense.Plugin do
   defp autocomplete_schema(schema, hint, [], _opts) do
     schema
     |> Enum.filter(fn {key, _} ->
-      apply(Matcher, :match?, [to_string(key), hint])
+      apply(@matcher, :match?, [to_string(key), hint])
     end)
     |> Enum.map(fn {key, config} ->
       option_suggestions(key, config, :option)
@@ -640,10 +657,10 @@ defmodule Spark.ElixirSense.Plugin do
     if match do
       Enum.filter(hints, fn
         %{label: label} ->
-          apply(Matcher, :match?, [label, match])
+          apply(@matcher, :match?, [label, match])
 
         %{name: name} ->
-          apply(Matcher, :match?, [name, match])
+          apply(@matcher, :match?, [name, match])
       end)
     else
       hints
@@ -842,7 +859,7 @@ defmodule Spark.ElixirSense.Plugin do
     Enum.flat_map(values, fn v ->
       inspected = inspect(v)
 
-      if apply(Matcher, :match?, [inspected, hint]) do
+      if apply(@matcher, :match?, [inspected, hint]) do
         [
           %{
             type: :generic,
@@ -968,7 +985,7 @@ defmodule Spark.ElixirSense.Plugin do
           |> apply_dsl_patches(extensions)
           |> Enum.filter(fn section ->
             !section.top_level? &&
-              apply(Matcher, :match?, [to_string(section.name), hint])
+              apply(@matcher, :match?, [to_string(section.name), hint])
           end)
           |> Enum.concat(top_level_constructors)
         rescue
@@ -1076,7 +1093,7 @@ defmodule Spark.ElixirSense.Plugin do
     find_opt_hints(section, hint) ++
       find_entity_hints(section, hint, []) ++
       Enum.filter(section.sections, fn section ->
-        apply(Matcher, :match?, [to_string(section.name), hint])
+        apply(@matcher, :match?, [to_string(section.name), hint])
       end) ++ recursives
   end
 
@@ -1148,7 +1165,7 @@ defmodule Spark.ElixirSense.Plugin do
     entity.schema
     |> Enum.reject(&(elem(&1, 0) in entity.args))
     |> Enum.flat_map(fn {key, value} ->
-      if apply(Matcher, :match?, [to_string(key), hint]) do
+      if apply(@matcher, :match?, [to_string(key), hint]) do
         arg_index = Enum.find_index(Spark.Dsl.Entity.arg_names(entity), &(&1 == key))
 
         if arg_index do
@@ -1164,7 +1181,7 @@ defmodule Spark.ElixirSense.Plugin do
 
   defp find_opt_hints(section, hint) do
     Enum.filter(section.schema, fn {key, _value} ->
-      apply(Matcher, :match?, [to_string(key), hint])
+      apply(@matcher, :match?, [to_string(key), hint])
     end)
   end
 
@@ -1175,13 +1192,13 @@ defmodule Spark.ElixirSense.Plugin do
     |> Enum.concat(List.wrap(recursive_for(entity)))
     |> List.flatten()
     |> Enum.filter(fn entity ->
-      apply(Matcher, :match?, [to_string(entity.name), hint])
+      apply(@matcher, :match?, [to_string(entity.name), hint])
     end)
   end
 
   defp find_entity_hints(section, hint, _recursives) do
     Enum.filter(section.entities, fn entity ->
-      apply(Matcher, :match?, [to_string(entity.name), hint])
+      apply(@matcher, :match?, [to_string(entity.name), hint])
     end)
   end
 
