@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.22](https://github.com/ash-project/spark/compare/v2.1.21...v2.1.22) (2024-05-14)
+
+
+
+
+### Bug Fixes:
+
+* fix `Spark.Options.validate_type` for `:fun` (#91)
+
+### Improvements:
+
+* fix elixir-ls plugin to match latest release
+
+* add more typespec coverage (#89)
+
+* Add more spark types to `type_to_spec` and `schema_to_spec`.
+
 ## [v2.1.21](https://github.com/ash-project/spark/compare/v2.1.20...v2.1.21) (2024-05-10)
 
 
