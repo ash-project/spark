@@ -1,9 +1,5 @@
 defmodule Mix.Tasks.Spark.CheatSheets do
-  @shortdoc """
-  Creates a set of cheat sheets for each Extension provided
-
-  You will want to include this task with the `--check` flag in your CI pipeline as well.
-  """
+  @shortdoc "Creates cheat sheets for each Extension provided. Useful for CI with `--check` flag."
   @moduledoc @shortdoc
   use Mix.Task
 
