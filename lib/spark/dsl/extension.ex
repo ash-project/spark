@@ -1798,13 +1798,9 @@ defmodule Spark.Dsl.Extension do
                   end
                 ] ++ other_extension_unimports
 
-            # This is (for some reason I'm not really sure why) necessary to keep the imports within a lexical scope
             quote generated: true do
-              try do
+              with do
                 unquote(code)
-              rescue
-                e ->
-                  reraise e, __STACKTRACE__
               end
             end
           end
