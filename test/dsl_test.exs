@@ -15,6 +15,25 @@ defmodule Spark.DslTest do
     end
   end
 
+  test "no depend modules still allows for aliases" do
+    defmodule The.Contacter do
+      def something(_), do: :ok
+    end
+
+    defmodule CrashBandicoot do
+      use Spark.Test.Contact
+
+      alias The.Contacter
+
+      contact do
+        module(Contacter)
+      end
+    end
+
+    assert(Spark.Test.Contact.Info.module(CrashBandicoot) ==  The.Contacter)
+  end
+
+
   describe "module conflicts" do
     test "options don't conflict with outermost sections" do
       defmodule MoffGideon do

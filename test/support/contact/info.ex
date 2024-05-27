@@ -13,6 +13,10 @@ defmodule Spark.Test.Contact.Info do
     Spark.Dsl.Extension.get_opt(contact, [:contact], :contacter)
   end
 
+  def module(contact) do
+    Spark.Dsl.Extension.get_opt(contact, [:contact], :module)
+  end
+
   def presets(contact) do
     Spark.Dsl.Extension.get_entities(contact, [:presets])
   end

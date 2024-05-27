@@ -573,7 +573,7 @@ defmodule Spark.Dsl do
           @spark_dsl_config
         end
 
-        @persisted @spark_dsl_config[:persist]
+        @persisted Map.drop(@spark_dsl_config[:persist], [:env])
 
         for {key, value} <- @persisted do
           def persisted(unquote(key), _), do: unquote(Macro.escape(value))
