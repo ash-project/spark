@@ -636,19 +636,23 @@ defmodule Spark.Dsl do
 
   @doc false
   def merge_with_warning(left, right, path, overwriting_by \\ nil) do
-    Keyword.merge(left, right, fn key, left, right ->
-      by =
-        if overwriting_by do
-          " by #{overwriting_by}"
-        else
-          ""
-        end
+    Keyword.merge(left, right, fn
+      _, left, left ->
+        left
 
-      IO.warn(
-        "#{Enum.join(path ++ [key], ".")} is being overwritten from #{inspect(left)} to #{inspect(right)}#{by}"
-      )
+      key, left, right ->
+        by =
+          if overwriting_by do
+            " by #{overwriting_by}"
+          else
+            ""
+          end
 
-      right
+        IO.warn(
+          "#{Enum.join(path ++ [key], ".")} is being overwritten from #{inspect(left)} to #{inspect(right)}#{by}"
+        )
+
+        right
     end)
   end
 end
