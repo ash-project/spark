@@ -11,7 +11,7 @@ defmodule Spark.CodeHelpers do
   def code_identifier(code) do
     code
     |> strip_meta()
-    |> :erlang.term_to_binary()
+    |> :erlang.term_to_iovec()
     |> :erlang.md5()
     |> Base.encode16()
   end
