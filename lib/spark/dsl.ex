@@ -372,6 +372,7 @@ defmodule Spark.Dsl do
             @spark_is parent
             @spark_parent parent
 
+            @doc false
             def spark_is, do: @spark_is
 
             Module.register_attribute(__MODULE__, :persist, accumulate: true)
@@ -553,12 +554,14 @@ defmodule Spark.Dsl do
 
         def __spark_placeholder__, do: nil
 
+        @doc false
         for {path, %{entities: entities}} <- @spark_dsl_config do
           def entities(unquote(path)), do: unquote(Macro.escape(entities || []))
         end
 
         def entities(_), do: []
 
+        @doc false
         for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           for {key, value} <- opts do
             def fetch_opt(unquote(path), unquote(key)) do
@@ -569,24 +572,28 @@ defmodule Spark.Dsl do
 
         def fetch_opt(_, _), do: :error
 
+        @doc false
         def spark_dsl_config do
           @spark_dsl_config
         end
 
         @persisted Map.drop(@spark_dsl_config[:persist], [:env])
 
+        @doc false
         for {key, value} <- @persisted do
           def persisted(unquote(key), _), do: unquote(Macro.escape(value))
         end
 
         def persisted(_, default), do: default
 
+        @doc false
         for {key, value} <- @persisted do
           def persisted(unquote(key)), do: unquote(Macro.escape(value))
         end
 
         def persisted(_), do: nil
 
+        @doc false
         def persisted do
           @persisted
         end
