@@ -206,7 +206,15 @@ defmodule Spark.CodeHelpers do
       )
       when is_list(fn_args) do
     fn_name = generate_unique_function_name(quoted_fn, key)
-    function = generate_captured_function_caller(fn_name, fn_args, caller)
+    arity =
+      case fn_args do
+        [{:when, _, args_with_clause}] ->
+          Enum.count(args_with_clause) - 1
+
+        other ->
+          Enum.count(other)
+      end
+    function = generate_captured_function_caller(fn_name, arity, caller)
 
     function_defs =
       for clause <- clauses do
@@ -235,7 +243,7 @@ defmodule Spark.CodeHelpers do
 
     {function,
      quote generated: true do
-       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(arity)}, :def) do
          @doc false
          unquote_splicing(function_defs)
        end
