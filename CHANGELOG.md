@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.23](https://github.com/ash-project/spark/compare/v2.1.22...v2.1.23) (2024-06-07)
+
+
+
+
+### Bug Fixes:
+
+* ensure that we infer the proper arity from multi-clause functions with `when`
+
+* make shortdoc for cheat sheats mix task shorter (#95)
+
+### Improvements:
+
+* Use term_to_iovec instead of term_to_binary (#97)
+
+* Make opts merge silent when values are identical (#96)
+
+* hide `env` from persisted output in compile time
+
 ## [v2.1.22](https://github.com/ash-project/spark/compare/v2.1.21...v2.1.22) (2024-05-14)
 
 
