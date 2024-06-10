@@ -281,7 +281,7 @@ defmodule Spark.Formatter do
       end
       |> List.wrap()
       |> Enum.flat_map(fn extension ->
-        case Code.ensure_compiled(extension) do
+        case is_atom(extension) and Code.ensure_compiled(extension) do
           {:module, module} ->
             if Spark.implements_behaviour?(module, Spark.Dsl.Extension) do
               [module]
