@@ -279,7 +279,7 @@ defmodule Spark.Dsl do
                 key in parent_opts[:single_extension_kinds] ->
                   fragments_set =
                     Enum.filter(fragments, fn fragment ->
-                      fragment.opts
+                      fragment.opts()
                       |> Spark.Dsl.expand_modules(parent_opts, __CALLER__)
                       |> elem(0)
                       |> Keyword.get(key)
