@@ -206,6 +206,7 @@ defmodule Spark.CodeHelpers do
       )
       when is_list(fn_args) do
     fn_name = generate_unique_function_name(quoted_fn, key)
+
     arity =
       case fn_args do
         [{:when, _, args_with_clause}] ->
@@ -214,6 +215,7 @@ defmodule Spark.CodeHelpers do
         other ->
           Enum.count(other)
       end
+
     function = generate_captured_function_caller(fn_name, arity, caller)
 
     function_defs =

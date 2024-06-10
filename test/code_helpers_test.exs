@@ -19,16 +19,16 @@ defmodule Spark.CodeHelpersTest do
         __ENV__
       )
 
-      {:module, module, _, _} =
-    Module.create(
-      Foo,
-      quote do
-        unquote(funs)
+    {:module, module, _, _} =
+      Module.create(
+        Foo,
+        quote do
+          unquote(funs)
 
-        def fun, do: unquote(code)
-      end,
-      Macro.Env.location(__ENV__)
-    )
+          def fun, do: unquote(code)
+        end,
+        Macro.Env.location(__ENV__)
+      )
 
     assert :erlang.fun_info(module.fun())[:arity] == 2
   end

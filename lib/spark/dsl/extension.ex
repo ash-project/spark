@@ -1009,51 +1009,58 @@ defmodule Spark.Dsl.Extension do
               []
             end
 
-          entity_imports ++
-            section_imports ++
-            opts_import ++
-            configured_imports ++
-            patch_module_imports ++
-            unimports ++
-            other_extension_unimports ++
-            [
-              quote generated: true do
-                unquote(body[:do])
+          all_the_code =
+            entity_imports ++
+              section_imports ++
+              opts_import ++
+              configured_imports ++
+              patch_module_imports ++
+              unimports ++
+              other_extension_unimports ++
+              [
+                quote generated: true do
+                  unquote(body[:do])
 
-                current_config =
-                  Process.get(
+                  current_config =
+                    Process.get(
+                      {__MODULE__, :spark, unquote(section_path)},
+                      %{entities: [], opts: []}
+                    )
+
+                  opts =
+                    case Spark.Options.validate(
+                           Keyword.new(current_config.opts),
+                           Map.get(unquote(Macro.escape(section)), :schema, [])
+                         ) do
+                      {:ok, opts} ->
+                        opts
+
+                      {:error, error} ->
+                        raise Spark.Error.DslError,
+                          module: __MODULE__,
+                          message: error,
+                          path: unquote(section_path)
+                    end
+
+                  Process.put(
                     {__MODULE__, :spark, unquote(section_path)},
-                    %{entities: [], opts: []}
+                    %{
+                      entities: current_config.entities,
+                      opts: opts
+                    }
                   )
+                end
+              ] ++
+              configured_unimports ++
+              patch_module_unimports ++
+              other_extension_reimports ++
+              opts_unimport ++ entity_unimports ++ section_unimports
 
-                opts =
-                  case Spark.Options.validate(
-                         Keyword.new(current_config.opts),
-                         Map.get(unquote(Macro.escape(section)), :schema, [])
-                       ) do
-                    {:ok, opts} ->
-                      opts
-
-                    {:error, error} ->
-                      raise Spark.Error.DslError,
-                        module: __MODULE__,
-                        message: error,
-                        path: unquote(section_path)
-                  end
-
-                Process.put(
-                  {__MODULE__, :spark, unquote(section_path)},
-                  %{
-                    entities: current_config.entities,
-                    opts: opts
-                  }
-                )
-              end
-            ] ++
-            configured_unimports ++
-            patch_module_unimports ++
-            other_extension_reimports ++
-            opts_unimport ++ entity_unimports ++ section_unimports
+          quote do
+            with do
+              unquote(all_the_code)
+            end
+          end
         end
       end
     end
@@ -1187,6 +1194,19 @@ defmodule Spark.Dsl.Extension do
             [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
           )
 
+        opts_unimport =
+          if section.schema == [] do
+            []
+          else
+            [
+              quote generated: true do
+                import unquote(opts_mod_name), only: []
+              end
+            ]
+          end
+
+        unimports = opts_unimport ++ unimports
+
         Spark.Dsl.Extension.async_compile(agent, fn ->
           {:module, module, _, _} =
             Module.create(
@@ -1201,7 +1221,7 @@ defmodule Spark.Dsl.Extension do
                   unquote(agent),
                   unquote(extension),
                   unquote(Macro.escape(nested_section)),
-                  unquote(unimports),
+                  unquote(Macro.escape(unimports)),
                   unquote(path ++ [section.name]),
                   unquote(mod)
                 )
