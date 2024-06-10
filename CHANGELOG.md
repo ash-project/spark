@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.1.24](https://github.com/ash-project/spark/compare/v2.1.23...v2.1.24) (2024-06-10)
+
+
+
+
+### Bug Fixes:
+
+* ensure that options modules from sections are unimported
+
+* ensure that unimports for sections are properly scoped
+
+* ensure atom before check compiled (#99)
+
 ## [v2.1.23](https://github.com/ash-project/spark/compare/v2.1.22...v2.1.23) (2024-06-07)
 
 
