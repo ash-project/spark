@@ -97,10 +97,11 @@ defmodule Spark.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sourceror, "~> 1.0"},
+      {:sourceror, "~> 1.2"},
       {:jason, "~> 1.4"},
+      {:igniter, "~> 0.1"},
       # Dev/Test dependencies
-      {:ex_doc, "~> 0.32.0", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.32", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.12", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
