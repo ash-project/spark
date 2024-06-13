@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.0](https://github.com/ash-project/spark/compare/v2.1.24...v2.2.0) (2024-06-13)
+
+
+
+
+### Features:
+
+* `mix spark.install` (a.k.a `mix igniter.install spark`)
+
+### Improvements:
+
+* `Spark.Igniter`, utilities for patching Spark DSL files
+
+* handle `nil` `module` in dsl error more gracefully
+
 ## [v2.1.24](https://github.com/ash-project/spark/compare/v2.1.23...v2.1.24) (2024-06-10)
 
 
