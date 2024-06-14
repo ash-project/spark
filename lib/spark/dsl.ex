@@ -250,10 +250,6 @@ defmodule Spark.Dsl do
           if Macro.quoted_literal?(opts) do
             opts
           else
-            IO.warn(
-              "Got a non-literal value for options to a `use Spark.DSL`. This is not supported and the options are being ignored."
-            )
-
             []
           end
 

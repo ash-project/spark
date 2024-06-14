@@ -57,10 +57,10 @@ defmodule Mix.Tasks.Spark.Formatter do
     new_contents =
       contents
       |> Sourceror.patch_string([
-        %{
-          range: Sourceror.get_range(spark_locals_without_parens, include_comments: true),
-          change: Sourceror.to_string(locals_without_parens, opts)
-        }
+        Sourceror.Patch.new(
+          Sourceror.get_range(spark_locals_without_parens, include_comments: true),
+          Sourceror.to_string(locals_without_parens, opts)
+        )
       ])
       |> Code.format_string!()
 
