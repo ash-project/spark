@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.1](https://github.com/ash-project/spark/compare/v2.2.0...v2.2.1) (2024-06-14)
+
+
+
+
+### Improvements:
+
+* update to latest igniter, sourceror
+
 ## [v2.2.0](https://github.com/ash-project/spark/compare/v2.1.24...v2.2.0) (2024-06-13)
 
 
