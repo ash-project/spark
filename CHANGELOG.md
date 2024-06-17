@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.3](https://github.com/ash-project/spark/compare/v2.2.2...v2.2.3) (2024-06-17)
+
+
+
+
+### Bug Fixes:
+
+* properly support optional arguments before required ones
+
 ## [v2.2.2](https://github.com/ash-project/spark/compare/v2.2.1...v2.2.2) (2024-06-17)
 
 
