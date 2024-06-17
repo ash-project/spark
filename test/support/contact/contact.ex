@@ -138,6 +138,26 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @preset_with_one_optional %Spark.Dsl.Entity{
+      name: :preset_with_one_optional,
+      args: [:name, {:optional, :default_message, "flubber"}],
+      target: Preset,
+      schema: [
+        name: [
+          type: :atom,
+          required: true
+        ],
+        default_message: [
+          type: {:or, [:string, {:in, [nil]}]}
+        ],
+        contacter: [
+          type:
+            {:spark_function_behaviour, Spark.Test.Contact.Contacter,
+             Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}
+        ]
+      ]
+    }
+
     @preset_with_optional %Spark.Dsl.Entity{
       name: :preset_with_optional,
       args: [{:optional, :name, :atom}, {:optional, :default_message}],
@@ -193,6 +213,7 @@ defmodule Spark.Test.Contact do
         @preset,
         @preset_with_fn_arg,
         @preset_with_optional,
+        @preset_with_one_optional,
         @preset_with_quoted,
         @preset_with_snippet
       ]

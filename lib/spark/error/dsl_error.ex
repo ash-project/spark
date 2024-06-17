@@ -45,8 +45,17 @@ defmodule Spark.Error.DslError do
   end
 
   def message(%{module: module, message: message, path: dsl_path}) do
-    dsl_path = Enum.join(dsl_path, " -> ")
-    "[#{module_line(module)}#{dsl_path}:\n  #{get_message(message)}"
+    dsl_path =
+      Enum.map_join(dsl_path, " -> ", fn item ->
+        try do
+          to_string(item)
+        rescue
+          _ ->
+            inspect(item)
+        end
+      end)
+
+    "#{module_line(module)}#{dsl_path}:\n  #{get_message(message)}"
   end
 
   defp get_message(message) when is_exception(message) do

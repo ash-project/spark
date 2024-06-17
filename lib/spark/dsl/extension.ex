@@ -1515,7 +1515,7 @@ defmodule Spark.Dsl.Extension do
               entity_args
               |> Enum.zip([unquote_splicing(arg_vars)])
               |> Spark.Dsl.Extension.escape_quoted(entity_schema, __CALLER__)
-              |> Spark.Dsl.Extension.shuffle_opts_to_end(unquote(Macro.escape(entity.args)), opts)
+              |> Spark.Dsl.Extension.shuffle_opts_to_end(entity.args, entity_schema, opts)
 
             if not Keyword.keyword?(opts) do
               raise ArgumentError,
@@ -2136,38 +2136,102 @@ defmodule Spark.Dsl.Extension do
     nil
   end
 
-  def shuffle_opts_to_end(keyword, entity_args, nil) do
-    count_required_args =
+  def shuffle_opts_to_end(keyword, entity_args, schema, nil) do
+    default_values =
       entity_args
-      |> Enum.take_while(&is_atom/1)
-      |> Enum.count()
+      |> Enum.reduce(%{}, fn
+        {:optional, name}, defaults ->
+          Map.put(defaults, name, nil)
 
-    case Enum.find_index(keyword, fn {_key, value} -> Keyword.keyword?(value) end) do
-      nil ->
-        {keyword, []}
+        {:optional, name, default}, defaults ->
+          Map.put(defaults, name, default)
 
-      index ->
-        if index <= count_required_args - 1 do
+        _, defaults ->
+          defaults
+      end)
+
+    entity_arg_names =
+      Enum.map(entity_args, fn
+        {:optional, name, _} -> name
+        {:optional, name} -> name
+        name -> name
+      end)
+
+    if Enum.empty?(Keyword.drop(schema, entity_arg_names)) do
+      {keyword, []}
+    else
+      last_specified_option =
+        entity_arg_names
+        |> Enum.reverse()
+        |> Enum.map(fn name -> {name, Keyword.get(keyword, name)} end)
+        |> Enum.drop_while(fn {k, v} ->
+          Map.fetch(default_values, k) == {:ok, v}
+        end)
+        |> Enum.at(0)
+
+      with {to_take_default, last_specified_value} <- last_specified_option,
+           true <- Keyword.keyword?(last_specified_value),
+           index_to_start_filling =
+             Enum.find_index(entity_arg_names, fn name -> name == to_take_default end) do
+        keyword =
+          Enum.map(keyword, fn {k, v} ->
+            if k == to_take_default do
+              {k, Map.get(default_values, to_take_default)}
+            else
+              {k, v}
+            end
+          end)
+
+        args_to_fill_in = Enum.drop(entity_args, index_to_start_filling + 1)
+
+        {fill_arguments(
+           keyword,
+           args_to_fill_in
+         ), last_specified_value}
+      else
+        _ ->
           {keyword, []}
-        else
-          key = keyword |> Enum.at(index) |> elem(0)
-
-          default =
-            Enum.find_value(entity_args, fn
-              {:optional, ^key, default} ->
-                default
-
-              _ ->
-                nil
-            end)
-
-          {List.replace_at(keyword, index, {key, default}), keyword |> Enum.at(index) |> elem(1)}
-        end
+      end
     end
   end
 
-  def shuffle_opts_to_end(keyword, _entity_args, opts) do
+  def shuffle_opts_to_end(keyword, _entity_args, _, opts) do
     {keyword, opts}
+  end
+
+  def fill_arguments(keyword, []), do: keyword
+
+  def fill_arguments(keyword, [option | rest]) when is_atom(option) do
+    fill_arguments(keyword, rest)
+  end
+
+  def fill_arguments(keyword, [optional | rest]) do
+    {option, default} =
+      case optional do
+        {:optional, v} -> {v, nil}
+        {:optional, v, default} -> {v, default}
+      end
+
+    case Enum.split_while(keyword, fn {k, _} -> k != option end) do
+      {unaffected_options, [{key, current_value} | rest_keyword]} ->
+        keyword = unaffected_options ++ [{key, default} | push_right(rest_keyword, current_value)]
+        fill_arguments(keyword, rest)
+
+      {unaffected_options, []} ->
+        keyword = unaffected_options ++ [{option, default}]
+        fill_arguments(keyword, rest)
+    end
+  end
+
+  # we're just throwing `v` away? something doesn't seem right here
+  defp push_right([], _current_value), do: []
+
+  defp push_right([{k, _v}], current_value) do
+    [{k, current_value}]
+  end
+
+  defp push_right([{k, v} | rest], current_value) do
+    [{k, current_value} | push_right(rest, v)]
   end
 
   @doc false

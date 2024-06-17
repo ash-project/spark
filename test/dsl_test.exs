@@ -182,6 +182,22 @@ defmodule Spark.DslTest do
       assert preset.name == :atom
     end
 
+    test "optional values with defaults are set when there are required arguments before them" do
+      defmodule DarrowOLykos do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_one_optional :name do
+          end
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(DarrowOLykos)
+      assert preset.default_message == "flubber"
+      assert preset.name == :name
+    end
+
     test "optional values can be included without including all of them" do
       defmodule BugsBunny do
         @moduledoc false
