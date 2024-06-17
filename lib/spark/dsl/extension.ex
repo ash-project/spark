@@ -1443,7 +1443,7 @@ defmodule Spark.Dsl.Extension do
       end)
       |> Enum.map(fn
         {:optional, name, default} ->
-          {:\\, [], [{name, [], Elixir}, default]}
+          {:\\, [], [{name, [], Elixir}, {:__spark_not_specified__, default}]}
 
         other ->
           Macro.var(other, Elixir)
@@ -1515,7 +1515,12 @@ defmodule Spark.Dsl.Extension do
               entity_args
               |> Enum.zip([unquote_splicing(arg_vars)])
               |> Spark.Dsl.Extension.escape_quoted(entity_schema, __CALLER__)
-              |> Spark.Dsl.Extension.shuffle_opts_to_end(entity.args, entity_schema, opts)
+              |> Spark.Dsl.Extension.shuffle_opts_to_end(
+                entity.args,
+                entity_schema,
+                entity.entities,
+                opts
+              )
 
             if not Keyword.keyword?(opts) do
               raise ArgumentError,
@@ -1566,11 +1571,9 @@ defmodule Spark.Dsl.Extension do
                      ) do
                   {args, funs}
                 else
-                  {[arg_value | args], [new_function | funs]}
+                  {[{key, arg_value} | args], [new_function | funs]}
                 end
               end)
-
-            arg_values = Enum.reverse(arg_values)
 
             top_level_unimports =
               __CALLER__.module
@@ -1711,7 +1714,7 @@ defmodule Spark.Dsl.Extension do
                     keyword_opts =
                       Keyword.merge(
                         unquote(Keyword.delete(opts, :do)),
-                        Enum.zip(unquote(entity_args), unquote(arg_values)),
+                        unquote(arg_values),
                         fn key, _, _ ->
                           raise Spark.Error.DslError,
                             module: __MODULE__,
@@ -2136,7 +2139,7 @@ defmodule Spark.Dsl.Extension do
     nil
   end
 
-  def shuffle_opts_to_end(keyword, entity_args, schema, nil) do
+  def shuffle_opts_to_end(keyword, entity_args, schema, entities, nil) do
     default_values =
       entity_args
       |> Enum.reduce(%{}, fn
@@ -2157,82 +2160,132 @@ defmodule Spark.Dsl.Extension do
         name -> name
       end)
 
-    if Enum.empty?(Keyword.drop(schema, entity_arg_names)) do
-      {keyword, []}
+    if Keyword.drop(schema, entity_arg_names) == [] && entities == [] do
+      {
+        replace_not_specified(keyword),
+        []
+      }
     else
       last_specified_option =
         entity_arg_names
         |> Enum.reverse()
         |> Enum.map(fn name -> {name, Keyword.get(keyword, name)} end)
-        |> Enum.drop_while(fn {k, v} ->
-          Map.fetch(default_values, k) == {:ok, v}
+        |> Enum.drop_while(fn
+          {_k, {:__spark_not_specified__, _}} ->
+            true
+
+          _ ->
+            false
         end)
         |> Enum.at(0)
 
       with {to_take_default, last_specified_value} <- last_specified_option,
            true <- Keyword.keyword?(last_specified_value) do
-        index_to_start_filling =
-          Enum.find_index(entity_arg_names, fn name -> name == to_take_default end)
-
         keyword =
-          Enum.map(keyword, fn {k, v} ->
+          Enum.flat_map(keyword, fn {k, v} ->
             if k == to_take_default do
-              {k, Map.get(default_values, to_take_default)}
+              if Keyword.has_key?(last_specified_value, k) do
+                []
+              else
+                if Map.has_key?(default_values, to_take_default) do
+                  [{k, {:__spark_not_specified__, Map.get(default_values, to_take_default)}}]
+                else
+                  []
+                end
+              end
             else
-              {k, v}
+              [{k, v}]
             end
           end)
 
-        args_to_fill_in = Enum.drop(entity_args, index_to_start_filling + 1)
+        shift_right_until_index =
+          Enum.find_index(entity_arg_names, fn name -> name == to_take_default end)
 
-        {fill_arguments(
-           keyword,
-           args_to_fill_in
-         ), last_specified_value}
+        replaced_required_arg? =
+          Enum.any?(entity_args, &(&1 == to_take_default))
+
+        has_optional_args_before? =
+          entity_args
+          |> Enum.take(shift_right_until_index)
+          |> Enum.any?(fn
+            name ->
+              not is_atom(name)
+          end)
+
+        keyword =
+          if has_optional_args_before? && replaced_required_arg? do
+            shifting =
+              Enum.take(entity_arg_names, shift_right_until_index + 1)
+
+            case shifting do
+              [] ->
+                keyword
+
+              shifting ->
+                shift(keyword, shifting, default_values)
+            end
+          else
+            keyword
+          end
+
+        {
+          replace_not_specified(keyword),
+          last_specified_value
+        }
       else
         _ ->
-          {keyword, []}
+          {
+            replace_not_specified(keyword),
+            []
+          }
       end
     end
   end
 
-  def shuffle_opts_to_end(keyword, _entity_args, _, opts) do
-    {keyword, opts}
+  def shuffle_opts_to_end(keyword, _entity_args, _, _, opts) do
+    {replace_not_specified(keyword), opts}
   end
 
-  def fill_arguments(keyword, []), do: keyword
+  defp replace_not_specified(keyword) do
+    Enum.map(keyword, fn
+      {k, {:__spark_not_specified__, v}} ->
+        {k, v}
 
-  def fill_arguments(keyword, [option | rest]) when is_atom(option) do
-    fill_arguments(keyword, rest)
+      {k, v} ->
+        {k, v}
+    end)
   end
 
-  def fill_arguments(keyword, [optional | rest]) do
-    {option, default} =
-      case optional do
-        {:optional, v} -> {v, nil}
-        {:optional, v, default} -> {v, default}
-      end
+  defp shift(keyword, [k | _] = list, default_values) do
+    do_shift(keyword, list, {:__spark_not_specified__, Map.get(default_values, k)})
+  end
 
-    case Enum.split_while(keyword, fn {k, _} -> k != option end) do
-      {unaffected_options, [{key, current_value} | rest_keyword]} ->
-        keyword = unaffected_options ++ [{key, default} | push_right(rest_keyword, current_value)]
-        fill_arguments(keyword, rest)
+  defp do_shift(keyword, [], _), do: keyword
 
-      {unaffected_options, []} ->
-        keyword = unaffected_options ++ [{option, default}]
-        fill_arguments(keyword, rest)
+  defp do_shift(keyword, [k], current_value) do
+    set_preserving_order(keyword, k, current_value)
+  end
+
+  defp do_shift(keyword, [k | rest], current_value) do
+    new_value = Keyword.get(keyword, k)
+
+    keyword
+    |> set_preserving_order(k, current_value)
+    |> do_shift(rest, new_value)
+  end
+
+  defp set_preserving_order(keyword, k, v) do
+    if Keyword.has_key?(keyword, k) do
+      Enum.map(keyword, fn
+        {^k, _} ->
+          {k, v}
+
+        {k, v} ->
+          {k, v}
+      end)
+    else
+      keyword ++ [{k, v}]
     end
-  end
-
-  # we're just throwing `v` away? something doesn't seem right here
-  defp push_right([], _current_value), do: []
-
-  defp push_right([{k, _v}], current_value) do
-    [{k, current_value}]
-  end
-
-  defp push_right([{k, v} | rest], current_value) do
-    [{k, current_value} | push_right(rest, v)]
   end
 
   @doc false
