@@ -2170,9 +2170,10 @@ defmodule Spark.Dsl.Extension do
         |> Enum.at(0)
 
       with {to_take_default, last_specified_value} <- last_specified_option,
-           true <- Keyword.keyword?(last_specified_value),
-           index_to_start_filling =
-             Enum.find_index(entity_arg_names, fn name -> name == to_take_default end) do
+           true <- Keyword.keyword?(last_specified_value) do
+        index_to_start_filling =
+          Enum.find_index(entity_arg_names, fn name -> name == to_take_default end)
+
         keyword =
           Enum.map(keyword, fn {k, v} ->
             if k == to_take_default do
