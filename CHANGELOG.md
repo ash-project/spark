@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.4](https://github.com/ash-project/spark/compare/v2.2.3...v2.2.4) (2024-06-20)
+
+
+
+
+### Improvements:
+
+* support igniter 0.2.0
+
 ## [v2.2.3](https://github.com/ash-project/spark/compare/v2.2.2...v2.2.3) (2024-06-17)
 
 
