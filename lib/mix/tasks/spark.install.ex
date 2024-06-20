@@ -11,7 +11,7 @@ defmodule Mix.Tasks.Spark.Install do
       :spark,
       [:formatter, :remove_parens?],
       true,
-      &{:ok, &1}
+      updater: &{:ok, &1}
     )
   end
 end
