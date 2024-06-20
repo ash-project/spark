@@ -5,8 +5,8 @@ defmodule Mix.Tasks.Spark.Install do
 
   def igniter(igniter, _argv) do
     igniter
-    |> Igniter.Formatter.add_formatter_plugin(Spark.Formatter)
-    |> Igniter.Config.configure(
+    |> Igniter.Project.Formatter.add_formatter_plugin(Spark.Formatter)
+    |> Igniter.Project.Config.configure(
       "config.exs",
       :spark,
       [:formatter, :remove_parens?],
