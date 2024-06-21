@@ -29,7 +29,7 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
       do_verify_entity_uniqueness(module, entity, section_path, dsl_state)
     end)
 
-    Enum.each(section.sections, fn section ->
+    Enum.each(section.sections(), fn section ->
       verify_entity_uniqueness(module, section, dsl_state, section_path)
     end)
 
