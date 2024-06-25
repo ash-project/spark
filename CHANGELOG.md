@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.5](https://github.com/ash-project/spark/compare/v2.2.4...v2.2.5) (2024-06-25)
+
+
+
+
+### Improvements:
+
+* allow `%__MODULE__{}` to be used in escaped functions
+
 ## [v2.2.4](https://github.com/ash-project/spark/compare/v2.2.3...v2.2.4) (2024-06-20)
 
 
