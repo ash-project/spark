@@ -2021,6 +2021,9 @@ defmodule Spark.Dsl.Extension do
 
   def expand_alias_no_require(ast, env) do
     Macro.prewalk(ast, fn
+      {:%, meta, [{:__MODULE__, _, _} = node, right]} ->
+        {:struct!, meta, [node, right]}
+
       {:%, meta, [left, right]} ->
         {:%, meta, [left, expand_alias_no_require(right, env)]}
 
