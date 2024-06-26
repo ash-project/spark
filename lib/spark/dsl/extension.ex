@@ -703,74 +703,12 @@ defmodule Spark.Dsl.Extension do
       {:ok, agent} = Agent.start_link(fn -> [] end)
       agent_and_pid = {agent, self()}
 
-      # This won't work for nested recursive entities (that don't appear in the top level)
-      # but I'm not aware of anyone doing anything like that, and so I'm okay with it for now
-      all_recursive_entity_module_names =
-        sections
-        |> Enum.flat_map(fn section ->
-          section.entities
-          |> Enum.filter(& &1.recursive_as)
-          |> Enum.flat_map(fn entity ->
-            entity_mod_name =
-              Spark.Dsl.Extension.module_concat([
-                module_prefix,
-                Macro.camelize(to_string(section.name)),
-                Macro.camelize(to_string(entity.name))
-              ])
-
-            mod_name =
-              Spark.Dsl.Extension.module_concat([
-                entity_mod_name,
-                Options
-              ])
-
-            opts_mod_unimport =
-              quote generated: true do
-                import unquote(mod_name), only: []
-              end
-
-            entity_mod_unimports =
-              entity.entities
-              |> Enum.flat_map(fn {key, nested_entities} ->
-                nested_entities
-                |> List.wrap()
-                |> Enum.map(fn nested_entity ->
-                  nested_entity_path = [section.name, key]
-
-                  nested_entity_mod_name =
-                    Spark.Dsl.Extension.entity_mod_name(
-                      entity_mod_name,
-                      nested_entity_path,
-                      [],
-                      nested_entity
-                    )
-
-                  quote do
-                    import unquote(nested_entity_mod_name), only: []
-                  end
-                end)
-              end)
-
-            [opts_mod_unimport | entity_mod_unimports]
-          end)
-        end)
-
-      top_level_unimports = Spark.Dsl.Extension.top_level_unimports(sections, module_prefix)
-
       Enum.each(sections, fn section ->
-        top_level_unimports =
-          if section.top_level? do
-            []
-          else
-            top_level_unimports
-          end
-
         Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
           Extension.build_section(
             agent_and_pid,
             extension,
             section,
-            all_recursive_entity_module_names ++ top_level_unimports,
             [],
             module_prefix
           )
@@ -802,67 +740,10 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def top_level_unimports(sections, module_prefix, skip \\ nil) do
-    sections
-    |> Enum.filter(& &1.top_level?)
-    |> Enum.flat_map(fn section ->
-      section_mod_name = Spark.Dsl.Extension.section_mod_name(module_prefix, [], section)
-
-      configured_unimports =
-        for module <- section.imports do
-          quote generated: true do
-            import unquote(module), only: []
-          end
-        end
-
-      entity_unimports =
-        for entity <- section.entities,
-            Map.delete(entity, :docs) != Map.delete(skip || %{}, :docs) do
-          module = Spark.Dsl.Extension.entity_mod_name(section_mod_name, [], [], entity)
-
-          quote generated: true do
-            import unquote(module), only: []
-          end
-        end
-
-      section_unimports =
-        for nested_section <- section.sections do
-          module =
-            Spark.Dsl.Extension.section_mod_name(
-              module_prefix,
-              [section.name],
-              nested_section
-            )
-
-          quote generated: true do
-            import unquote(module), only: []
-          end
-        end
-
-      opts_unimport =
-        if Map.get(section, :schema, []) == [] do
-          []
-        else
-          opts_module = Spark.Dsl.Extension.module_concat([section_mod_name, Options])
-
-          [
-            quote generated: true do
-              import unquote(opts_module), only: []
-            end
-          ]
-        end
-
-      opts_unimport ++
-        section_unimports ++ entity_unimports ++ configured_unimports
-    end)
-  end
-
-  @doc false
   defmacro build_section(
              agent,
              extension,
              section,
-             unimports \\ [],
              path \\ [],
              module_prefix \\ nil
            ) do
@@ -871,20 +752,18 @@ defmodule Spark.Dsl.Extension do
             section: section,
             path: path,
             extension: extension,
-            module_prefix: module_prefix,
-            unimports: unimports
+            module_prefix: module_prefix
           ],
           generated: true do
       alias Spark.Dsl
 
-      {section_modules, entity_modules, unimport_modules, opts_module} =
+      {section_modules, entity_modules, opts_module} =
         Dsl.Extension.do_build_section(
           agent,
           module_prefix,
           extension,
           section,
-          path,
-          unimports
+          path
         )
 
       @doc false
@@ -923,42 +802,7 @@ defmodule Spark.Dsl.Extension do
         defmacro unquote(section.name)(body) do
           opts_module = unquote(opts_module)
           section_path = unquote(path ++ [section.name])
-          section_has_schema? = unquote(!Enum.empty?(Map.get(section, :schema, [])))
-          unimports = unquote(Macro.escape(unimports))
-          unimport_modules = unquote(Macro.escape(unimport_modules))
           extension = unquote(extension)
-
-          configured_imports =
-            for module <- unquote(section.imports) do
-              quote generated: true do
-                import unquote(module)
-              end
-            end
-
-          entity_imports =
-            for module <- unquote(entity_modules) do
-              quote generated: true do
-                import unquote(module), only: :macros
-              end
-            end
-
-          section_imports =
-            for module <- unquote(section_modules) do
-              quote generated: true do
-                import unquote(module), only: :macros
-              end
-            end
-
-          opts_import =
-            if section_has_schema? do
-              [
-                quote generated: true do
-                  import unquote(opts_module)
-                end
-              ]
-            else
-              []
-            end
 
           entity_modules = unquote(entity_modules)
 
@@ -968,32 +812,25 @@ defmodule Spark.Dsl.Extension do
             |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
             |> Enum.reject(&(&1 in entity_modules))
 
-          patch_module_imports =
-            Enum.map(patch_modules, fn patch_module ->
-              quote do
-                import unquote(patch_module), only: :macros
+          section_imports =
+            for module <- unquote(section_modules) do
+              quote generated: true do
+                import unquote(module), only: :macros
               end
-            end)
-
-          other_extension_unimports =
-            if unquote(path) == [] do
-              for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
-                quote do
-                  import unquote(extension), only: []
-                end
-              end
-            else
-              []
             end
 
+          import_statements =
+            Enum.concat([
+              unquote(section.imports),
+              unquote(entity_modules),
+              patch_modules,
+              unquote(section_modules),
+              unquote(List.wrap(opts_module))
+            ])
+            |> Spark.Dsl.Extension.Imports.import_solving_conflicts(__CALLER__)
+
           all_the_code =
-            entity_imports ++
-              section_imports ++
-              opts_import ++
-              configured_imports ++
-              patch_module_imports ++
-              unimports ++
-              other_extension_unimports ++
+            import_statements ++
               [
                 quote generated: true do
                   unquote(body[:do])
@@ -1045,49 +882,8 @@ defmodule Spark.Dsl.Extension do
     )
   end
 
-  defp unimports(mod, section, path, opts_mod_name) do
-    entity_modules =
-      section.entities
-      |> Enum.reject(& &1.recursive_as)
-      |> Enum.map(fn entity ->
-        entity_mod_name(mod, [], path ++ [section.name], entity)
-      end)
-
-    entity_unimports =
-      for module <- entity_modules do
-        quote generated: true do
-          import unquote(module), only: []
-        end
-      end
-
-    section_modules =
-      Enum.map(section.sections, fn section ->
-        section_mod_name(mod, path, section)
-      end)
-
-    section_unimports =
-      for module <- section_modules do
-        quote generated: true do
-          import unquote(module), only: []
-        end
-      end
-
-    opts_unimport =
-      if section.schema == [] do
-        []
-      else
-        [
-          quote generated: true do
-            import unquote(opts_mod_name), only: []
-          end
-        ]
-      end
-
-    opts_unimport ++ section_unimports ++ entity_unimports
-  end
-
   @doc false
-  def do_build_section(agent, mod, extension, section, path, unimports) do
+  def do_build_section(agent, mod, extension, section, path) do
     opts_mod_name =
       if section.schema == [] do
         nil
@@ -1095,20 +891,12 @@ defmodule Spark.Dsl.Extension do
         Spark.Dsl.Extension.module_concat([mod, Macro.camelize(to_string(section.name)), Options])
       end
 
-    {entity_modules, unimport_modules} =
-      Enum.reduce(section.entities, {[], []}, fn entity, {entity_modules, unimport_mods} ->
+    entity_modules =
+      Enum.reduce(section.entities, [], fn entity, entity_modules ->
         entity = %{
           entity
           | auto_set_fields: Keyword.merge(section.auto_set_fields, entity.auto_set_fields)
         }
-
-        new_unimports =
-          unimports(
-            mod,
-            %{section | entities: Enum.reject(section.entities, &(&1.name == entity.name))},
-            path,
-            opts_mod_name
-          )
 
         entity_mod =
           build_entity(
@@ -1118,14 +906,13 @@ defmodule Spark.Dsl.Extension do
             path ++ [section.name],
             entity,
             section.deprecations,
-            [],
-            unimports ++ new_unimports
+            []
           )
 
         if entity.recursive_as do
-          {[entity_mod | entity_modules], unimport_mods}
+          [entity_mod | entity_modules]
         else
-          {[entity_mod | entity_modules], [entity_mod | unimport_mods]}
+          [entity_mod | entity_modules]
         end
       end)
 
@@ -1143,19 +930,6 @@ defmodule Spark.Dsl.Extension do
             [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
           )
 
-        opts_unimport =
-          if section.schema == [] do
-            []
-          else
-            [
-              quote generated: true do
-                import unquote(opts_mod_name), only: []
-              end
-            ]
-          end
-
-        unimports = opts_unimport ++ unimports
-
         Spark.Dsl.Extension.async_compile(agent, fn ->
           {:module, module, _, _} =
             Module.create(
@@ -1170,7 +944,6 @@ defmodule Spark.Dsl.Extension do
                   unquote(agent),
                   unquote(extension),
                   unquote(Macro.escape(nested_section)),
-                  unquote(Macro.escape(unimports)),
                   unquote(path ++ [section.name]),
                   unquote(mod)
                 )
@@ -1237,7 +1010,7 @@ defmodule Spark.Dsl.Extension do
       )
     end
 
-    {section_modules, entity_modules, unimport_modules, opts_mod_name}
+    {section_modules, entity_modules, opts_mod_name}
   end
 
   @doc false
@@ -1250,54 +1023,20 @@ defmodule Spark.Dsl.Extension do
         entity,
         deprecations,
         nested_entity_path,
-        unimports,
         nested_key \\ nil
       ) do
     mod_name = entity_mod_name(mod, nested_entity_path, section_path, entity)
 
     options_mod_name = Spark.Dsl.Extension.module_concat(mod_name, "Options")
 
-    {nested_entity_mods, nested_entity_unimports} =
-      Enum.reduce(entity.entities, {[], []}, fn
-        {key, entities}, {nested_entity_mods, nested_entity_unimports} ->
+    nested_entity_mods =
+      Enum.reduce(entity.entities, [], fn
+        {key, entities}, nested_entity_mods ->
           entities
           |> List.wrap()
           |> Enum.reduce(
-            {nested_entity_mods, nested_entity_unimports},
-            fn nested_entity, {nested_entity_mods, nested_entity_unimports} ->
-              entities_to_unimport =
-                entity.entities
-                |> Enum.flat_map(fn {key, entities} ->
-                  entities
-                  |> List.wrap()
-                  |> Enum.reject(&(&1.name == nested_entity.name))
-                  |> Enum.flat_map(fn nested_entity ->
-                    if nested_entity.recursive_as do
-                      []
-                    else
-                      [
-                        entity_mod_name(
-                          mod_name,
-                          nested_entity_path ++ [key],
-                          section_path,
-                          nested_entity
-                        )
-                      ]
-                    end
-                  end)
-                end)
-
-              unimports =
-                unimports ++
-                  Enum.map(
-                    [options_mod_name | entities_to_unimport],
-                    fn mod_name ->
-                      quote generated: true do
-                        import unquote(mod_name), only: []
-                      end
-                    end
-                  )
-
+            nested_entity_mods,
+            fn nested_entity, nested_entity_mods ->
               entity_mod =
                 build_entity(
                   agent,
@@ -1307,12 +1046,10 @@ defmodule Spark.Dsl.Extension do
                   nested_entity,
                   nested_entity.deprecations,
                   nested_entity_path ++ [key],
-                  unimports,
                   key
                 )
 
-              {[entity_mod | nested_entity_mods],
-               [entity_mod | nested_entity_unimports] ++ entities_to_unimport}
+              [entity_mod | nested_entity_mods]
             end
           )
       end)
@@ -1343,15 +1080,6 @@ defmodule Spark.Dsl.Extension do
     entity_args = Spark.Dsl.Entity.arg_names(entity)
     arg_vars = Enum.map(entity_args, &Macro.var(&1, Elixir))
 
-    unimports =
-      Enum.reject(unimports, fn
-        {:import, _, [^options_mod_name, _]} ->
-          true
-
-        _ ->
-          false
-      end)
-
     async_compile(agent, fn ->
       Module.create(
         mod_name,
@@ -1365,11 +1093,9 @@ defmodule Spark.Dsl.Extension do
                 section_path: Macro.escape(section_path),
                 entity_args: Macro.escape(entity_args),
                 options_mod_name: Macro.escape(options_mod_name),
-                nested_entity_unimports: Macro.escape(nested_entity_unimports),
                 nested_entity_mods: Macro.escape(nested_entity_mods),
                 nested_entity_path: Macro.escape(nested_entity_path),
                 deprecations: deprecations,
-                unimports: Macro.escape(unimports),
                 nested_key: nested_key,
                 mod: mod
               ] do
@@ -1418,10 +1144,8 @@ defmodule Spark.Dsl.Extension do
             source = unquote(__MODULE__)
             extension = unquote(Macro.escape(extension))
             nested_entity_mods = unquote(Macro.escape(nested_entity_mods))
-            nested_entity_unimports = unquote(Macro.escape(nested_entity_unimports))
             nested_entity_path = unquote(Macro.escape(nested_entity_path))
             deprecations = unquote(deprecations)
-            unimports = unquote(Macro.escape(unimports))
             nested_key = unquote(nested_key)
             mod = unquote(mod)
 
@@ -1498,23 +1222,7 @@ defmodule Spark.Dsl.Extension do
                 end
               end)
 
-            top_level_unimports =
-              __CALLER__.module
-              |> Module.get_attribute(:extensions)
-              |> Enum.reject(&(&1 == extension))
-              |> Enum.flat_map(fn extension ->
-                if Enum.count(section_path) == 1 && Enum.empty?(nested_entity_path || []) do
-                  Spark.Dsl.Extension.top_level_unimports(
-                    extension.sections(),
-                    extension.module_prefix(),
-                    entity
-                  )
-                else
-                  []
-                end
-              end)
-
-            {other_extension_imports, other_extension_unimports} =
+            other_extension_modules =
               __CALLER__.module
               |> Module.get_attribute(:extensions)
               |> Enum.reject(&(&1 == extension))
@@ -1537,36 +1245,14 @@ defmodule Spark.Dsl.Extension do
                 |> Enum.uniq_by(& &1.name)
                 |> Enum.map(&{extension, &1})
               end)
-              |> Enum.reduce({[], []}, fn {extension, entity},
-                                          {other_extension_imports, other_extension_unimports} ->
-                mod_name =
-                  Spark.Dsl.Extension.entity_mod_name(
-                    extension.module_prefix(),
-                    [],
-                    section_path,
-                    entity
-                  )
-
-                mod_import =
-                  quote generated: true do
-                    import unquote(mod_name), only: :macros
-                  end
-
-                mod_unimport =
-                  quote generated: true do
-                    import unquote(mod_name), only: []
-                  end
-
-                {[mod_import | other_extension_imports],
-                 [mod_unimport | other_extension_unimports]}
+              |> Enum.map(fn {extension, entity} ->
+                Spark.Dsl.Extension.entity_mod_name(
+                  extension.module_prefix(),
+                  [],
+                  section_path,
+                  entity
+                )
               end)
-
-            imports =
-              for module <- entity.imports do
-                quote generated: true do
-                  import unquote(module)
-                end
-              end
 
             opts =
               Enum.map(opts, fn {key, value} ->
@@ -1589,38 +1275,24 @@ defmodule Spark.Dsl.Extension do
                 end
               end)
 
-            opts_mod_import =
-              if options_mod_name do
-                [
-                  quote do
-                    import unquote(options_mod_name), only: :macros
-                  end
-                ]
-              else
-                []
-              end
-
-            nested_entity_mod_imports =
-              for mod <- nested_entity_mods do
-                quote do
-                  import unquote(mod), only: :macros
-                end
-              end
-
             entity_keys =
               entity.entities
               |> Enum.map(&elem(&1, 0))
               |> Enum.uniq()
 
+            import_statements =
+              Enum.concat([
+                other_extension_modules,
+                entity.imports,
+                List.wrap(options_mod_name),
+                nested_entity_mods
+              ])
+              |> Spark.Dsl.Extension.Imports.import_solving_conflicts(__CALLER__)
+
             code =
-              top_level_unimports ++
-                unimports ++
-                other_extension_imports ++
-                imports ++
+              import_statements ++
                 funs ++
                 opt_funs ++
-                opts_mod_import ++
-                nested_entity_mod_imports ++
                 [
                   quote generated: true do
                     handle_data =
@@ -1657,22 +1329,6 @@ defmodule Spark.Dsl.Extension do
     end)
 
     mod_name
-  end
-
-  defmacro import_mods(mods) do
-    for mod <- mods do
-      quote generated: true do
-        import unquote(mod)
-      end
-    end
-  end
-
-  defmacro unimport_mods(mods) do
-    for mod <- mods do
-      quote generated: true do
-        import unquote(mod), only: []
-      end
-    end
   end
 
   @doc false
