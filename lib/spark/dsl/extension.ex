@@ -888,15 +888,42 @@ defmodule Spark.Dsl.Extension do
         )
 
       @doc false
-      # This macro argument is only called `body` so that it looks nicer
-      # in the DSL docs
+      def __set_and_validate_options__(unquote(path ++ [section.name]) = section_path, module) do
+        schema = unquote(Macro.escape(Map.get(section, :schema, [])))
+
+        current_config =
+          Process.get(
+            {module, :spark, section_path},
+            %{entities: [], opts: []}
+          )
+
+        opts =
+          case Spark.Options.validate(Keyword.new(current_config.opts), schema) do
+            {:ok, opts} ->
+              opts
+
+            {:error, error} ->
+              raise Spark.Error.DslError,
+                module: module,
+                message: error,
+                path: section_path
+          end
+
+        Process.put(
+          {module, :spark, section_path},
+          %{
+            entities: current_config.entities,
+            opts: opts
+          }
+        )
+      end
 
       unless section.top_level? && path == [] do
         @doc false
         defmacro unquote(section.name)(body) do
           opts_module = unquote(opts_module)
           section_path = unquote(path ++ [section.name])
-          section = unquote(Macro.escape(section))
+          section_has_schema? = unquote(!Enum.empty?(Map.get(section, :schema, [])))
           unimports = unquote(Macro.escape(unimports))
           unimport_modules = unquote(Macro.escape(unimport_modules))
           extension = unquote(extension)
@@ -923,46 +950,14 @@ defmodule Spark.Dsl.Extension do
             end
 
           opts_import =
-            if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
-              []
-            else
+            if section_has_schema? do
               [
                 quote generated: true do
                   import unquote(opts_module)
                 end
               ]
-            end
-
-          configured_unimports =
-            for module <- unquote(section.imports) do
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          entity_unimports =
-            for module <- unquote(unimport_modules) do
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          section_unimports =
-            for module <- unquote(section_modules) do
-              quote generated: true do
-                import unquote(module), only: []
-              end
-            end
-
-          opts_unimport =
-            if Map.get(unquote(Macro.escape(section)), :schema, []) == [] do
-              []
             else
-              [
-                quote generated: true do
-                  import unquote(opts_module), only: []
-                end
-              ]
+              []
             end
 
           entity_modules = unquote(entity_modules)
@@ -980,29 +975,11 @@ defmodule Spark.Dsl.Extension do
               end
             end)
 
-          patch_module_unimports =
-            Enum.map(patch_modules, fn patch_module ->
-              quote do
-                import unquote(patch_module), only: []
-              end
-            end)
-
           other_extension_unimports =
             if unquote(path) == [] do
               for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
                 quote do
                   import unquote(extension), only: []
-                end
-              end
-            else
-              []
-            end
-
-          other_extension_reimports =
-            if unquote(path) == [] do
-              for extension <- Module.get_attribute(__CALLER__.module, :extensions) do
-                quote do
-                  import unquote(extension), only: :macros
                 end
               end
             else
@@ -1021,40 +998,12 @@ defmodule Spark.Dsl.Extension do
                 quote generated: true do
                   unquote(body[:do])
 
-                  current_config =
-                    Process.get(
-                      {__MODULE__, :spark, unquote(section_path)},
-                      %{entities: [], opts: []}
-                    )
-
-                  opts =
-                    case Spark.Options.validate(
-                           Keyword.new(current_config.opts),
-                           Map.get(unquote(Macro.escape(section)), :schema, [])
-                         ) do
-                      {:ok, opts} ->
-                        opts
-
-                      {:error, error} ->
-                        raise Spark.Error.DslError,
-                          module: __MODULE__,
-                          message: error,
-                          path: unquote(section_path)
-                    end
-
-                  Process.put(
-                    {__MODULE__, :spark, unquote(section_path)},
-                    %{
-                      entities: current_config.entities,
-                      opts: opts
-                    }
+                  unquote(__MODULE__).__set_and_validate_options__(
+                    unquote(section_path),
+                    __MODULE__
                   )
                 end
-              ] ++
-              configured_unimports ++
-              patch_module_unimports ++
-              other_extension_reimports ++
-              opts_unimport ++ entity_unimports ++ section_unimports
+              ]
 
           quote do
             with do
@@ -1820,54 +1769,31 @@ defmodule Spark.Dsl.Extension do
         for {key, config} <- entity.schema,
             !Spark.Dsl.Extension.required_arg?(key, entity.args) do
           defmacro unquote(key)(value) do
-            key = unquote(key)
-            modules = unquote(entity.modules)
-            no_depend_modules = unquote(entity.no_depend_modules)
-            deprecations = unquote(entity.deprecations)
-            entity_name = unquote(entity.name)
-            recursive_as = unquote(entity.recursive_as)
-            nested_entity_path = unquote(nested_entity_path)
-
-            config = unquote(Macro.escape(config))
-
-            value =
-              case config[:type] do
-                :quoted ->
-                  Macro.escape(value)
-
-                _ ->
-                  value
-              end
-
             Spark.Dsl.Extension.maybe_deprecated(
-              key,
-              deprecations,
-              nested_entity_path,
+              unquote(key),
+              unquote(entity.deprecations),
+              unquote(nested_entity_path),
               __CALLER__
             )
 
-            value =
-              cond do
-                key in modules ->
-                  Spark.Dsl.Extension.expand_alias(value, __CALLER__)
+            {value, function} =
+              Spark.Dsl.Extension.EntityOption.value_and_function(
+                value,
+                unquote(key),
+                unquote(Macro.escape(config[:type])),
+                __CALLER__,
+                unquote(entity.modules),
+                unquote(entity.no_depend_modules)
+              )
 
-                key in no_depend_modules ->
-                  Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
-
-                true ->
-                  value
-              end
-
-            {value, function} = Spark.CodeHelpers.lift_functions(value, key, __CALLER__)
-
+            key = unquote(key)
             quote generated: true do
               unquote(function)
 
-              Spark.Dsl.Extension.set_entity_opt(
-                unquote(value),
-                unquote(Macro.escape(value)),
-                unquote(Macro.escape(config[:type])),
-                unquote(key)
+              Spark.Dsl.Extension.EntityOption.set_entity_option(
+                __MODULE__,
+                unquote(key),
+                unquote(value)
               )
             end
           end
@@ -1890,40 +1816,6 @@ defmodule Spark.Dsl.Extension do
           {name, value}
       end
     end)
-  end
-
-  defmacro set_entity_opt(
-             value,
-             escaped_value,
-             type,
-             key
-           ) do
-    {value, function} = Spark.CodeHelpers.lift_functions(value, key, __CALLER__)
-
-    quote generated: true,
-          bind_quoted: [
-            value: value,
-            escaped_value: escaped_value,
-            type: type,
-            key: key,
-            function: function
-          ] do
-      nested_entity_path = Process.get(:recursive_builder_path)
-
-      current_opts = Process.get({:builder_opts, nested_entity_path}, [])
-
-      if Keyword.has_key?(current_opts, key) do
-        raise Spark.Error.DslError,
-          module: __MODULE__,
-          message: "Multiple values for key `#{inspect(key)}`",
-          path: nested_entity_path
-      end
-
-      Process.put(
-        {:builder_opts, nested_entity_path},
-        Keyword.put(current_opts, key, value)
-      )
-    end
   end
 
   @doc false
@@ -2253,10 +2145,9 @@ defmodule Spark.Dsl.Extension do
         :ok
 
       {:tasks, funs} ->
-        Enum.map(funs, & &1.())
-        # funs
-        # |> Enum.map(&do_async_compile/1)
-        # |> Task.await_many(:infinity)
+        funs
+        |> Enum.map(&do_async_compile/1)
+        |> Task.await_many(:infinity)
 
         await_all_tasks(agent)
     end
