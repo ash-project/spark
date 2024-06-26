@@ -101,7 +101,6 @@ defmodule Spark.MixProject do
       {:jason, "~> 1.4"},
       {:igniter, "~> 0.2"},
       # Dev/Test dependencies
-      {:eflame, "~> 1.0"},
       {:ex_doc, "~> 0.32", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.12", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
