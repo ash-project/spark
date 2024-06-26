@@ -1250,49 +1250,35 @@ defmodule Spark.Dsl.Extension do
               section_path = unquote(Macro.escape(section_path))
               field = unquote(Macro.escape(field))
               extension = unquote(extension)
-              config = unquote(Macro.escape(config))
-              section = unquote(Macro.escape(section))
-
-              value =
-                case config[:type] do
-                  :quoted ->
-                    Macro.escape(value)
-
-                  _ ->
-                    value
-                end
+              type = unquote(Macro.escape(config[:type]))
+              deprecations = unquote(Macro.escape(section.deprecations))
 
               Spark.Dsl.Extension.maybe_deprecated(
                 field,
-                section.deprecations,
+                deprecations,
                 section_path,
                 __CALLER__
               )
 
-              value =
-                cond do
-                  field in section.modules ->
-                    Spark.Dsl.Extension.expand_alias(value, __CALLER__)
-
-                  field in section.no_depend_modules ->
-                    Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)
-
-                  true ->
-                    value
-                end
-
-              {value, function} = Spark.CodeHelpers.lift_functions(value, field, __CALLER__)
+              {value, function} =
+                Spark.Dsl.Extension.SectionOption.value_and_function(
+                  value,
+                  field,
+                  type,
+                  __CALLER__,
+                  unquote(Macro.escape(section.modules)),
+                  unquote(Macro.escape(section.no_depend_modules))
+                )
 
               quote generated: true do
                 unquote(function)
 
-                Spark.Dsl.Extension.set_section_opt(
-                  unquote(value),
-                  unquote(Macro.escape(value)),
-                  unquote(Macro.escape(config[:type])),
-                  unquote(section_path),
+                Spark.Dsl.Extension.SectionOption.set_section_option(
+                  __MODULE__,
                   unquote(extension),
-                  unquote(field)
+                  unquote(section_path),
+                  unquote(field),
+                  unquote(value)
                 )
               end
             end
@@ -1303,50 +1289,6 @@ defmodule Spark.Dsl.Extension do
     end
 
     {section_modules, entity_modules, unimport_modules, opts_mod_name}
-  end
-
-  defmacro set_section_opt(
-             value,
-             escaped_value,
-             type,
-             section_path,
-             extension,
-             field
-           ) do
-    {value, function} = Spark.CodeHelpers.lift_functions(value, field, __CALLER__)
-
-    quote generated: true,
-          bind_quoted: [
-            value: value,
-            escaped_value: escaped_value,
-            type: type,
-            section_path: section_path,
-            extension: extension,
-            field: field,
-            function: function
-          ] do
-      current_sections = Process.get({__MODULE__, :spark_sections}, [])
-
-      unless {extension, section_path} in current_sections do
-        Process.put({__MODULE__, :spark_sections}, [
-          {extension, section_path} | current_sections
-        ])
-      end
-
-      current_config =
-        Process.get(
-          {__MODULE__, :spark, section_path},
-          %{entities: [], opts: []}
-        )
-
-      Process.put(
-        {__MODULE__, :spark, section_path},
-        %{
-          current_config
-          | opts: Keyword.put(current_config.opts, field, value)
-        }
-      )
-    end
   end
 
   @doc false
@@ -2311,9 +2253,10 @@ defmodule Spark.Dsl.Extension do
         :ok
 
       {:tasks, funs} ->
-        funs
-        |> Enum.map(&do_async_compile/1)
-        |> Task.await_many(:infinity)
+        Enum.map(funs, & &1.())
+        # funs
+        # |> Enum.map(&do_async_compile/1)
+        # |> Task.await_many(:infinity)
 
         await_all_tasks(agent)
     end
