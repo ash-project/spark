@@ -1373,6 +1373,38 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
+          def __build__(module, opts, nested_entities) do
+            case Spark.Dsl.Entity.build(unquote(Macro.escape(entity)), opts, nested_entities) do
+              {:ok, built} ->
+                built
+
+              {:error, error} ->
+                additional_path =
+                  if opts[:name] do
+                    [unquote(entity.name), opts[:name]]
+                  else
+                    [unquote(entity.name)]
+                  end
+
+                message =
+                  cond do
+                    is_exception(error) ->
+                      Exception.message(error)
+
+                    is_binary(error) ->
+                      error
+
+                    true ->
+                      inspect(error)
+                  end
+
+                raise Spark.Error.DslError,
+                  module: module,
+                  message: message,
+                  path: unquote(section_path) ++ additional_path
+            end
+          end
+
           @moduledoc false
           defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
             section_path = unquote(Macro.escape(section_path))
@@ -1557,6 +1589,29 @@ defmodule Spark.Dsl.Extension do
                 end
               end)
 
+            opts_mod_import =
+              if options_mod_name do
+                [
+                  quote do
+                    import unquote(options_mod_name), only: :macros
+                  end
+                ]
+              else
+                []
+              end
+
+            nested_entity_mod_imports =
+              for mod <- nested_entity_mods do
+                quote do
+                  import unquote(mod), only: :macros
+                end
+              end
+
+            entity_keys =
+              entity.entities
+              |> Enum.map(&elem(&1, 0))
+              |> Enum.uniq()
+
             code =
               top_level_unimports ++
                 unimports ++
@@ -1564,153 +1619,31 @@ defmodule Spark.Dsl.Extension do
                 imports ++
                 funs ++
                 opt_funs ++
+                opts_mod_import ++
+                nested_entity_mod_imports ++
                 [
                   quote generated: true do
-                    section_path = unquote(section_path)
-                    entity_name = unquote(entity_name)
-                    extension = unquote(extension)
-                    recursive_as = unquote(entity.recursive_as)
-                    nested_key = unquote(nested_key)
-                    parent_recursive_as = Process.get(:parent_recursive_as)
-
-                    original_nested_entity_path = Process.get(:recursive_builder_path)
-
-                    nested_entity_path =
-                      if is_nil(original_nested_entity_path) do
-                        Process.put(:recursive_builder_path, [])
-                        []
-                      else
-                        unless recursive_as || nested_key || parent_recursive_as do
-                          raise "Somehow got a nested entity without a `recursive_as` or `nested_key`"
-                        end
-
-                        path =
-                          (original_nested_entity_path || []) ++
-                            [recursive_as || nested_key || parent_recursive_as]
-
-                        Process.put(
-                          :recursive_builder_path,
-                          path
-                        )
-
-                        path
-                      end
-
-                    if recursive_as do
-                      Process.put(:parent_recursive_as, recursive_as)
-                    end
-
-                    current_sections = Process.get({__MODULE__, :spark_sections}, [])
-
-                    keyword_opts =
-                      Keyword.merge(
+                    handle_data =
+                      Spark.Dsl.Extension.Entity.setup(
+                        __MODULE__,
+                        unquote(entity.recursive_as),
+                        unquote(nested_key),
                         unquote(Keyword.delete(opts, :do)),
-                        unquote(arg_values),
-                        fn key, _, _ ->
-                          raise Spark.Error.DslError,
-                            module: __MODULE__,
-                            message: "Multiple values for key `#{inspect(key)}`",
-                            path: nested_entity_path
-                        end
+                        unquote(arg_values)
                       )
-
-                    Process.put(
-                      {:builder_opts, nested_entity_path},
-                      keyword_opts
-                    )
-
-                    import unquote(options_mod_name)
-
-                    require Spark.Dsl.Extension
-                    Spark.Dsl.Extension.import_mods(unquote(nested_entity_mods))
 
                     unquote(opts[:do])
 
-                    Process.put(:recursive_builder_path, original_nested_entity_path)
-                    Process.put(:parent_recursive_as, parent_recursive_as)
-
-                    current_config =
-                      Process.get(
-                        {__MODULE__, :spark, section_path ++ nested_entity_path},
-                        %{entities: [], opts: []}
-                      )
-
-                    import unquote(options_mod_name), only: []
-
-                    require Spark.Dsl.Extension
-                    Spark.Dsl.Extension.unimport_mods(unquote(nested_entity_mods))
-
-                    opts = Process.delete({:builder_opts, nested_entity_path})
-
-                    alias Spark.Dsl.Entity
-
-                    nested_entity_keys =
-                      unquote(Macro.escape(entity.entities))
-                      |> Enum.map(&elem(&1, 0))
-                      |> Enum.uniq()
-
-                    nested_entities =
-                      nested_entity_keys
-                      |> Enum.reduce(%{}, fn key, acc ->
-                        nested_path = section_path ++ nested_entity_path ++ [key]
-
-                        entities =
-                          {__MODULE__, :spark, nested_path}
-                          |> Process.get(%{entities: []})
-                          |> Map.get(:entities, [])
-
-                        Process.delete({__MODULE__, :spark, nested_path})
-
-                        Map.update(acc, key, entities, fn current_nested_entities ->
-                          (current_nested_entities || []) ++ entities
-                        end)
-                      end)
-
-                    built =
-                      case Entity.build(unquote(Macro.escape(entity)), opts, nested_entities) do
-                        {:ok, built} ->
-                          built
-
-                        {:error, error} ->
-                          additional_path =
-                            if opts[:name] do
-                              [unquote(entity.name), opts[:name]]
-                            else
-                              [unquote(entity.name)]
-                            end
-
-                          message =
-                            cond do
-                              is_exception(error) ->
-                                Exception.message(error)
-
-                              is_binary(error) ->
-                                error
-
-                              true ->
-                                inspect(error)
-                            end
-
-                          raise Spark.Error.DslError,
-                            module: __MODULE__,
-                            message: message,
-                            path: section_path ++ additional_path
-                      end
-
-                    new_config = %{current_config | entities: current_config.entities ++ [built]}
-
-                    unless {extension, section_path} in current_sections do
-                      Process.put({__MODULE__, :spark_sections}, [
-                        {extension, section_path} | current_sections
-                      ])
-                    end
-
-                    Process.put(
-                      {__MODULE__, :spark, section_path ++ nested_entity_path},
-                      new_config
+                    Spark.Dsl.Extension.Entity.handle(
+                      __MODULE__,
+                      unquote(section_path),
+                      unquote(entity_keys),
+                      unquote(__MODULE__),
+                      unquote(extension),
+                      handle_data
                     )
                   end
-                ] ++ other_extension_unimports
+                ]
 
             quote generated: true do
               with do
@@ -1787,6 +1720,7 @@ defmodule Spark.Dsl.Extension do
               )
 
             key = unquote(key)
+
             quote generated: true do
               unquote(function)
 
