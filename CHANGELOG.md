@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.6](https://github.com/ash-project/spark/compare/v2.2.5...v2.2.6) (2024-06-28)
+
+
+
+
+### Improvements:
+
+* simplify & optimize import conflict resolution
+
+* optimize and make idiomatic the entity building macros
+
+* more idiomatic and performant section body & entity option macros
+
+* optimize and make idiomatic the section option setter
+
 ## [v2.2.5](https://github.com/ash-project/spark/compare/v2.2.4...v2.2.5) (2024-06-25)
 
 
