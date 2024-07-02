@@ -124,6 +124,8 @@ defmodule Spark.Igniter do
   end
 
   def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
+    extension = {:__aliases__, [], Enum.map(Module.split(extension), &String.to_atom/1)}
+
     Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
       case Igniter.Code.Module.move_to_use(zipper, type) do
         {:ok, zipper} ->
@@ -141,10 +143,12 @@ defmodule Spark.Igniter do
               if singleton? do
                 with {:ok, arg_zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
                      {:ok, value_zipper} <- Igniter.Code.Keyword.get_key(arg_zipper, key),
-                     true <- Igniter.Code.Module.module?(value_zipper),
                      module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
                      {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
                   {:ok, Module.concat(parts)}
+                  else
+                  _ ->
+                    :error
                 end
               else
                 :error
@@ -153,7 +157,7 @@ defmodule Spark.Igniter do
             Igniter.Code.Function.update_nth_argument(zipper, 1, fn zipper ->
               if singleton? do
                 case Igniter.Code.Keyword.put_in_keyword(zipper, [key], extension, fn x ->
-                       {:ok, Sourceror.Zipper.replace(x, extension)}
+                       {:ok, Igniter.Code.Common.replace_code(x, extension)}
                      end) do
                   {:ok, zipper} ->
                     {:ok, zipper}
