@@ -8,28 +8,21 @@ defmodule Spark.Igniter do
   @doc "Sets an option at a given path within in a DSL."
   @spec set_option(
           Igniter.t(),
-          spark :: module,
-          Path.t(),
+          module,
           dsl_path :: list(atom),
           value :: term(),
           (Zipper.t() -> {:ok, Zipper.t()} | {:error, term | list(term)} | :error)
         ) :: Igniter.t()
-  def set_option(igniter, spark, file_path, path, value, updater \\ &{:ok, &1}) do
+  def set_option(igniter, module, path, value, updater \\ &{:ok, &1}) do
     {body, [last]} = Enum.split(List.wrap(path), -1)
     path = Enum.map(body, &{:section, &1}) ++ [{:option, last}]
 
-    update_dsl(igniter, spark, file_path, path, value, updater)
+    update_dsl(igniter, module, path, value, updater)
   end
 
-  def update_dsl(igniter, spark, file_path, path, value, func) do
-    Igniter.update_elixir_file(igniter, file_path, fn zipper ->
-      case Igniter.Code.Module.move_to_module_using(zipper, spark) do
-        {:ok, zipper} ->
-          do_update_dsl(zipper, path, value, func)
-
-        _ ->
-          {:ok, zipper}
-      end
+  def update_dsl(igniter, module, path, value, func) do
+    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+      do_update_dsl(zipper, path, value, func)
     end)
   end
 
@@ -88,17 +81,14 @@ defmodule Spark.Igniter do
           "{:option, #{inspect(name)}} was found as a non-leaf node in a path to update. Options must be the last item in the list."
   end
 
-  def remove_extension(igniter, path, type, key, extension, singleton? \\ false) do
-    Igniter.update_elixir_file(igniter, path, fn zipper ->
-      with {:ok, zipper} <- Igniter.Code.Module.move_to_module_using(zipper, type),
-           {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type) do
+  def remove_extension(igniter, module, type, key, extension, singleton? \\ false) do
+    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+      with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type) do
         if Igniter.Code.Common.node_matches_pattern?(zipper, {_, _, [_]}) do
           :error
         else
           if singleton? do
-            case Igniter.Code.Common.within(zipper, fn zipper ->
-                   Igniter.Code.Keyword.remove_keyword_key(zipper, key)
-                 end) do
+            case Igniter.Code.Keyword.remove_keyword_key(zipper, key) do
               {:ok, zipper} ->
                 {:ok, zipper}
 
@@ -133,75 +123,73 @@ defmodule Spark.Igniter do
     remove_constructors(zipper, constructors_to_remove)
   end
 
-  def add_extension(igniter, path, type, key, extension, singleton? \\ false) do
-    Igniter.update_elixir_file(igniter, path, fn zipper ->
-      with {:ok, zipper} <- Igniter.Code.Module.move_to_module_using(zipper, type),
-           {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type) do
-        if Igniter.Code.Common.node_matches_pattern?(zipper, {_, _, [_]}) do
-          value =
-            if singleton? do
-              extension
-            else
-              [extension]
-            end
-
-          Igniter.Code.Function.append_argument(zipper, [{key, value}])
-        else
-          remove_extension =
-            if singleton? do
-              with {:ok, arg_zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
-                   {:ok, value_zipper} <- Igniter.Code.Keyword.get_key(arg_zipper, key),
-                   true <- Igniter.Code.Module.module?(value_zipper),
-                   module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
-                   {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
-                {:ok, Module.concat(parts)}
+  def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
+    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+      case Igniter.Code.Module.move_to_use(zipper, type) do
+        {:ok, zipper} ->
+          if Igniter.Code.Common.node_matches_pattern?(zipper, {_, _, [_]}) do
+            value =
+              if singleton? do
+                extension
+              else
+                [extension]
               end
-            else
-              :error
-            end
 
-          Igniter.Code.Function.update_nth_argument(zipper, 1, fn zipper ->
-            if singleton? do
-              case Igniter.Code.Common.within(zipper, fn zipper ->
-                     Igniter.Code.Keyword.put_in_keyword(zipper, [key], extension, fn x ->
+            Igniter.Code.Function.append_argument(zipper, [{key, value}])
+          else
+            remove_extension =
+              if singleton? do
+                with {:ok, arg_zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
+                     {:ok, value_zipper} <- Igniter.Code.Keyword.get_key(arg_zipper, key),
+                     true <- Igniter.Code.Module.module?(value_zipper),
+                     module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
+                     {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
+                  {:ok, Module.concat(parts)}
+                end
+              else
+                :error
+              end
+
+            Igniter.Code.Function.update_nth_argument(zipper, 1, fn zipper ->
+              if singleton? do
+                case Igniter.Code.Keyword.put_in_keyword(zipper, [key], extension, fn x ->
                        {:ok, Sourceror.Zipper.replace(x, extension)}
-                     end)
-                   end) do
-                {:ok, zipper} ->
-                  {:ok, zipper}
-
-                _ ->
-                  {:ok, zipper}
-              end
-            else
-              Igniter.Code.Keyword.put_in_keyword(zipper, [key], [extension], fn zipper ->
-                Igniter.Code.List.prepend_new_to_list(
-                  zipper,
-                  extension
-                )
-              end)
-            end
-          end)
-          |> case do
-            {:ok, zipper} ->
-              case remove_extension do
-                {:ok, module} ->
-                  if Code.ensure_loaded?(module) &&
-                       Spark.implements_behaviour?(module, Spark.Dsl.Extension) do
-                    do_remove_constructors(zipper, type, module)
-                  else
+                     end) do
+                  {:ok, zipper} ->
                     {:ok, zipper}
-                  end
 
-                :error ->
-                  {:ok, zipper}
+                  _ ->
+                    {:ok, zipper}
+                end
+              else
+                Igniter.Code.Keyword.put_in_keyword(zipper, [key], [extension], fn zipper ->
+                  Igniter.Code.List.prepend_new_to_list(
+                    zipper,
+                    extension
+                  )
+                end)
               end
+            end)
+            |> case do
+              {:ok, zipper} ->
+                case remove_extension do
+                  {:ok, module} ->
+                    if Code.ensure_loaded?(module) &&
+                         Spark.implements_behaviour?(module, Spark.Dsl.Extension) do
+                      do_remove_constructors(zipper, type, module)
+                    else
+                      {:ok, zipper}
+                    end
 
-            :error ->
-              :error
+                  :error ->
+                    {:ok, zipper}
+                end
+
+              :error ->
+                :error
+            end
           end
-        end
-      else
+
         _ ->
           {:ok, zipper}
       end

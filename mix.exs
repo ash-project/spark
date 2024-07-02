@@ -99,7 +99,7 @@ defmodule Spark.MixProject do
     [
       {:sourceror, "~> 1.2"},
       {:jason, "~> 1.4"},
-      {:igniter, "~> 0.2"},
+      {:igniter, "~> 0.2.6"},
       # Dev/Test dependencies
       {:eflame, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.32", only: [:dev, :test], runtime: false},
