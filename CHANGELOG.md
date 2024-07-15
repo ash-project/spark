@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.8](https://github.com/ash-project/spark/compare/v2.2.7...v2.2.8) (2024-07-15)
+
+
+
+
+### Improvements:
+
+* add `Spark.Igniter.prepend_to_section_order`
+
 ## [v2.2.7](https://github.com/ash-project/spark/compare/v2.2.6...v2.2.7) (2024-07-02)
 
 
