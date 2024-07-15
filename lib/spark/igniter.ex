@@ -5,6 +5,28 @@ defmodule Spark.Igniter do
   require Igniter.Code.Common
   alias Sourceror.Zipper
 
+  @doc "Prepends a new section or list of sections to the section order in a formatter configuration."
+  def prepend_to_section_order(igniter, type, sections) do
+    Igniter.Project.Config.configure(
+      igniter,
+      "config.exs",
+      :spark,
+      [:formatter, type, :section_order],
+      sections,
+      updater: fn zipper ->
+        sections
+        |> List.wrap()
+        |> Enum.reverse()
+        |> Enum.reduce({:ok, zipper}, fn section, {:ok, zipper} ->
+          case Igniter.Code.List.prepend_new_to_list(zipper, section) do
+            {:ok, zipper} -> {:ok, zipper}
+            :error -> {:ok, zipper}
+          end
+        end)
+      end
+    )
+  end
+
   @doc "Sets an option at a given path within in a DSL."
   @spec set_option(
           Igniter.t(),
@@ -123,6 +145,7 @@ defmodule Spark.Igniter do
     remove_constructors(zipper, constructors_to_remove)
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
     extension = {:__aliases__, [], Enum.map(Module.split(extension), &String.to_atom/1)}
 
@@ -146,7 +169,7 @@ defmodule Spark.Igniter do
                      module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
                      {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
                   {:ok, Module.concat(parts)}
-                  else
+                else
                   _ ->
                     :error
                 end

@@ -3,6 +3,12 @@ defmodule Mix.Tasks.Spark.Install do
   @shortdoc @moduledoc
   use Igniter.Mix.Task
 
+  @impl true
+  def info(_argv, _parent) do
+    %Igniter.Mix.Task.Info{}
+  end
+
+  @impl true
   def igniter(igniter, _argv) do
     igniter
     |> Igniter.Project.Formatter.add_formatter_plugin(Spark.Formatter)
