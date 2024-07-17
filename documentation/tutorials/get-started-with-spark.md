@@ -13,6 +13,6 @@ This library has only recently been extracted out from Ash core, so there is sti
 
 ## Dependency
 
-`{:spark, "~> 2.2.8"}`
+`{:spark, "~> 2.2.9"}`
 
 

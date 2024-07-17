@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.9](https://github.com/ash-project/spark/compare/v2.2.8...v2.2.9) (2024-07-17)
+
+
+
+
+### Bug Fixes:
+
+* hide hidden docs & auto_set_fields in options tables
+
 ## [v2.2.8](https://github.com/ash-project/spark/compare/v2.2.7...v2.2.8) (2024-07-15)
 
 
