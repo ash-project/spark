@@ -62,6 +62,7 @@ defmodule Spark.Dsl.Entity do
 
   For a full example, see `Spark.Dsl.Extension`.
   """
+
   defstruct [
     :name,
     :target,

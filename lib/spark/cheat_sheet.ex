@@ -58,6 +58,11 @@ defmodule Spark.CheatSheet do
         """
       end
 
+    options =
+      Enum.reject(section.schema, fn {_key, opts} ->
+        opts[:hide]
+      end)
+
     if section.schema && section.schema != [] do
       """
       ## #{Enum.join(path ++ [section.name], ".")}
@@ -67,7 +72,7 @@ defmodule Spark.CheatSheet do
 
       #{examples}
 
-      #{options_table(section.schema, path ++ [section.name])}
+      #{options_table(options, path ++ [section.name])}
 
       #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name]))}
       #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name]))}
@@ -96,7 +101,14 @@ defmodule Spark.CheatSheet do
     nested_entity_docs =
       Enum.map_join(nested_entities, &entity_cheat_sheet(&1, path ++ [entity.name]))
 
-    options = Keyword.drop(entity.schema, List.wrap(entity.hide))
+    options =
+      entity.schema
+      |> Keyword.drop(List.wrap(entity.hide))
+      |> Enum.reject(fn {_key, opts} ->
+        opts[:hide]
+      end)
+      |> Keyword.drop(Keyword.keys(entity.auto_set_fields))
+
     arg_keys = arg_keys(entity)
 
     reference =
