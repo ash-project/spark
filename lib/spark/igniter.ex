@@ -103,6 +103,9 @@ defmodule Spark.Igniter do
           "{:option, #{inspect(name)}} was found as a non-leaf node in a path to update. Options must be the last item in the list."
   end
 
+  @doc "Removes an extension from a DSL module."
+  @spec remove_extension(Igniter.t(), module(), module(), atom(), module(), boolean()) ::
+          Igniter.t()
   def remove_extension(igniter, module, type, key, extension, singleton? \\ false) do
     Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
       with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type) do
@@ -145,7 +148,42 @@ defmodule Spark.Igniter do
     remove_constructors(zipper, constructors_to_remove)
   end
 
+  @doc "Returns `{igniter, true}` if the module has the extension, or `{igniter, false}` otherwise."
+  @spec has_extension(Igniter.t(), module(), module(), atom(), module()) ::
+          {Igniter.t(), boolean()}
+  def has_extension(igniter, module, type, key, extension) do
+    case Igniter.Code.Module.find_module(igniter, module) do
+      {:ok, {igniter, _source, zipper}} ->
+        with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type),
+             {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
+             {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key) do
+          match? =
+            if Igniter.Code.List.list?(zipper) do
+              match?(
+                {:ok, _},
+                Igniter.Code.List.move_to_list_item(
+                  zipper,
+                  &Igniter.Code.Common.nodes_equal?(&1, extension)
+                )
+              )
+            else
+              Igniter.Code.Common.nodes_equal?(zipper, extension)
+            end
+
+          {igniter, match?}
+        else
+          _ ->
+            {igniter, false}
+        end
+
+      {:error, igniter} ->
+        {igniter, false}
+    end
+  end
+
   # sobelow_skip ["DOS.StringToAtom"]
+  @doc "Adds an extension to a DSL module."
+  @spec add_extension(Igniter.t(), module(), module(), atom(), module(), boolean()) :: Igniter.t()
   def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
     extension = {:__aliases__, [], Enum.map(Module.split(extension), &String.to_atom/1)}
 
