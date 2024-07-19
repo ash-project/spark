@@ -7,6 +7,7 @@ defmodule Spark.Igniter do
 
   @doc "Prepends a new section or list of sections to the section order in a formatter configuration."
   def prepend_to_section_order(igniter, type, sections) do
+    sections = List.wrap(sections)
     Igniter.Project.Config.configure(
       igniter,
       "config.exs",
@@ -15,7 +16,6 @@ defmodule Spark.Igniter do
       sections,
       updater: fn zipper ->
         sections
-        |> List.wrap()
         |> Enum.reverse()
         |> Enum.reduce({:ok, zipper}, fn section, {:ok, zipper} ->
           case Igniter.Code.List.prepend_new_to_list(zipper, section) do
