@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.11](https://github.com/ash-project/spark/compare/v2.2.10...v2.2.11) (2024-07-30)
+
+
+
+
+### Bug Fixes:
+
+* (maybe temporarily) disable parallel compilation to resolve compile time issues
+
+* ensure that sections are a list in `prepend_to_section_order/3`
+
 ## [v2.2.10](https://github.com/ash-project/spark/compare/v2.2.9...v2.2.10) (2024-07-18)
 
 
