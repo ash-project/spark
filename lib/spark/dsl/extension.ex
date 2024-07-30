@@ -124,6 +124,8 @@ defmodule Spark.Dsl.Extension do
 
   @optional_callbacks explain: 1
 
+  @parallel_compile Application.compile_env(:spark, :parallel_compile, false)
+
   defp persisted!(resource, key, default) do
     resource.persisted(key, default)
   rescue
@@ -1745,13 +1747,17 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   def async_compile({agent, _pid}, func) do
-    Agent.update(
-      agent,
-      fn funs ->
-        [func | funs]
-      end,
-      :infinity
-    )
+    if @parallel_compile do
+      Agent.update(
+        agent,
+        fn funs ->
+          [func | funs]
+        end,
+        :infinity
+      )
+    else
+      func.()
+    end
   end
 
   @doc false
