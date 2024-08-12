@@ -147,6 +147,14 @@ defmodule Spark.Dsl.Extension do
       end
   end
 
+  @doc false
+  def get_attribute(mod, attr) do
+    Module.get_attribute(mod, attr)
+  rescue
+    ArgumentError ->
+      mod.module_info(:attributes)[attr]
+  end
+
   @doc "Get the entities configured for a given section"
   def get_entities(map, nil), do: get_entities(map, [])
 
@@ -392,6 +400,7 @@ defmodule Spark.Dsl.Extension do
   def prepare(extensions) do
     body =
       quote generated: true, location: :keep do
+        Module.register_attribute(__MODULE__, :extensions, persist: true)
         @extensions unquote(extensions)
         @persist {:spark_extensions, @extensions}
       end
@@ -800,7 +809,9 @@ defmodule Spark.Dsl.Extension do
       end
 
       unless section.top_level? && path == [] do
-        @doc false
+        @doc """
+        Hello!
+        """
         defmacro unquote(section.name)(body) do
           opts_module = unquote(opts_module)
           section_path = unquote(path ++ [section.name])
@@ -809,8 +820,7 @@ defmodule Spark.Dsl.Extension do
           entity_modules = unquote(entity_modules)
 
           patch_modules =
-            __CALLER__.module
-            |> Module.get_attribute(:extensions, [])
+            Spark.Dsl.Extension.get_attribute(__CALLER__.module, :extensions)
             |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
             |> Enum.reject(&(&1 in entity_modules))
 
@@ -937,7 +947,7 @@ defmodule Spark.Dsl.Extension do
             Module.create(
               mod_name,
               quote generated: true do
-                @moduledoc false
+                @moduledoc "MOD DOCS"
                 alias Spark.Dsl
 
                 require Dsl.Extension
@@ -968,8 +978,9 @@ defmodule Spark.Dsl.Extension do
                 section_path: path ++ [section.name],
                 extension: extension
               ] do
-          @moduledoc false
+          @moduledoc "Mod Docs"
           for {field, config} <- section.schema do
+            @doc "Hello 3"
             defmacro unquote(field)(value) do
               section_path = unquote(Macro.escape(section_path))
               field = unquote(Macro.escape(field))
@@ -1133,7 +1144,8 @@ defmodule Spark.Dsl.Extension do
             end
           end
 
-          @moduledoc false
+          @moduledoc "Mod docs"
+          @doc "Hello 4"
           defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
             section_path = unquote(Macro.escape(section_path))
             entity_schema = unquote(Macro.escape(entity.schema))
@@ -1225,8 +1237,7 @@ defmodule Spark.Dsl.Extension do
               end)
 
             other_extension_modules =
-              __CALLER__.module
-              |> Module.get_attribute(:extensions)
+              Spark.Dsl.Extension.get_attribute(__CALLER__.module, :extensions)
               |> Enum.reject(&(&1 == extension))
               |> Enum.flat_map(fn extension ->
                 extension.dsl_patches()
@@ -1355,10 +1366,11 @@ defmodule Spark.Dsl.Extension do
               entity: Macro.escape(entity),
               nested_entity_path: nested_entity_path
             ] do
-        @moduledoc false
+        @moduledoc "Mod Docs"
 
         for {key, config} <- entity.schema,
             !Spark.Dsl.Extension.required_arg?(key, entity.args) do
+          @doc "Hello 2"
           defmacro unquote(key)(value) do
             Spark.Dsl.Extension.maybe_deprecated(
               unquote(key),

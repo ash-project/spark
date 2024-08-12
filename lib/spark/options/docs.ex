@@ -327,14 +327,18 @@ defmodule Spark.Options.Docs do
     [head | tail]
   end
 
-  def schema_to_spec(schema) do
-    schema
-    |> Enum.map(fn {key, opt_schema} ->
+  def schema_specs(schema) do
+    Enum.map(schema, fn {key, opt_schema} ->
       typespec =
         Keyword.get_lazy(opt_schema, :type_spec, fn -> type_to_spec(opt_schema[:type]) end)
 
       quote do: {unquote(key), unquote(typespec)}
     end)
+  end
+
+  def schema_to_spec(schema) do
+    schema
+    |> schema_specs()
     |> unionize_quoted()
   end
 

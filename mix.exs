@@ -75,7 +75,8 @@ defmodule Spark.MixProject do
         Tutorials: ~r/documentation\/tutorials/
       ],
       groups_for_modules: [
-        "DSLs and Extensions": ~r/(^Spark.Dsl|^Spark.OptionsHelpers|^Spark.Options)/,
+        "DSLs and Extensions": ~r/^Spark.Dsl/,
+        "Options": ~r/^Spark.Options/,
         Errors: [Spark.Error.DslError],
         Internals: ~r/.*/
       ]
@@ -98,9 +99,11 @@ defmodule Spark.MixProject do
   defp deps do
     [
       {:sourceror, "~> 1.2"},
+      # in 3.x, make this dependency optional
       {:jason, "~> 1.4"},
       {:igniter, "~> 0.2 and >= 0.2.6"},
       # Dev/Test dependencies
+      {:benchee, "~> 1.3", only: [:dev, :test]},
       {:eflame, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.32", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.12", only: [:dev, :test]},

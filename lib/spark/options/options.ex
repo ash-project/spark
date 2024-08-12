@@ -663,7 +663,6 @@ defmodule Spark.Options do
       @type option() :: {:int, integer()} | {:number, integer() | float()}
 
   """
-  @doc since: "0.5.0"
   @spec option_typespec(schema() | t()) :: Macro.t()
   def option_typespec(schema)
 
@@ -698,79 +697,60 @@ defmodule Spark.Options do
   end
 
   defp validate_options_with_schema_and_path(opts, schema, path) when is_list(opts) do
-    schema = expand_star_to_option_keys(schema, opts)
+    case validate_options(schema, opts) do
+      {:ok, options} ->
+        {:ok, options}
 
-    with :ok <- validate_unknown_options(opts, schema),
-         {:ok, options} <- validate_options(schema, opts) do
-      {:ok, options}
-    else
       {:error, %ValidationError{} = error} ->
         {:error, %ValidationError{error | keys_path: path ++ error.keys_path}}
     end
   end
 
-  defp validate_unknown_options(opts, schema) do
-    valid_opts = Keyword.keys(schema)
-
-    case Keyword.keys(opts) -- valid_opts do
-      [] ->
-        :ok
-
-      keys ->
-        error_tuple(
-          keys,
-          nil,
-          "unknown options #{inspect(keys)}, valid options are: #{inspect(valid_opts)}"
-        )
-    end
-  end
-
   defp validate_options(schema, opts) do
-    case Enum.reduce_while(schema, opts, &reduce_options/2) do
-      {:error, %ValidationError{}} = result -> result
-      result -> {:ok, result}
-    end
-  end
-
-  defp reduce_options({key, schema_opts}, opts) do
-    case validate_option(opts, key, schema_opts) do
-      {:error, %ValidationError{}} = result ->
-        {:halt, result}
-
-      {:ok, value} ->
-        {:cont, Keyword.update(opts, key, value, fn _ -> value end)}
-
-      :no_value ->
-        if Keyword.has_key?(schema_opts, :default) do
-          opts_with_default = Keyword.put(opts, key, schema_opts[:default])
-          reduce_options({key, schema_opts}, opts_with_default)
+    {required, defaults} =
+      Enum.reduce(schema, {[], []}, fn {key, opts}, {required, defaults} ->
+        if opts[:required] do
+          {[key | required], defaults}
         else
-          {:cont, opts}
-        end
-    end
-  end
+          case Keyword.fetch(opts, :default) do
+            {:ok, default} ->
+              {required, Keyword.put(defaults, key, default)}
 
-  defp validate_option(opts, key, schema) do
-    with {:ok, value} <- validate_value(opts, key, schema),
-         {:ok, value} <- validate_type(schema[:type], key, value) do
-      if nested_schema = schema[:keys] do
-        validate_options_with_schema_and_path(value, nested_schema, _path = [key])
-      else
-        {:ok, value}
+            :error ->
+              {required, defaults}
+          end
+        end
+      end)
+
+    Enum.reduce_while(opts, {:ok, [], required}, fn {key, value}, {:ok, validated, required} ->
+      with {:ok, value, option_schema} <- validate_value(schema, opts, key, value),
+           {:ok, value} <- validate_type(option_schema[:type], key, value) do
+        new_required = required -- [key]
+
+        if nested_schema = option_schema[:keys] do
+          case validate_options_with_schema_and_path(value, nested_schema, _path = [key]) do
+            {:ok, value} ->
+              {:cont, {:ok, [{key, value} | validated], new_required}}
+
+            {:error, error} ->
+              {:halt, {:error, error}}
+          end
+        else
+          {:cont, {:ok, [{key, value} | validated], new_required}}
+        end
       end
-    end
-  end
+    end)
+    |> case do
+      {:ok, validated, []} ->
+        case defaults do
+          [] ->
+            {:ok, validated}
 
-  defp validate_value(opts, key, schema) do
-    cond do
-      Keyword.has_key?(opts, key) ->
-        if message = Keyword.get(schema, :deprecated) do
-          IO.warn("#{render_key(key)} is deprecated. " <> message)
+          _ ->
+            {:ok, Keyword.merge(defaults, validated)}
         end
 
-        {:ok, opts[key]}
-
-      Keyword.get(schema, :required, false) ->
+      {:ok, _validated, [key | _]} ->
         error_tuple(
           key,
           nil,
@@ -778,9 +758,47 @@ defmodule Spark.Options do
             inspect(Keyword.keys(opts))
         )
 
-      true ->
-        :no_value
+      {:error, error} ->
+        {:error, error}
     end
+  end
+
+  defp validate_value(schema, opts, key, value) do
+    case Keyword.fetch(schema, key) do
+      {:ok, schema} ->
+        if message = Keyword.get(schema, :deprecated) do
+          IO.warn("#{render_key(key)} is deprecated. " <> message)
+        end
+
+        {:ok, value, schema}
+
+      :error ->
+        case Keyword.fetch(schema, :*) do
+          :error ->
+            if Keyword.get(schema, :required, false) do
+              error_tuple(
+                key,
+                nil,
+                "required #{render_key(key)} not found, received options: " <>
+                  inspect(Keyword.keys(opts))
+              )
+            else
+              error_tuple(
+                [key],
+                nil,
+                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(opts))}"
+              )
+            end
+
+          {:ok, default} ->
+            {:ok, value, default}
+        end
+    end
+  end
+
+  @doc false
+  def validate_single_type(type, key, value) do
+    validate_type(type, key, value)
   end
 
   defp validate_type(:integer, key, value) when not is_integer(value) do
@@ -1387,16 +1405,6 @@ defmodule Spark.Options do
     is_list(value) and Enum.all?(value, &match?({key, _value} when is_atom(key), &1))
   end
 
-  defp expand_star_to_option_keys(keys, opts) do
-    case keys[:*] do
-      nil ->
-        keys
-
-      schema_opts ->
-        Enum.map(opts, fn {k, _} -> {k, schema_opts} end)
-    end
-  end
-
   defp available_types do
     types =
       Enum.map(@basic_types, &inspect/1) ++
@@ -1626,10 +1634,11 @@ defmodule Spark.Options do
     {:error, %ValidationError{key: key, message: message, value: value}}
   end
 
-  defp render_key({__MODULE__, :key}), do: "map key"
-  defp render_key({__MODULE__, :value, key}), do: "map key #{inspect(key)}"
-  defp render_key({__MODULE__, :tuple, index}), do: "tuple element at position #{index}"
-  defp render_key({__MODULE__, :list, index}), do: "list element at position #{index}"
-  defp render_key({__MODULE__, :tagged_tuple_value, _key}), do: "tagged tuple elem 1"
-  defp render_key(key), do: inspect(key) <> " option"
+  @doc false
+  def render_key({__MODULE__, :key}), do: "map key"
+  def render_key({__MODULE__, :value, key}), do: "map key #{inspect(key)}"
+  def render_key({__MODULE__, :tuple, index}), do: "tuple element at position #{index}"
+  def render_key({__MODULE__, :list, index}), do: "list element at position #{index}"
+  def render_key({__MODULE__, :tagged_tuple_value, _key}), do: "tagged tuple elem 1"
+  def render_key(key), do: inspect(key) <> " option"
 end
