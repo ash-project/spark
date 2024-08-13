@@ -68,7 +68,7 @@ defmodule Spark.Options.Validator do
 
         defstruct struct_fields ++ [__set__: @defaults]
 
-        schema_specs = Spark.Options.Docs.schema_specs(@schema)
+        schema_specs = Spark.Options.Docs.schema_specs(@schema, true)
 
         quote do
           @type t :: %__MODULE__{unquote_splicing(schema_specs)}
@@ -84,6 +84,12 @@ defmodule Spark.Options.Validator do
                   end)
                   |> Enum.map(&elem(&1, 0))
 
+        @valid_options schema
+          |> Enum.reject(fn {_key, config} ->
+            config[:private?]
+          end)
+          |> Enum.map(&elem(&1, 0))
+
         @type schema :: Spark.Options.t()
         def schema do
           @schema
@@ -91,7 +97,7 @@ defmodule Spark.Options.Validator do
 
         @type docs :: String.t()
         def docs(opts \\ []) do
-          Spark.Options.docs(@schema, opts)
+          Spark.Options.docs(@schema |> Keyword.take(@valid_options), opts)
         end
 
         if define_deprecated_access? do
@@ -125,7 +131,7 @@ defmodule Spark.Options.Validator do
             {schema, []} ->
               schema
 
-            {schema, missing} ->
+            {_schema, missing} ->
               raise %Spark.Options.ValidationError{
                 key: missing,
                 message: "Missing required keys: #{inspect(missing)}"
@@ -145,7 +151,7 @@ defmodule Spark.Options.Validator do
             {schema, []} ->
               {:ok, schema}
 
-            {schema, missing} ->
+            {_schema, missing} ->
               {:error,
                %Spark.Options.ValidationError{
                  key: missing,
@@ -160,6 +166,10 @@ defmodule Spark.Options.Validator do
           type = Macro.escape(config[:type])
 
           cond do
+            config[:private?] ->
+              defp validate_option(unquote(key), value, {acc, required_fields}) do
+              end
+
             # we can add as many of these as we like to front load validations
             type == :integer ->
               defp validate_option(unquote(key), value, {acc, required_fields})
@@ -210,7 +220,14 @@ defmodule Spark.Options.Validator do
         end
 
         defp validate_option(unknown_key, value, _) do
-          {:halt, {:error, "Unknown key #{unknown_key}"}}
+          {:halt,
+           {:error,
+            %Spark.Options.ValidationError{
+              key: unknown_key,
+              message:
+                "unknown options #{inspect([unknown_key])}, valid options are: #{inspect(@valid_options)}",
+              value: value
+            }}}
         end
 
         for {key, config} <- Keyword.new(schema) do

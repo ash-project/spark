@@ -327,12 +327,16 @@ defmodule Spark.Options.Docs do
     [head | tail]
   end
 
-  def schema_specs(schema) do
+  def schema_specs(schema, or_nil? \\ false) do
     Enum.map(schema, fn {key, opt_schema} ->
       typespec =
         Keyword.get_lazy(opt_schema, :type_spec, fn -> type_to_spec(opt_schema[:type]) end)
 
-      quote do: {unquote(key), unquote(typespec)}
+      if or_nil? && !opt_schema[:required] && is_nil(opt_schema[:default]) do
+        quote do: {unquote(key), unquote(typespec) | nil}
+      else
+        quote do: {unquote(key), unquote(typespec)}
+      end
     end)
   end
 
