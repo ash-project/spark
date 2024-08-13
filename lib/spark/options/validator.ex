@@ -87,6 +87,11 @@ defmodule Spark.Options.Validator do
           @schema
         end
 
+        @type docs :: String.t()
+        def docs(opts \\ []) do
+          Spark.Options.docs(@schema, opts)
+        end
+
         if unquote(define_deprecated_access?) do
           def fetch(%__MODULE__{} = data, key) do
             IO.warn(
