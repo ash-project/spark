@@ -85,10 +85,10 @@ defmodule Spark.Options.Validator do
                   |> Enum.map(&elem(&1, 0))
 
         @valid_options schema
-          |> Enum.reject(fn {_key, config} ->
-            config[:private?]
-          end)
-          |> Enum.map(&elem(&1, 0))
+                       |> Enum.reject(fn {_key, config} ->
+                         config[:private?]
+                       end)
+                       |> Enum.map(&elem(&1, 0))
 
         @type schema :: Spark.Options.t()
         def schema do
