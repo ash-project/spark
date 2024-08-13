@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.15](https://github.com/ash-project/spark/compare/v2.2.14...v2.2.15) (2024-08-13)
+
+
+
+
+### Improvements:
+
+* support getting an options list back out
+
+* add `to_options/1` to options validators
+
+* store which keys were provided in option validators
+
 ## [v2.2.14](https://github.com/ash-project/spark/compare/v2.2.13...v2.2.14) (2024-08-13)
 
 
