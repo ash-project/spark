@@ -28,7 +28,11 @@ defmodule Spark.Options.ValidatorTest do
     end
 
     test "the keys are the same as the schema keys" do
-      assert Map.keys(MySchema.__struct__()) -- [:__struct__] == Keyword.keys(MySchema.schema())
+      assert Map.keys(MySchema.__struct__()) -- [:__struct__, :__provided__] == Keyword.keys(MySchema.schema())
+    end
+
+    test "stores which keys were explicitly provided" do
+      assert MySchema.validate!([foo: "10", bar: "10"]).__provided__ == [:bar, :foo]
     end
   end
 end

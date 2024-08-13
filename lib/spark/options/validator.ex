@@ -60,7 +60,7 @@ defmodule Spark.Options.Validator do
             {key, config[:default]}
           end)
 
-        defstruct struct_fields
+        defstruct struct_fields ++ [__provided__: []]
 
         quote do
           @type t :: %__MODULE__{unquote_splicing(Spark.Options.Docs.schema_specs(@schema))}
@@ -95,7 +95,7 @@ defmodule Spark.Options.Validator do
         def validate!(options) do
           Enum.reduce(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
             case validate_option(key, value, acc) do
-              {:cont, acc} -> acc
+              {:cont, {struct, missing}} -> {%{struct | __provided__: [key | struct.__provided__]}, missing}
               {:halt, {:error, error}} -> raise error
             end
           end)
@@ -108,7 +108,10 @@ defmodule Spark.Options.Validator do
         @spec validate(Keyword.t()) :: {:ok, t()} | {:error, term()}
         def validate(options) do
           Enum.reduce_while(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
-            validate_option(key, value, acc)
+            case validate_option(key, value, acc) do
+              {:cont, {struct, missing}} -> {:cont, {%{struct | __provided__: [key | struct.__provided__]}, missing}}
+              {:halt, {:error, error}} -> {:halt, {:error, error}}
+            end
           end)
           |> case do
             {schema, []} -> {:ok, schema}
