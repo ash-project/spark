@@ -425,8 +425,12 @@ defmodule Spark.Options.Docs do
           quote(do: term())
         end
 
-      {:in, _choices} ->
-        quote(do: [term()])
+      {one_of, choices} when one_of in [:in, :one_of] ->
+        if Enum.all?(choices, &is_atom(&1)) do
+          unionize_quoted(choices)
+        else
+          quote(do: term())
+        end
 
       {:custom, _mod, _fun, _args} ->
         quote(do: term())
@@ -434,7 +438,7 @@ defmodule Spark.Options.Docs do
       {:list, subtype} ->
         quote(do: [unquote(type_to_spec(subtype))])
 
-      {one_of, subtypes} when one_of in [:one_of, :or] ->
+      {:or, subtypes} ->
         subtypes |> Enum.map(&type_to_spec/1) |> unionize_quoted()
 
       {:struct, _struct_name} ->

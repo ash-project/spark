@@ -52,8 +52,8 @@ defmodule Spark.Options.Validator do
     define_deprecated_access? = opts[:define_deprecated_access?]
 
     [
-      quote do
-        @schema unquote(schema)
+      quote bind_quoted: [schema: schema, define_deprecated_access?: define_deprecated_access?] do
+        @schema Keyword.new(schema)
 
         struct_fields =
           Keyword.new(@schema, fn {key, config} ->
@@ -68,8 +68,10 @@ defmodule Spark.Options.Validator do
 
         defstruct struct_fields ++ [__set__: @defaults]
 
+        schema_specs = Spark.Options.Docs.schema_specs(@schema)
+
         quote do
-          @type t :: %__MODULE__{unquote_splicing(Spark.Options.Docs.schema_specs(@schema))}
+          @type t :: %__MODULE__{unquote_splicing(schema_specs)}
         end
         |> Code.eval_quoted([], __ENV__)
 
@@ -92,7 +94,7 @@ defmodule Spark.Options.Validator do
           Spark.Options.docs(@schema, opts)
         end
 
-        if unquote(define_deprecated_access?) do
+        if define_deprecated_access? do
           def fetch(%__MODULE__{} = data, key) do
             IO.warn(
               "Accessing options from #{__MODULE__} is deprecated. Use `opts.#{key}` instead."
@@ -120,8 +122,14 @@ defmodule Spark.Options.Validator do
             end
           end)
           |> case do
-            {schema, []} -> schema
-            {schema, missing} -> raise "Missing required keys: #{inspect(missing)}"
+            {schema, []} ->
+              schema
+
+            {schema, missing} ->
+              raise %Spark.Options.ValidationError{
+                key: missing,
+                message: "Missing required keys: #{inspect(missing)}"
+              }
           end
         end
 
@@ -134,15 +142,22 @@ defmodule Spark.Options.Validator do
             end
           end)
           |> case do
-            {schema, []} -> {:ok, schema}
-            {schema, missing} -> {:error, "Missing required keys: #{inspect(missing)}"}
+            {schema, []} ->
+              {:ok, schema}
+
+            {schema, missing} ->
+              {:error,
+               %Spark.Options.ValidationError{
+                 key: missing,
+                 message: "Missing required keys: #{inspect(missing)}"
+               }}
           end
         end
       end,
       quote bind_quoted: [schema: schema] do
         @compile {:inline, validate_option: 3, use_key: 2, mark_set: 2, warn_deprecated: 1}
-        for {key, config} <- schema do
-          type = config[:type]
+        for {key, config} <- Keyword.new(schema) do
+          type = Macro.escape(config[:type])
 
           cond do
             # we can add as many of these as we like to front load validations
@@ -198,7 +213,7 @@ defmodule Spark.Options.Validator do
           {:halt, {:error, "Unknown key #{unknown_key}"}}
         end
 
-        for {key, config} <- schema do
+        for {key, config} <- Keyword.new(schema) do
           if config[:required] do
             defp use_key(list, unquote(key)) do
               warn_deprecated(unquote(key))
@@ -213,7 +228,7 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        for {key, config} <- schema, Keyword.has_key?(config, :default) do
+        for {key, config} <- Keyword.new(schema), Keyword.has_key?(config, :default) do
           defp mark_set(struct, unquote(key)) do
             struct
           end
@@ -223,7 +238,7 @@ defmodule Spark.Options.Validator do
           %{struct | __set__: [key | struct.__set__]}
         end
 
-        for {key, config} <- schema, config[:deprecated] do
+        for {key, config} <- Keyword.new(schema), config[:deprecated] do
           defp warn_deprecated(unquote(key)) do
             IO.warn("#{unquote(key)} is deprecated")
           end

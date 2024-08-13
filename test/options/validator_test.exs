@@ -17,9 +17,11 @@ defmodule Spark.Options.ValidatorTest do
         default: 10
       ],
       buz: [
-        type: :integer
+        type: {:custom, __MODULE__, :anything, []}
       ]
     ]
+
+    def anything(value), do: {:ok, value}
 
     use Spark.Options.Validator, schema: @schema, define_deprecated_access?: true
   end
@@ -43,6 +45,15 @@ defmodule Spark.Options.ValidatorTest do
                baz: 10,
                bar: "10",
                foo: "10"
+             ]
+    end
+
+    test "custom types are properly escaped" do
+      assert MySchema.to_options(MySchema.validate!(foo: "10", bar: "10", buz: "anything")) == [
+               baz: 10,
+               bar: "10",
+               foo: "10",
+               buz: "anything"
              ]
     end
   end

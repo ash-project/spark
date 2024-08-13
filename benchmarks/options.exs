@@ -27,6 +27,6 @@ Benchee.run(
       Spark.Options.validate!([foo: "foo", bar: "bar", baz: 20], schema)
     end,
     "validator" => fn ->
-      MySchema.validate!([foo: "foo", bar: "bar", baz: 20])
+      MySchema.validate!([foo: "foo", bar: "bar", baz: 20]) |> MySchema.to_options()
     end
 })

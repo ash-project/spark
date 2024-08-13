@@ -566,6 +566,7 @@ defmodule Spark.Options do
 
   def docs(schema, options) when is_list(schema) and is_list(options) do
     schema
+    |> Keyword.new()
     |> Enum.reject(fn {_key, opts} ->
       opts[:hide]
     end)
@@ -577,6 +578,7 @@ defmodule Spark.Options do
 
   def docs(%Spark.Options{schema: schema}, options) when is_list(options) do
     schema
+    |> Keyword.new()
     |> Enum.reject(fn {_key, opts} ->
       opts[:hide]
     end)
