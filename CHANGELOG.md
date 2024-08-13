@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.17](https://github.com/ash-project/spark/compare/v2.2.16...v2.2.17) (2024-08-13)
+
+
+
+
+### Bug Fixes:
+
+* handle schemas w/ duplicate keys
+
+### Improvements:
+
+* add `docs/1` to options validators
+
 ## [v2.2.16](https://github.com/ash-project/spark/compare/v2.2.15...v2.2.16) (2024-08-13)
 
 
