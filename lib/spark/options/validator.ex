@@ -246,7 +246,9 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        for {key, config} <- Keyword.new(schema), Keyword.has_key?(config, :default), !config[:private?] do
+        for {key, config} <- Keyword.new(schema),
+            Keyword.has_key?(config, :default),
+            !config[:private?] do
           defp mark_set(struct, unquote(key)) do
             struct
           end
