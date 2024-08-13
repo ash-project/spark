@@ -5,6 +5,12 @@ defmodule Spark.Options.Validator do
   Validators create structs with keys for each option in their schema,
   and an optimized `validate`, and `validate!` function on that struct.
 
+  ## Upgrading from options lists
+
+  You can pass the option `define_deprecated_access?: true` to `use Spark.Options.Validator`,
+  which will make it such that `options[:foo]` will still work, but will emit a deprecation warning.
+  This cane help with smoother upgrades.
+
   ## Example
 
   Given a module like the following:
@@ -43,6 +49,7 @@ defmodule Spark.Options.Validator do
 
   defmacro __using__(opts) do
     schema = opts[:schema]
+    define_deprecated_access? = opts[:define_deprecated_access?]
 
     [
       quote do
@@ -72,6 +79,16 @@ defmodule Spark.Options.Validator do
         @type schema :: Spark.Options.t()
         def schema do
           @schema
+        end
+
+        if unquote(define_deprecated_access?) do
+          def fetch(%__MODULE__{} = data, key) do
+            IO.warn(
+              "Accessing options from #{__MODULE__} is deprecated. Use `opts.#{key}` instead."
+            )
+
+            Map.fetch(data, key)
+          end
         end
 
         @spec validate!(Keyword.t()) :: t() | no_return

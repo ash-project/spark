@@ -1,6 +1,7 @@
 defmodule Spark.Options.ValidatorTest do
   use ExUnit.Case
   require Spark.Options.Validator
+  import ExUnit.CaptureLog
 
   defmodule MySchema do
     @schema [
@@ -18,7 +19,7 @@ defmodule Spark.Options.ValidatorTest do
       ]
     ]
 
-    Spark.Options.Validator.create(@schema)
+    use Spark.Options.Validator, schema: @schema, define_deprecated_access?: true
   end
 
   describe "definition" do
