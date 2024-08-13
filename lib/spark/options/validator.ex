@@ -168,6 +168,7 @@ defmodule Spark.Options.Validator do
           cond do
             config[:private?] ->
               defp validate_option(unquote(key), value, {acc, required_fields}) do
+                {:cont, {acc, required_fields}}
               end
 
             # we can add as many of these as we like to front load validations
@@ -230,7 +231,7 @@ defmodule Spark.Options.Validator do
             }}}
         end
 
-        for {key, config} <- Keyword.new(schema) do
+        for {key, config} <- Keyword.new(schema), !config[:private?] do
           if config[:required] do
             defp use_key(list, unquote(key)) do
               warn_deprecated(unquote(key))
@@ -245,7 +246,7 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        for {key, config} <- Keyword.new(schema), Keyword.has_key?(config, :default) do
+        for {key, config} <- Keyword.new(schema), Keyword.has_key?(config, :default), !config[:private?] do
           defp mark_set(struct, unquote(key)) do
             struct
           end

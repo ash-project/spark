@@ -433,6 +433,7 @@ defmodule Spark.Options do
           | {:required, boolean}
           | {:default, any}
           | {:keys, schema}
+          | {:private?, boolean}
           | {:deprecated, String.t()}
           | {:doc, String.t()}
           | {:subsection, String.t() | nil}
