@@ -57,7 +57,19 @@ defmodule Spark.Options.Validator do
 
         struct_fields =
           Keyword.new(@schema, fn {key, config} ->
-            {key, config[:default]}
+            case Keyword.fetch(config, :default) do
+              {:ok, default} ->
+                case Spark.Options.validate_single_value(config[:type], key, default) do
+                  {:ok, default} ->
+                    {key, default}
+
+                  {:error, error} ->
+                    raise error
+                end
+
+              :error ->
+                {key, nil}
+            end
           end)
 
         @defaults @schema
