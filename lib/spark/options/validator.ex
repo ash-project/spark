@@ -91,6 +91,12 @@ defmodule Spark.Options.Validator do
           end
         end
 
+        def to_options(self) do
+          Enum.reduce(self.__provided__, [], fn key, acc ->
+            [{key, Map.get(self, key)} | acc]
+          end)
+        end
+
         @spec validate!(Keyword.t()) :: t() | no_return
         def validate!(options) do
           Enum.reduce(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
