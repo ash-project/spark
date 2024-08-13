@@ -160,8 +160,8 @@ defmodule Spark.Options.Validator do
               def validate_option(unquote(key), value, {acc, required_fields}) do
                 case Spark.Options.validate_single_value(unquote(type), unquote(key), value) do
                   {:ok, value} ->
-                    {:cont, %{acc | unquote(key) => value},
-                     use_key(required_fields, unquote(key))}
+                    {:cont, {%{acc | unquote(key) => value},
+                     use_key(required_fields, unquote(key))}}
 
                   {:error, error} ->
                     {:halt, {:error, error}}

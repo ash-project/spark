@@ -738,16 +738,19 @@ defmodule Spark.Options do
         else
           {:cont, {:ok, [{key, value} | validated], new_required}}
         end
+      else
+        other ->
+          {:halt, other}
       end
     end)
     |> case do
       {:ok, validated, []} ->
         case defaults do
           [] ->
-            {:ok, validated}
+            {:ok, Enum.reverse(validated)}
 
           _ ->
-            {:ok, Keyword.merge(defaults, validated)}
+            {:ok, Enum.reverse(Keyword.merge(defaults, validated))}
         end
 
       {:ok, _validated, [key | _]} ->
@@ -797,7 +800,7 @@ defmodule Spark.Options do
   end
 
   @doc false
-  def validate_single_type(type, key, value) do
+  def validate_single_value(type, key, value) do
     validate_type(type, key, value)
   end
 
