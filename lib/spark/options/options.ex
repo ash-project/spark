@@ -714,7 +714,14 @@ defmodule Spark.Options do
         else
           case Keyword.fetch(opts, :default) do
             {:ok, default} ->
-              {required, Keyword.put(defaults, key, default)}
+              case validate_type(opts[:type], key, default) do
+                {:ok, default} ->
+                  {required, [{key, default} | defaults]}
+
+                {:error, error} ->
+                  raise ArgumentError,
+                        "Invalid spec, default value #{inspect(default)} for #{key} is invalid: #{inspect(error)}"
+              end
 
             :error ->
               {required, defaults}

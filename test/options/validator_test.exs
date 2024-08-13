@@ -15,6 +15,9 @@ defmodule Spark.Options.ValidatorTest do
       baz: [
         type: :integer,
         default: 10
+      ],
+      buz: [
+        type: :integer
       ]
     ]
 
@@ -27,15 +30,20 @@ defmodule Spark.Options.ValidatorTest do
     end
 
     test "the keys are the same as the schema keys" do
-      assert Map.keys(MySchema.__struct__()) -- [:__struct__, :__provided__] == Keyword.keys(MySchema.schema())
+      assert Map.keys(MySchema.__struct__()) -- [:__struct__, :__set__] ==
+               Keyword.keys(MySchema.schema())
     end
 
-    test "stores which keys were explicitly provided" do
-      assert MySchema.validate!([foo: "10", bar: "10"]).__provided__ == [:bar, :foo]
+    test "stores which keys were explicitly provided or have defaults" do
+      assert MySchema.validate!(foo: "10", bar: "10").__set__ == [:foo, :bar, :baz]
     end
 
     test "to_options returns the validated values for keys that were provided" do
-      assert MySchema.to_options(MySchema.validate!([foo: "10", bar: "10"])) == [foo: "10", bar: "10"]
+      assert MySchema.to_options(MySchema.validate!(foo: "10", bar: "10")) == [
+               baz: 10,
+               bar: "10",
+               foo: "10"
+             ]
     end
   end
 end

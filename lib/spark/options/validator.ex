@@ -82,7 +82,6 @@ defmodule Spark.Options.Validator do
                   end)
                   |> Enum.map(&elem(&1, 0))
 
-
         @type schema :: Spark.Options.t()
         def schema do
           @schema
@@ -110,7 +109,9 @@ defmodule Spark.Options.Validator do
             case validate_option(key, value, acc) do
               {:cont, {struct, missing}} ->
                 {mark_set(struct, key), missing}
-              {:halt, {:error, error}} -> raise error
+
+              {:halt, {:error, error}} ->
+                raise error
             end
           end)
           |> case do
@@ -142,7 +143,7 @@ defmodule Spark.Options.Validator do
             # we can add as many of these as we like to front load validations
             type == :integer ->
               defp validate_option(unquote(key), value, {acc, required_fields})
-                  when is_integer(value) do
+                   when is_integer(value) do
                 {:cont, {%{acc | unquote(key) => value}, use_key(required_fields, unquote(key))}}
               end
 
@@ -159,7 +160,7 @@ defmodule Spark.Options.Validator do
 
             type == :string ->
               defp validate_option(unquote(key), value, {acc, required_fields})
-                  when is_binary(value) do
+                   when is_binary(value) do
                 {:cont, {%{acc | unquote(key) => value}, use_key(required_fields, unquote(key))}}
               end
 
@@ -178,8 +179,8 @@ defmodule Spark.Options.Validator do
               defp validate_option(unquote(key), value, {acc, required_fields}) do
                 case Spark.Options.validate_single_value(unquote(type), unquote(key), value) do
                   {:ok, value} ->
-                    {:cont, {%{acc | unquote(key) => value},
-                     use_key(required_fields, unquote(key))}}
+                    {:cont,
+                     {%{acc | unquote(key) => value}, use_key(required_fields, unquote(key))}}
 
                   {:error, error} ->
                     {:halt, {:error, error}}
