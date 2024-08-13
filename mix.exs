@@ -76,7 +76,7 @@ defmodule Spark.MixProject do
       ],
       groups_for_modules: [
         "DSLs and Extensions": ~r/^Spark.Dsl/,
-        "Options": ~r/^Spark.Options/,
+        Options: ~r/^Spark.Options/,
         Errors: [Spark.Error.DslError],
         Internals: ~r/.*/
       ]
