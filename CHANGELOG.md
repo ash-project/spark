@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.13](https://github.com/ash-project/spark/compare/v2.2.12...v2.2.13) (2024-08-13)
+
+
+
+
+### Improvements:
+
+* support define_deprecated_access? to help migrating to options validators
+
 ## [v2.2.12](https://github.com/ash-project/spark/compare/v2.2.11...v2.2.12) (2024-08-13)
 
 
