@@ -60,7 +60,13 @@ defmodule Spark.Options.Validator do
             {key, config[:default]}
           end)
 
-        defstruct struct_fields ++ [__provided__: []]
+        @defaults @schema
+                  |> Enum.filter(fn {_key, config} ->
+                    Keyword.has_key?(config, :default)
+                  end)
+                  |> Enum.map(&elem(&1, 0))
+
+        defstruct struct_fields ++ [__set__: @defaults]
 
         quote do
           @type t :: %__MODULE__{unquote_splicing(Spark.Options.Docs.schema_specs(@schema))}
@@ -75,6 +81,7 @@ defmodule Spark.Options.Validator do
                     config[:required]
                   end)
                   |> Enum.map(&elem(&1, 0))
+
 
         @type schema :: Spark.Options.t()
         def schema do
@@ -92,7 +99,7 @@ defmodule Spark.Options.Validator do
         end
 
         def to_options(self) do
-          Enum.reduce(self.__provided__, [], fn key, acc ->
+          Enum.reduce(self.__set__, [], fn key, acc ->
             [{key, Map.get(self, key)} | acc]
           end)
         end
@@ -101,7 +108,8 @@ defmodule Spark.Options.Validator do
         def validate!(options) do
           Enum.reduce(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
             case validate_option(key, value, acc) do
-              {:cont, {struct, missing}} -> {%{struct | __provided__: [key | struct.__provided__]}, missing}
+              {:cont, {struct, missing}} ->
+                {mark_set(struct, key), missing}
               {:halt, {:error, error}} -> raise error
             end
           end)
@@ -115,7 +123,7 @@ defmodule Spark.Options.Validator do
         def validate(options) do
           Enum.reduce_while(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
             case validate_option(key, value, acc) do
-              {:cont, {struct, missing}} -> {:cont, {%{struct | __provided__: [key | struct.__provided__]}, missing}}
+              {:cont, {struct, missing}} -> {:cont, {mark_set(struct, key), missing}}
               {:halt, {:error, error}} -> {:halt, {:error, error}}
             end
           end)
@@ -126,18 +134,19 @@ defmodule Spark.Options.Validator do
         end
       end,
       quote bind_quoted: [schema: schema] do
+        @compile {:inline, validate_option: 3, use_key: 2, mark_set: 2, warn_deprecated: 1}
         for {key, config} <- schema do
           type = config[:type]
 
           cond do
             # we can add as many of these as we like to front load validations
             type == :integer ->
-              def validate_option(unquote(key), value, {acc, required_fields})
+              defp validate_option(unquote(key), value, {acc, required_fields})
                   when is_integer(value) do
                 {:cont, {%{acc | unquote(key) => value}, use_key(required_fields, unquote(key))}}
               end
 
-              def validate_option(unquote(key), value, _) do
+              defp validate_option(unquote(key), value, _) do
                 {:halt,
                  {:error,
                   %Spark.Options.ValidationError{
@@ -149,12 +158,12 @@ defmodule Spark.Options.Validator do
               end
 
             type == :string ->
-              def validate_option(unquote(key), value, {acc, required_fields})
+              defp validate_option(unquote(key), value, {acc, required_fields})
                   when is_binary(value) do
                 {:cont, {%{acc | unquote(key) => value}, use_key(required_fields, unquote(key))}}
               end
 
-              def validate_option(unquote(key), value, _) do
+              defp validate_option(unquote(key), value, _) do
                 {:halt,
                  {:error,
                   %Spark.Options.ValidationError{
@@ -166,7 +175,7 @@ defmodule Spark.Options.Validator do
               end
 
             true ->
-              def validate_option(unquote(key), value, {acc, required_fields}) do
+              defp validate_option(unquote(key), value, {acc, required_fields}) do
                 case Spark.Options.validate_single_value(unquote(type), unquote(key), value) do
                   {:ok, value} ->
                     {:cont, {%{acc | unquote(key) => value},
@@ -179,7 +188,7 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        def validate_option(unknown_key, value, _) do
+        defp validate_option(unknown_key, value, _) do
           {:halt, {:error, "Unknown key #{unknown_key}"}}
         end
 
@@ -196,6 +205,16 @@ defmodule Spark.Options.Validator do
               list
             end
           end
+        end
+
+        for {key, config} <- schema, Keyword.has_key?(config, :default) do
+          defp mark_set(struct, unquote(key)) do
+            struct
+          end
+        end
+
+        defp mark_set(struct, key) do
+          %{struct | __set__: [key | struct.__set__]}
         end
 
         for {key, config} <- schema, config[:deprecated] do

@@ -13,7 +13,9 @@ schema = [
   ]
 ]
 
-Spark.Options.Validator.create(MySchema, schema, __ENV__)
+defmodule MySchema do
+  use Spark.Options.Validator, schema: schema
+end
 
 # prime
 Spark.Options.validate!([foo: "foo", bar: "bar", baz: 20], schema)
