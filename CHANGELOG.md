@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.18](https://github.com/ash-project/spark/compare/v2.2.17...v2.2.18) (2024-08-13)
+
+
+
+
+### Bug Fixes:
+
+* proper validation error on unknown optiosn
+
+### Improvements:
+
+* show `| nil` in struct type when optional
+
 ## [v2.2.17](https://github.com/ash-project/spark/compare/v2.2.16...v2.2.17) (2024-08-13)
 
 
