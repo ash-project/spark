@@ -799,7 +799,7 @@ defmodule Spark.Options do
               error_tuple(
                 [key],
                 nil,
-                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(opts))}"
+                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(schema))}"
               )
             end
 
