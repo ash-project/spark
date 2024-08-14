@@ -53,6 +53,7 @@ defmodule Spark.Options.Validator do
 
     [
       quote bind_quoted: [schema: schema, define_deprecated_access?: define_deprecated_access?] do
+        schema = Spark.Options.new!(schema).schema
         @schema Keyword.new(schema)
 
         struct_fields =
