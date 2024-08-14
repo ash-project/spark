@@ -39,6 +39,11 @@ defmodule Spark.Options do
           The message will be displayed as a warning when passing the item.
           """
         ],
+        private?: [
+          type: :boolean,
+          default: false,
+          doc: "Defines an option as private, used with `Spark.Options.Validator`"
+        ],
         hide: [
           type: {:wrap_list, :atom},
           doc: """
@@ -790,16 +795,16 @@ defmodule Spark.Options do
           :error ->
             if Keyword.get(schema, :required, false) do
               error_tuple(
+                [key],
+                nil,
+                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(schema))}"
+              )
+            else
+              error_tuple(
                 key,
                 nil,
                 "required #{render_key(key)} not found, received options: " <>
                   inspect(Keyword.keys(opts))
-              )
-            else
-              error_tuple(
-                [key],
-                nil,
-                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(schema))}"
               )
             end
 
