@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.20](https://github.com/ash-project/spark/compare/v2.2.19...v2.2.20) (2024-08-14)
+
+
+
+
+### Bug Fixes:
+
+* show proper list of known options
+
+* validate schema at compile time
+
 ## [v2.2.19](https://github.com/ash-project/spark/compare/v2.2.18...v2.2.19) (2024-08-13)
 
 
