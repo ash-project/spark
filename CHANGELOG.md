@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.21](https://github.com/ash-project/spark/compare/v2.2.20...v2.2.21) (2024-08-14)
+
+
+
+
+### Bug Fixes:
+
+* add `private?` to options spec, and fix incorrect error output
+
 ## [v2.2.20](https://github.com/ash-project/spark/compare/v2.2.19...v2.2.20) (2024-08-14)
 
 
