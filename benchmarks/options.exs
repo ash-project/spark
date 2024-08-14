@@ -46,7 +46,7 @@ Benchee.run(
       _bar = options[:bar]
     end,
     "validator" => fn ->
-      %MySchema{} = options = MySchema.validate!([foo: "foo", bar: "bar", baz: 20])
+      options = MySchema.validate!([foo: "foo", bar: "bar", baz: 20])
       _foo = options.foo
       _bar = options.bar
       _foo = options.foo
@@ -66,4 +66,6 @@ Benchee.run(
       _foo = options[:foo]
       _bar = options[:bar]
     end
-})
+  },
+  memory_time: 2
+)
