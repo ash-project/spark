@@ -88,6 +88,8 @@ defmodule Spark.Options.Validator do
         end
         |> Code.eval_quoted([], __ENV__)
 
+        @type options :: [unquote_splicing(schema_specs)]
+
         required_fields =
           Spark.Options.Validator.validate_schema!(@schema)
 
