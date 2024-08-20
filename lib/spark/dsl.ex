@@ -577,14 +577,21 @@ defmodule Spark.Dsl do
 
         @doc false
         for {key, value} <- @persisted do
-          def persisted(unquote(key), _), do: unquote(Macro.escape(value))
+          def persisted(unquote(Macro.escape(key)), _), do: unquote(Macro.escape(value))
         end
 
         def persisted(_, default), do: default
 
         @doc false
         for {key, value} <- @persisted do
-          def persisted(unquote(key)), do: unquote(Macro.escape(value))
+          def fetch_persisted(unquote(Macro.escape(key))), do: {:ok, unquote(Macro.escape(value))}
+        end
+
+        def fetch_persisted(_), do: :error
+
+        @doc false
+        for {key, value} <- @persisted do
+          def persisted(unquote(Macro.escape(key))), do: unquote(Macro.escape(value))
         end
 
         def persisted(_), do: nil

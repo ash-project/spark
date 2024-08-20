@@ -147,6 +147,27 @@ defmodule Spark.Dsl.Extension do
       end
   end
 
+  defp fetch_persisted!(resource, key) do
+    resource.fetch_persisted(key)
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        Map.fetch(Module.get_attribute(resource, :persisted) || %{}, key)
+      rescue
+        ArgumentError ->
+          try do
+            resource.fetch_persisted(key)
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      `#{inspect(resource)}` is not a Spark DSL module.
+                      """,
+                      __STACKTRACE__
+          end
+      end
+  end
+
   @doc false
   def get_attribute(mod, attr) do
     Module.get_attribute(mod, attr)
@@ -207,6 +228,23 @@ defmodule Spark.Dsl.Extension do
 
   def get_persisted(resource, key, default) do
     persisted!(resource, key, default)
+  end
+
+  @doc "Fetch a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
+  def fetch_persisted(%struct{}, key) do
+    fetch_persisted(struct, key)
+  end
+
+  def fetch_persisted(map, key) when is_map(map) do
+    Spark.Dsl.Transformer.fetch_persisted(map, key)
+  end
+
+  def fetch_persisted(resource, :module) when is_atom(resource) do
+    {:ok, resource}
+  end
+
+  def fetch_persisted(resource, key) do
+    fetch_persisted!(resource, key)
   end
 
   @doc """

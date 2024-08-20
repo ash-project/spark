@@ -104,6 +104,12 @@ defmodule Spark.Dsl.Transformer do
     |> Map.get(key, default)
   end
 
+  def fetch_persisted(dsl, key) do
+    dsl
+    |> Map.get(:persist, %{})
+    |> Map.fetch(key)
+  end
+
   def build_entity!(extension, path, name, opts) do
     case build_entity(extension, path, name, opts) do
       {:ok, entity} ->

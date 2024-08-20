@@ -164,7 +164,7 @@ defmodule Spark.Options.Validator do
           end)
           |> case do
             {:error, error} ->
-               {:error, error}
+              {:error, error}
 
             {schema, []} ->
               {:ok, schema}
