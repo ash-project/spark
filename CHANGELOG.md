@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.22](https://github.com/ash-project/spark/compare/v2.2.21...v2.2.22) (2024-08-20)
+
+
+
+
+### Bug Fixes:
+
+* Macro.escape persisted keys
+
+* properly handle {:error, error} when validating opts
+
+### Improvements:
+
+* add `fetch_persisted`
+
+* add options type to option validators
+
 ## [v2.2.21](https://github.com/ash-project/spark/compare/v2.2.20...v2.2.21) (2024-08-14)
 
 
