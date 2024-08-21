@@ -125,13 +125,22 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        def to_options(self) do
+        def to_options(self, take \\ nil)
+
+        def to_options(self, nil) do
           Enum.reduce(self.__set__, [], fn key, acc ->
             [{key, Map.get(self, key)} | acc]
           end)
         end
 
+        def to_options(self, take) do
+          self
+          |> to_options()
+          |> Keyword.take(take)
+        end
+
         @spec validate!(Keyword.t()) :: t() | no_return
+        def validate!(%__MODULE__{} = opts), do: opts
         def validate!(options) do
           Enum.reduce(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
             case validate_option(key, value, acc) do
@@ -155,6 +164,7 @@ defmodule Spark.Options.Validator do
         end
 
         @spec validate(Keyword.t()) :: {:ok, t()} | {:error, term()}
+        def validate(%__MODULE__{} = opts), do: {:ok, opts}
         def validate(options) do
           Enum.reduce_while(options, {%__MODULE__{}, @required}, fn {key, value}, acc ->
             case validate_option(key, value, acc) do
