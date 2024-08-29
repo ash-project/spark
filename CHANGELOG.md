@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.23](https://github.com/ash-project/spark/compare/v2.2.22...v2.2.23) (2024-08-29)
+
+
+
+
+### Improvements:
+
+* add `get_option` igniter tool
+
+* add `take` option to `to_options`
+
 ## [v2.2.22](https://github.com/ash-project/spark/compare/v2.2.21...v2.2.22) (2024-08-20)
 
 
