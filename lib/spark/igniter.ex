@@ -28,6 +28,46 @@ defmodule Spark.Igniter do
     )
   end
 
+  @doc """
+  Gets an option at a given path within a DSL.
+  We will attempt to expand literals using the environment at the path
+  but this is only guaranteed to return the *AST* at that option, *not* necessarily a value.
+
+  Additionally, this only finds options set explicitly in the body of the resource, not by an extension.
+  """
+  @spec get_option(Igniter.t(), module(), list(atom)) :: {Igniter.t(), {:ok, Macro.t()} | :error}
+  def get_option(igniter, module, path) do
+    {body, [last]} = Enum.split(List.wrap(path), -1)
+    path = Enum.map(body, &{:section, &1}) ++ [{:option, last}]
+
+    {:ok, {igniter, _source, zipper}} = Igniter.Code.Module.find_module(igniter, module)
+
+    {igniter, do_get_option(zipper, path)}
+  end
+
+  defp do_get_option(zipper, [{:option, name}]) do
+    with {:ok, zipper} <-
+           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1) |> IO.inspect(),
+         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) |> IO.inspect() do
+      case Igniter.Code.Common.expand_literal(zipper) do
+        {:ok, value} -> value
+        :error -> zipper.node
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  defp do_get_option(zipper, [{:section, name} | rest]) do
+    with {:ok, zipper} <-
+           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
+         {:ok, zipper} <- Igniter.Code.Common.move_to_do_block(zipper) do
+      do_get_option(zipper, rest)
+    else
+      _ -> :error
+    end
+  end
+
   @doc "Sets an option at a given path within in a DSL."
   @spec set_option(
           Igniter.t(),
