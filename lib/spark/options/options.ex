@@ -1161,12 +1161,12 @@ defmodule Spark.Options do
     error_tuple(key, value, "expected tagged tuple in #{render_key(key)}, got: #{inspect(value)}")
   end
 
-  defp validate_type({:spark_behaviour, _module}, _key, value) when is_atom(value) do
+  defp validate_type({:spark_behaviour, _module}, _key, value) when is_atom(value) and not is_boolean(value) do
     {:ok, {value, []}}
   end
 
   defp validate_type({:spark_behaviour, _module}, _key, {module, opts})
-       when is_atom(module) and is_list(opts) do
+       when is_atom(module) and not is_boolean(module) and is_list(opts) do
     {:ok, {module, opts}}
   end
 
@@ -1178,12 +1178,12 @@ defmodule Spark.Options do
     )
   end
 
-  defp validate_type({:spark_behaviour, _module, _}, _key, value) when is_atom(value) do
+  defp validate_type({:spark_behaviour, _module, _}, _key, value) when is_atom(value) and not is_boolean(value) do
     {:ok, {value, []}}
   end
 
   defp validate_type({:spark_behaviour, _module, _}, _key, {module, opts})
-       when is_atom(module) and is_list(opts) do
+       when is_atom(module) and is_list(opts) and not is_boolean(module) do
     {:ok, {module, opts}}
   end
 

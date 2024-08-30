@@ -47,8 +47,8 @@ defmodule Spark.Igniter do
 
   defp do_get_option(zipper, [{:option, name}]) do
     with {:ok, zipper} <-
-           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1) |> IO.inspect(),
-         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) |> IO.inspect() do
+           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
+         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) do
       case Igniter.Code.Common.expand_literal(zipper) do
         {:ok, value} -> value
         :error -> zipper.node
