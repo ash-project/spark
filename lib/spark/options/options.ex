@@ -604,6 +604,22 @@ defmodule Spark.Options do
 
   defp document_values(opts) do
     case opts[:type] do
+      {in_type, range}
+      when in_type in [:in, :one_of] and is_struct(range, Range) and range.step > 0 ->
+        Keyword.update!(
+          opts,
+          :doc,
+          &"#{&1} Valid values are between #{range.first} and #{range.last}"
+        )
+
+      {in_type, range}
+      when in_type in [:in, :one_of] and is_struct(range, Range) and range.step < 0 ->
+        Keyword.update!(
+          opts,
+          :doc,
+          &"#{&1} Valid values are between #{range.last} and #{range.first}"
+        )
+
       {in_type, values} when in_type in [:in, :one_of] ->
         values = Enum.map_join(values, ", ", &inspect/1)
 
