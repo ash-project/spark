@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.24](https://github.com/ash-project/spark/compare/v2.2.23...v2.2.24) (2024-09-06)
+
+
+
+
+### Bug Fixes:
+
+* remove experimental module/function docs ð¤¦
+
+* don't assume all atoms could be module names
+
+### Improvements:
+
+* Don't just all the values when there may be a large number of values. (#106)
+
 ## [v2.2.23](https://github.com/ash-project/spark/compare/v2.2.22...v2.2.23) (2024-08-29)
 
 
