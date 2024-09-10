@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.26](https://github.com/ash-project/spark/compare/v2.2.25...v2.2.26) (2024-09-10)
+
+
+
+
+### Bug Fixes:
+
+* undo change supporting non keyword lists in spark options
+
 ## [v2.2.25](https://github.com/ash-project/spark/compare/v2.2.24...v2.2.25) (2024-09-10)
 
 
