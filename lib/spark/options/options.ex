@@ -1183,7 +1183,7 @@ defmodule Spark.Options do
   end
 
   defp validate_type({:spark_behaviour, _module}, _key, {module, opts})
-       when is_atom(module) and not is_boolean(module) do
+       when is_atom(module) and not is_boolean(module)  do
     {:ok, {module, opts}}
   end
 
@@ -1201,7 +1201,7 @@ defmodule Spark.Options do
   end
 
   defp validate_type({:spark_behaviour, _module, _}, _key, {module, opts})
-       when is_atom(module) and is_list(opts) and not is_boolean(module) do
+       when is_atom(module) and not is_boolean(module) do
     {:ok, {module, opts}}
   end
 
