@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.25](https://github.com/ash-project/spark/compare/v2.2.24...v2.2.25) (2024-09-10)
+
+
+
+
+### Improvements:
+
+* `:spark_behaviour` does not need to require opts be a list
+
 ## [v2.2.24](https://github.com/ash-project/spark/compare/v2.2.23...v2.2.24) (2024-09-06)
 
 
