@@ -811,16 +811,16 @@ defmodule Spark.Options do
           :error ->
             if Keyword.get(schema, :required, false) do
               error_tuple(
-                [key],
-                nil,
-                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(schema))}"
-              )
-            else
-              error_tuple(
                 key,
                 nil,
                 "required #{render_key(key)} not found, received options: " <>
                   inspect(Keyword.keys(opts))
+              )
+            else
+              error_tuple(
+                [key],
+                nil,
+                "unknown options #{inspect([key])}, valid options are: #{inspect(Keyword.keys(schema))}"
               )
             end
 
