@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.28](https://github.com/ash-project/spark/compare/v2.2.27...v2.2.28) (2024-09-14)
+
+
+
+
+### Bug Fixes:
+
+* support latest elixir_ls changes
+
+### Improvements:
+
+* support fragments when finding DSL options
+
 ## [v2.2.27](https://github.com/ash-project/spark/compare/v2.2.26...v2.2.27) (2024-09-12)
 
 
