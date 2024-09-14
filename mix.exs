@@ -101,7 +101,7 @@ defmodule Spark.MixProject do
       {:sourceror, "~> 1.2"},
       # in 3.x, make this dependency optional
       {:jason, "~> 1.4"},
-      {:igniter, "~> 0.2 and >= 0.2.6"},
+      {:igniter, "~> 0.2 and >= 0.3.36"},
       # Dev/Test dependencies
       {:benchee, "~> 1.3", only: [:dev, :test]},
       {:eflame, "~> 1.0", only: [:dev, :test], runtime: false},
@@ -112,7 +112,10 @@ defmodule Spark.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:test, :dev, :docs]},
+      {:elixir_sense,
+       github: "zachdaniel/elixir_sense",
+       only: [:dev, :test, :docs],
+       ref: "572c81c4046e12857b734abc28aa14b7d1f6f595"},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false}
     ]
   end

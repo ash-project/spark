@@ -3,10 +3,15 @@ defmodule Spark.ElixirSense.Entity do
   alias ElixirSense.Core.Introspection
   alias ElixirSense.Providers.Suggestion.Complete
 
-  if Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) do
-    @util ElixirLS.LanguageServer.Plugins.Util
-  else
-    @util ElixirSense.Plugins.Util
+  cond do
+    Code.ensure_loaded?(ElixirSense.Providers.Plugins.Util) ->
+      @util ElixirSense.Providers.Plugins.Util
+
+    Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) ->
+      @util ElixirLS.LanguageServer.Plugins.Util
+
+    true ->
+      @util ElixirSense.Plugins.Util
   end
 
   def find_entities(type, hint) do
@@ -31,6 +36,14 @@ defmodule Spark.ElixirSense.Entity do
     builtins =
       if builtins && !String.contains?(hint, ".") && lowercase_string?(hint) do
         cond do
+          Code.ensure_loaded?(ElixirSense.Providers.Completion.CompletionEngine) ->
+            apply(ElixirSense.Providers.Completion.CompletionEngine, :complete, [
+              to_string("#{inspect(builtins)}.#{hint}"),
+              apply(ElixirSense.Core.State.Env, :__struct__, []),
+              apply(ElixirSense.Core.Metadata, :__struct__, []),
+              0
+            ])
+
           Code.ensure_loaded?(ElixirLS.Utils.CompletionEngine) ->
             apply(ElixirLS.Utils.CompletionEngine, :complete, [
               to_string("#{inspect(builtins)}.#{hint}"),

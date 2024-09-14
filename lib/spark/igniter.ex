@@ -42,16 +42,50 @@ defmodule Spark.Igniter do
 
     {:ok, {igniter, _source, zipper}} = Igniter.Code.Module.find_module(igniter, module)
 
-    {igniter, do_get_option(zipper, path)}
+    zipper =
+      case Igniter.Code.Common.move_to_do_block(zipper) do
+        {:ok, zipper} -> zipper
+        _ -> zipper
+      end
+
+    zipper
+    |> search_modules(module)
+    |> Enum.reduce_while({igniter, :error}, fn search_module, {igniter, :error} ->
+      {igniter, zipper} =
+        if search_module == module do
+          {igniter, {:ok, zipper}}
+        else
+          with {:ok, {igniter, _source, zipper}} <-
+                 Igniter.Code.Module.find_module(igniter, search_module),
+               {:ok, zipper} <- Igniter.Code.Common.move_to_do_block(zipper) do
+            {igniter, {:ok, zipper}}
+          else
+            {:error, igniter} ->
+              {igniter, :error}
+
+            _ ->
+              {igniter, :error}
+          end
+        end
+
+      with {:ok, zipper} <- zipper,
+           {:ok, value} <- do_get_option(zipper, path) do
+        {:halt, {igniter, {:ok, value}}}
+      else
+        _ -> {:cont, {igniter, :error}}
+      end
+    end)
   end
 
   defp do_get_option(zipper, [{:option, name}]) do
     with {:ok, zipper} <-
            Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
          {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) do
+      zipper = Igniter.Code.Common.maybe_move_to_single_child_block(zipper)
+
       case Igniter.Code.Common.expand_literal(zipper) do
-        {:ok, value} -> value
-        :error -> zipper.node
+        {:ok, value} -> {:ok, value}
+        :error -> {:ok, zipper.node}
       end
     else
       _ -> :error
@@ -349,5 +383,46 @@ defmodule Spark.Igniter do
         [{section.name, 1}]
       end
     end)
+  end
+
+  # sobelow_skip ["RCE.CodeModule"]
+  defp search_modules(zipper, base) do
+    with {:ok, zipper} <-
+           Igniter.Code.Function.move_to_function_call_in_current_scope(
+             zipper,
+             :use,
+             2,
+             fn zipper ->
+               with {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
+                    {:ok, _} <- Igniter.Code.Keyword.get_key(zipper, :fragments) do
+                 true
+               else
+                 _ ->
+                   false
+               end
+             end
+           ),
+         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
+         {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, :fragments) do
+      evaled =
+        try do
+          case Igniter.Code.Common.expand_literal(zipper) do
+            {:ok, value} -> value
+            :error -> Code.eval_quoted(zipper.node)
+          end
+        rescue
+          _e ->
+            []
+        end
+
+      if is_list(evaled) do
+        Enum.uniq([base | Enum.filter(evaled, &is_atom/1)])
+      else
+        [base]
+      end
+    else
+      _ ->
+        [base]
+    end
   end
 end

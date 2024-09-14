@@ -18,6 +18,17 @@ defmodule Spark.ElixirSense.Plugin do
       :ok
   end
 
+  case Code.ensure_compiled(ElixirSense.Providers.Plugin) do
+    {:module, _} ->
+      @behaviour ElixirSense.Providers.Plugin
+      @behaviour ElixirSense.Providers.Completion.GenericReducer
+      @generic_reducer ElixirSense.Providers.Completion.GenericReducer
+      @matcher ElixirSense.Providers.Utils.Matcher
+
+    _ ->
+      :ok
+  end
+
   case Code.ensure_compiled(ElixirLS.LanguageServer.Plugin) do
     {:module, _} ->
       @behaviour ElixirLS.LanguageServer.Plugin
@@ -60,7 +71,7 @@ defmodule Spark.ElixirSense.Plugin do
         suggestions
     end
   rescue
-    _ ->
+    _e ->
       :ignore
   end
 

@@ -3,10 +3,15 @@ defmodule Spark.ElixirSense.Types do
 
   alias ElixirSense.Core.Introspection
 
-  if Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) do
-    @util ElixirLS.LanguageServer.Plugins.Util
-  else
-    @util ElixirSense.Plugins.Util
+  cond do
+    Code.ensure_loaded?(ElixirSense.Providers.Plugins.Util) ->
+      @util ElixirSense.Providers.Plugins.Util
+
+    Code.ensure_loaded?(ElixirLS.LanguageServer.Plugins.Util) ->
+      @util ElixirLS.LanguageServer.Plugins.Util
+
+    true ->
+      @util ElixirSense.Plugins.Util
   end
 
   if Code.ensure_loaded?(ElixirLS.Utils.Matcher) do
