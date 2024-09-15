@@ -40,6 +40,45 @@ defmodule Spark.Igniter do
     {body, [last]} = Enum.split(List.wrap(path), -1)
     path = Enum.map(body, &{:section, &1}) ++ [{:option, last}]
 
+    find(igniter, module, fn _search_module, zipper ->
+      do_get_option(zipper, path)
+    end)
+    |> case do
+      {:ok, igniter, _module, value} -> {igniter, {:ok, value}}
+      {:error, igniter} -> {igniter, :error}
+    end
+  end
+
+  defp do_get_option(zipper, [{:option, name}]) do
+    with {:ok, zipper} <-
+           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
+         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) do
+      zipper = Igniter.Code.Common.maybe_move_to_single_child_block(zipper)
+
+      case Igniter.Code.Common.expand_literal(zipper) do
+        {:ok, value} -> {:ok, value}
+        :error -> {:ok, zipper.node}
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  defp do_get_option(zipper, [{:section, name} | rest]) do
+    with {:ok, zipper} <-
+           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
+         {:ok, zipper} <- Igniter.Code.Common.move_to_do_block(zipper) do
+      do_get_option(zipper, rest)
+    else
+      _ -> :error
+    end
+  end
+
+  @doc "Searches for a match to a zipper function inside a DSL and all of its fragments."
+  @spec find(Igniter.t(), module, (module(), Zipper.t() -> {:ok, value} | :error)) ::
+          {:ok, Igniter.t(), module(), value} | {:error, Igniter.t()}
+        when value: term()
+  def find(igniter, module, callback) do
     {:ok, {igniter, _source, zipper}} = Igniter.Code.Module.find_module(igniter, module)
 
     zipper =
@@ -69,36 +108,15 @@ defmodule Spark.Igniter do
         end
 
       with {:ok, zipper} <- zipper,
-           {:ok, value} <- do_get_option(zipper, path) do
-        {:halt, {igniter, {:ok, value}}}
+           {:ok, value} <- callback.(search_module, zipper) do
+        {:halt, {:ok, igniter, search_module, value}}
       else
         _ -> {:cont, {igniter, :error}}
       end
     end)
-  end
-
-  defp do_get_option(zipper, [{:option, name}]) do
-    with {:ok, zipper} <-
-           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
-         {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 0) do
-      zipper = Igniter.Code.Common.maybe_move_to_single_child_block(zipper)
-
-      case Igniter.Code.Common.expand_literal(zipper) do
-        {:ok, value} -> {:ok, value}
-        :error -> {:ok, zipper.node}
-      end
-    else
-      _ -> :error
-    end
-  end
-
-  defp do_get_option(zipper, [{:section, name} | rest]) do
-    with {:ok, zipper} <-
-           Igniter.Code.Function.move_to_function_call_in_current_scope(zipper, name, 1),
-         {:ok, zipper} <- Igniter.Code.Common.move_to_do_block(zipper) do
-      do_get_option(zipper, rest)
-    else
-      _ -> :error
+    |> case do
+      {igniter, :error} -> {:error, igniter}
+      {:ok, igniter, search_module, value} -> {:ok, igniter, search_module, value}
     end
   end
 
