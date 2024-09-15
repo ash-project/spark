@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.29](https://github.com/ash-project/spark/compare/v2.2.28...v2.2.29) (2024-09-15)
+
+
+
+
+### Improvements:
+
+* add `Spark.Igniter.find` for search a DSL and all fragments
+
 ## [v2.2.28](https://github.com/ash-project/spark/compare/v2.2.27...v2.2.28) (2024-09-14)
 
 
