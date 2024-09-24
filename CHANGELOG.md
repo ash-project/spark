@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.30](https://github.com/ash-project/spark/compare/v2.2.29...v2.2.30) (2024-09-24)
+
+
+
+
+### Improvements:
+
+* raise multiple DslErrors at once
+
 ## [v2.2.29](https://github.com/ash-project/spark/compare/v2.2.28...v2.2.29) (2024-09-15)
 
 
