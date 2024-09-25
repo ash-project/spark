@@ -206,6 +206,8 @@ defmodule Spark.Options do
 
     * `{:protocol, protocol}` - expects a value for which the protocol is implemented.
 
+    * `{:impl, protocol}` - expects a module for which the protocol is implemented.
+
     * `{:spark, dsl_module}` - expects a module that is a `Spark.Dsl`
 
     * `{:mfa_or_fun, arity}` - expects a function or MFA of a corresponding arity.
@@ -422,6 +424,7 @@ defmodule Spark.Options do
           | {:spark_function_behaviour, module, module, {module, integer}}
           | {:behaviour, module}
           | {:protocol, module}
+          | {:impl, module}
           | {:spark, module}
           | {:mfa_or_fun, non_neg_integer()}
           | {:spark_type, module, builtin_function :: atom}
@@ -1229,6 +1232,34 @@ defmodule Spark.Options do
       error_tuple(key, value, "expected `#{inspect(protocol)}` to be a protocol")
   end
 
+  defp validate_type({:impl, protocol}, key, value) do
+    protocol.__info__(:module)
+    Protocol.assert_protocol!(protocol)
+    Protocol.assert_impl!(protocol, value)
+    {:ok, value}
+  rescue
+    UndefinedFunctionError ->
+      error_tuple(key, value, "#{inspect(protocol)} is not a protocol")
+
+    e in ArgumentError ->
+      message = Exception.message(e)
+
+      cond do
+        String.contains?(message, "reason :nofile") ->
+          error_tuple(
+            key,
+            value,
+            "protocol #{inspect(protocol)} is not implemented by #{inspect(value)}"
+          )
+
+        String.contains?(message, "not an atom") ->
+          error_tuple(key, value, "expected module in #{render_key(key)}, got: #{inspect(value)}")
+
+        true ->
+          error_tuple(key, value, message)
+      end
+  end
+
   defp validate_type({type, _}, _key, value)
        when is_atom(value) and type in [:behaviour, :spark] do
     {:ok, value}
@@ -1547,6 +1578,8 @@ defmodule Spark.Options do
   end
 
   def validate_type({:protocol, module}) when is_atom(module), do: {:ok, {:protocol, module}}
+
+  def validate_type({:impl, module}) when is_atom(module), do: {:ok, {:impl, module}}
 
   def validate_type({:spark_behaviour, module}) when is_atom(module) do
     {:ok, {:spark_behaviour, module}}
