@@ -160,6 +160,9 @@ defmodule Spark.Options.Docs do
   defp get_raw_type_str({:protocol, module}),
     do: "value that implements the `#{inspect(module)}` protocol"
 
+  defp get_raw_type_str({:impl, module}),
+    do: "module for which the `#{inspect(module)}` protocol is implemented"
+
   defp get_raw_type_str({:struct, struct_type}), do: "struct of type `#{inspect(struct_type)}`"
   defp get_raw_type_str(:struct), do: "struct"
   defp get_raw_type_str({:spark, module}), do: "`#{inspect(module)}`"
@@ -199,6 +202,7 @@ defmodule Spark.Options.Docs do
 
   def dsl_docs_type({:behaviour, _mod}), do: "module"
   def dsl_docs_type({:protocol, protocol}), do: "an `#{inspect(protocol)}` value"
+  def dsl_docs_type({:impl, protocol}), do: "a module implementing `#{inspect(protocol)}`"
   def dsl_docs_type({:spark, mod}), do: dsl_docs_type({:behaviour, mod})
   def dsl_docs_type({:spark_behaviour, mod}), do: dsl_docs_type({:behaviour, mod})
 
@@ -460,7 +464,7 @@ defmodule Spark.Options.Docs do
       {:tagged_tuple, tag, subtype} ->
         quote do: {unquote(tag), unquote(type_to_spec(subtype))}
 
-      {tag, _} when tag in [:behaviour, :spark_behaviour, :protocol, :spark] ->
+      {tag, _} when tag in [:behaviour, :spark_behaviour, :protocol, :spark, :impl] ->
         quote(do: module())
 
       {:spark_function_behaviour, _, _} ->
