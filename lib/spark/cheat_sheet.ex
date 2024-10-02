@@ -222,11 +222,21 @@ defmodule Spark.CheatSheet do
   end
 
   defp entity_properties(entity) do
-    """
-    ### Introspection
+    docs =
+      case Code.fetch_docs(entity.target) do
+        {:docs_v1, _, _, _, docs, _, _} -> docs
+        {:error, _} -> :hidden
+      end
 
-    Target: `#{inspect(entity.target)}`
-    """
+    if docs == :hidden do
+      ""
+    else
+      """
+      ### Introspection
+
+      Target: `#{inspect(entity.target)}`
+      """
+    end
   end
 
   defp options_table(options, path, positional_args \\ [])
