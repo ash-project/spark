@@ -4,7 +4,7 @@ defmodule Spark.CheatSheet do
   @doc """
   Generate a cheat sheet for a given DSL
   """
-  def cheat_sheet(extension) do
+  def cheat_sheet(extension, opts \\ []) do
     patches =
       Enum.map_join(
         extension.dsl_patches(),
@@ -13,13 +13,13 @@ defmodule Spark.CheatSheet do
              section_path: section_path,
              entity: entity
            } ->
-          entity_cheat_sheet(entity, section_path)
+          entity_cheat_sheet(entity, section_path, opts)
         end
       )
 
     body =
       extension.sections()
-      |> Enum.map_join("\n\n", &section_cheat_sheet(&1))
+      |> Enum.map_join("\n\n", &section_cheat_sheet(&1, [], opts))
       |> Kernel.<>("\n")
       |> Kernel.<>(patches)
 
@@ -37,7 +37,7 @@ defmodule Spark.CheatSheet do
     """
   end
 
-  def section_cheat_sheet(section, path \\ []) do
+  def section_cheat_sheet(section, path, opts) do
     examples =
       case section.examples do
         [] ->
@@ -74,8 +74,8 @@ defmodule Spark.CheatSheet do
 
       #{options_table(options, path ++ [section.name])}
 
-      #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name]))}
-      #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name]))}
+      #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name], opts))}
+      #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name], opts))}
       """
     else
       """
@@ -86,20 +86,20 @@ defmodule Spark.CheatSheet do
 
       #{examples}
 
-      #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name]))}
-      #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name]))}
+      #{Enum.map_join(section.sections, &section_cheat_sheet(&1, path ++ [section.name], opts))}
+      #{Enum.map_join(section.entities, &entity_cheat_sheet(&1, path ++ [section.name], opts))}
       """
     end
   end
 
-  defp entity_cheat_sheet(entity, path) do
+  defp entity_cheat_sheet(entity, path, opts) do
     nested_entities =
       entity.entities
       |> List.wrap()
       |> Enum.flat_map(&elem(&1, 1))
 
     nested_entity_docs =
-      Enum.map_join(nested_entities, &entity_cheat_sheet(&1, path ++ [entity.name]))
+      Enum.map_join(nested_entities, &entity_cheat_sheet(&1, path ++ [entity.name], opts))
 
     options =
       entity.schema
@@ -165,7 +165,7 @@ defmodule Spark.CheatSheet do
 
     #{reference}
 
-    #{entity_properties(entity)}
+    #{entity_properties(entity, opts)}
     """
   end
 
@@ -221,12 +221,16 @@ defmodule Spark.CheatSheet do
     end)
   end
 
-  defp entity_properties(entity) do
-    """
-    ### Introspection
+  defp entity_properties(entity, opts) do
+    if Keyword.get(opts, :no_introspection, false) do
+      ""
+    else
+      """
+      ### Introspection
 
-    Target: `#{inspect(entity.target)}`
-    """
+      Target: `#{inspect(entity.target)}`
+      """
+    end
   end
 
   defp options_table(options, path, positional_args \\ [])
