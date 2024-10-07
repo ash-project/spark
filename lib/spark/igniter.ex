@@ -79,7 +79,7 @@ defmodule Spark.Igniter do
           {:ok, Igniter.t(), module(), value} | {:error, Igniter.t()}
         when value: term()
   def find(igniter, module, callback) do
-    {:ok, {igniter, _source, zipper}} = Igniter.Code.Module.find_module(igniter, module)
+    {:ok, {igniter, _source, zipper}} = Igniter.Project.Module.find_module(igniter, module)
 
     zipper =
       case Igniter.Code.Common.move_to_do_block(zipper) do
@@ -95,7 +95,7 @@ defmodule Spark.Igniter do
           {igniter, {:ok, zipper}}
         else
           with {:ok, {igniter, _source, zipper}} <-
-                 Igniter.Code.Module.find_module(igniter, search_module),
+                 Igniter.Project.Module.find_module(igniter, search_module),
                {:ok, zipper} <- Igniter.Code.Common.move_to_do_block(zipper) do
             {igniter, {:ok, zipper}}
           else
@@ -136,7 +136,7 @@ defmodule Spark.Igniter do
   end
 
   def update_dsl(igniter, module, path, value, func) do
-    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+    Igniter.Project.Module.find_and_update_module!(igniter, module, fn zipper ->
       do_update_dsl(zipper, path, value, func)
     end)
   end
@@ -200,7 +200,7 @@ defmodule Spark.Igniter do
   @spec remove_extension(Igniter.t(), module(), module(), atom(), module(), boolean()) ::
           Igniter.t()
   def remove_extension(igniter, module, type, key, extension, singleton? \\ false) do
-    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+    Igniter.Project.Module.find_and_update_module!(igniter, module, fn zipper ->
       with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type) do
         if Igniter.Code.Common.node_matches_pattern?(zipper, {_, _, [_]}) do
           :error
@@ -245,7 +245,7 @@ defmodule Spark.Igniter do
   @spec has_extension(Igniter.t(), module(), module(), atom(), module()) ::
           {Igniter.t(), boolean()}
   def has_extension(igniter, module, type, key, extension) do
-    case Igniter.Code.Module.find_module(igniter, module) do
+    case Igniter.Project.Module.find_module(igniter, module) do
       {:ok, {igniter, _source, zipper}} ->
         with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type),
              {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
@@ -280,7 +280,7 @@ defmodule Spark.Igniter do
   def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
     extension = {:__aliases__, [], Enum.map(Module.split(extension), &String.to_atom/1)}
 
-    Igniter.Code.Module.find_and_update_module!(igniter, module, fn zipper ->
+    Igniter.Project.Module.find_and_update_module!(igniter, module, fn zipper ->
       case Igniter.Code.Module.move_to_use(zipper, type) do
         {:ok, zipper} ->
           if Igniter.Code.Common.node_matches_pattern?(zipper, {_, _, [_]}) do
