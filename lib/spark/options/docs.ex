@@ -299,7 +299,10 @@ defmodule Spark.Options.Docs do
 
   def dsl_docs_type({:one_of, values}), do: dsl_docs_type({:in, values})
   def dsl_docs_type({:in, values}), do: Enum.map_join(values, " | ", &inspect/1)
-  def dsl_docs_type({:or, subtypes}), do: subtypes |> Enum.map(&dsl_docs_type/1) |> Enum.uniq() |> Enum.join(" | ")
+
+  def dsl_docs_type({:or, subtypes}),
+    do: subtypes |> Enum.map(&dsl_docs_type/1) |> Enum.uniq() |> Enum.join(" | ")
+
   def dsl_docs_type({:list, subtype}), do: "list(#{dsl_docs_type(subtype)})"
   def dsl_docs_type(:quoted), do: "any"
 
