@@ -469,26 +469,56 @@ defmodule Spark.Dsl do
             |> Spark.Dsl.Transformer.sort()
             |> Enum.filter(& &1.after_compile?())
 
-          @extensions
-          |> Enum.flat_map(& &1.verifiers())
-          |> Enum.each(fn verifier ->
-            case verifier.verify(@spark_dsl_config) do
-              :ok ->
-                :ok
+          errors =
+            @extensions
+            |> Enum.flat_map(& &1.verifiers())
+            |> Enum.flat_map(fn verifier ->
+              try do
+                case verifier.verify(@spark_dsl_config) do
+                  :ok ->
+                    []
 
-              {:warn, warnings} ->
-                warnings
-                |> List.wrap()
-                |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+                  {:warn, warnings} ->
+                    warnings
+                    |> List.wrap()
+                    |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
 
-              {:error, error} ->
-                if is_exception(error) do
-                  raise error
-                else
-                  raise "Verification error from #{inspect(verifier)}: #{inspect(error)}"
+                    []
+
+                  {:error, error} ->
+                    List.wrap(error)
                 end
-            end
-          end)
+              rescue
+                e ->
+                  [e]
+              end
+            end)
+
+          case Enum.uniq(errors) do
+            [] ->
+              :ok
+
+            [%Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error] ->
+              reraise error, stacktrace
+
+            [error] ->
+              raise error
+
+            errors ->
+              raise Spark.Error.DslError,
+                message:
+                  "Multiple Errors Occurred\n\n" <>
+                    Enum.map_join(errors, "\n---\n", fn
+                      %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error ->
+                        Exception.format(:error, error, stacktrace)
+
+                      error ->
+                        {:current_stacktrace, stacktrace} =
+                          Process.info(self(), :current_stacktrace)
+
+                        Exception.format(:error, error, stacktrace)
+                    end)
+          end
 
           __MODULE__
           |> Spark.Dsl.Extension.run_transformers(
