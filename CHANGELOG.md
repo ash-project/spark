@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.32](https://github.com/ash-project/spark/compare/v2.2.31...v2.2.32) (2024-10-07)
+
+
+
+
+### Improvements:
+
+* disable introspection section in cheatsheets if target module is not documented (#111)
+
 ## [v2.2.31](https://github.com/ash-project/spark/compare/v2.2.30...v2.2.31) (2024-09-27)
 
 
