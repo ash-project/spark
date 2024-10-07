@@ -299,7 +299,7 @@ defmodule Spark.Options.Docs do
 
   def dsl_docs_type({:one_of, values}), do: dsl_docs_type({:in, values})
   def dsl_docs_type({:in, values}), do: Enum.map_join(values, " | ", &inspect/1)
-  def dsl_docs_type({:or, subtypes}), do: Enum.map_join(subtypes, " | ", &dsl_docs_type/1)
+  def dsl_docs_type({:or, subtypes}), do: subtypes |> Enum.map(&dsl_docs_type/1) |> Enum.uniq() |> Enum.join(" | ")
   def dsl_docs_type({:list, subtype}), do: "list(#{dsl_docs_type(subtype)})"
   def dsl_docs_type(:quoted), do: "any"
 
@@ -468,10 +468,10 @@ defmodule Spark.Options.Docs do
         quote(do: module())
 
       {:spark_function_behaviour, _, _} ->
-        quote(do: module())
+        quote(do: module() | {module(), Keyword.t()})
 
       {:spark_function_behaviour, _, _, _} ->
-        quote(do: module())
+        quote(do: module() | {module(), Keyword.t()})
 
       {:spark_type, _, _} ->
         quote(do: module)
@@ -530,6 +530,17 @@ defmodule Spark.Options.Docs do
   defp unionize_quoted(specs) do
     specs
     |> Enum.reverse()
+    |> Enum.uniq_by(&remove_meta/1)
     |> Enum.reduce(&quote(do: unquote(&1) | unquote(&2)))
+  end
+
+  defp remove_meta(code) do
+    Macro.prewalk(code, fn
+      {a, _b, c} ->
+        {a, [], c}
+
+      other ->
+        other
+    end)
   end
 end
