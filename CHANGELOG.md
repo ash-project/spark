@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.33](https://github.com/ash-project/spark/compare/v2.2.32...v2.2.33) (2024-10-13)
+
+
+
+
+### Bug Fixes:
+
+* include optional arguments as entity builders in spark.formatter
+
 ## [v2.2.32](https://github.com/ash-project/spark/compare/v2.2.31...v2.2.32) (2024-10-07)
 
 
