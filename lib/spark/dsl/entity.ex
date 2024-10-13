@@ -229,6 +229,13 @@ defmodule Spark.Dsl.Entity do
   end
 
   @doc false
+  def required_arg_names(entity) do
+    entity.args
+    |> Kernel.||([])
+    |> Enum.filter(&is_atom/1)
+  end
+
+  @doc false
   def build(
         %{
           target: target,
