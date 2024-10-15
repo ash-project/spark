@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.34](https://github.com/ash-project/spark/compare/v2.2.33...v2.2.34) (2024-10-15)
+
+
+
+
+### Improvements:
+
+* more and better typespecs for `Spark.Options.Validator`
+
 ## [v2.2.33](https://github.com/ash-project/spark/compare/v2.2.32...v2.2.33) (2024-10-13)
 
 
