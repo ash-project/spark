@@ -109,12 +109,13 @@ defmodule Spark.Options do
   @moduledoc """
   Provides a standard API to handle keyword-list-based options.
 
-  This module began its life as a vendored form of `NimbleOptions`.
+  This module began its life as a vendored form of `NimbleOptions`,
+  meaning that we copied it from `NimbleOptions` into `Spark`.
   We had various features to add to it, and the spirit of nimble
   options is to be as lightweight as possible. With that in mind,
-  we were advised to vendor `NimbleOptions`. We would like to
-  thank the authors of `NimbleOptions` for their excellent work,
-  and their blessing to transplant their work into Spark.
+  we were advised to vendor it. We would like to thank the authors
+  of `NimbleOptions` for their excellent work, and their blessing
+  to transplant their work into Spark.
 
   `Spark.Options` allows developers to create schemas using a
   pre-defined set of options and types. The main benefits are:
@@ -122,9 +123,9 @@ defmodule Spark.Options do
     * A single unified way to define simple static options
     * Config validation against schemas
     * Automatic doc generation
-
-
-  Spark also uses this to power entity and section schemas.
+    * More types over what is provided by `NimbleOptions`
+    * Compile time validators that are highly optimized and produce structs. See `Spark.Options.Validator`.
+    * Shared logic between Spark DSLs and options lists.
 
   ## Schema Options
 
