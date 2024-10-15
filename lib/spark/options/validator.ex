@@ -105,12 +105,13 @@ defmodule Spark.Options.Validator do
                        end)
                        |> Enum.map(&elem(&1, 0))
 
-        @type schema :: Spark.Options.t()
+        @spec schema :: Spark.Options.schema()
         def schema do
           @schema
         end
 
-        @type docs :: String.t()
+        @spec docs(Keyword.t()) :: String.t()
+        @spec docs() :: String.t()
         def docs(opts \\ []) do
           Spark.Options.docs(@schema |> Keyword.take(@valid_options), opts)
         end
@@ -125,6 +126,8 @@ defmodule Spark.Options.Validator do
           end
         end
 
+        @spec to_options(t(), Keyword.t() | nil) :: options()
+        @spec to_options(t()) :: options()
         def to_options(self, take \\ nil)
 
         def to_options(self, nil) do
@@ -139,7 +142,7 @@ defmodule Spark.Options.Validator do
           |> Keyword.take(take)
         end
 
-        @spec validate!(Keyword.t()) :: t() | no_return
+        @spec validate!(options()) :: t() | no_return
         def validate!(%__MODULE__{} = opts), do: opts
 
         def validate!(options) do
@@ -164,7 +167,7 @@ defmodule Spark.Options.Validator do
           end
         end
 
-        @spec validate(Keyword.t()) :: {:ok, t()} | {:error, term()}
+        @spec validate(options) :: {:ok, t()} | {:error, term()}
         def validate(%__MODULE__{} = opts), do: {:ok, opts}
 
         def validate(options) do
