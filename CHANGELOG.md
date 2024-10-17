@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.35](https://github.com/ash-project/spark/compare/v2.2.34...v2.2.35) (2024-10-17)
+
+
+
+
+### Bug Fixes:
+
+* generate DSL documentation without a colon in the file name
+
 ## [v2.2.34](https://github.com/ash-project/spark/compare/v2.2.33...v2.2.34) (2024-10-15)
 
 
