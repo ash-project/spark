@@ -36,14 +36,20 @@ defmodule Spark.Options.Validator do
   You can use it like so:
 
   ```elixir
-  # validate options
+  @doc \"\"\"
+  Does a thing
 
-  MyOptions.validate!(foo: "foo")
-  # %MyOptions{foo: "foo", bar: nil, baz: 10}
+  ## Options
 
-  # retrieve original schema
-  MyOptions.schema()
-  # foo: [type: :string, required: true], bar: [type: :string], baz: [type: :integer, default: 10]
+  \#{MyOptions.docs()}
+  \"\"\"
+  @doc spark_opts: [{1, MyOptions.schema()}]
+  def your_function(arg, opts \\ []) do
+    options = Spark.Options.validate!(opts)
+
+    options.foo
+    options.bar
+  end
   ```
   """
 
