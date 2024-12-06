@@ -60,9 +60,9 @@ defmodule Spark.Dsl do
   @type section :: %Spark.Dsl.Section{}
 
   @moduledoc """
-  The primary entry point for adding a DSL to a module.
+  The primary entry point for defining a DSL.
 
-  To add a DSL to a module, add `use Spark.Dsl, ...options`. The options supported with `use Spark.Dsl` are:
+  To define a DSL, add `use Spark.Dsl, ...options`. The options supported with `use Spark.Dsl` are:
 
   #{Spark.Options.docs(@using_schema)}
 
