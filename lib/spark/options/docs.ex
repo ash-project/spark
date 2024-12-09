@@ -437,7 +437,7 @@ defmodule Spark.Options.Docs do
         end
 
       {one_of, choices} when one_of in [:in, :one_of] ->
-        if Enum.all?(choices, &is_atom(&1)) do
+        if !Enum.empty?(choices) && Enum.all?(choices, &is_atom(&1)) do
           unionize_quoted(choices)
         else
           quote(do: term())

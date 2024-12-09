@@ -142,6 +142,12 @@ defmodule Spark.Options do
 
     * `:non_empty_keyword_list` - A non-empty keyword list.
 
+    * `{:keyword_list, schema}` - A keyword list matching the given options schema.
+
+    * `:non_empty_keyword_list` - A non-empty keyword list.
+
+    * `{:non_empty_keyword_list, schema}` - A non-empty keyword list matching the given options schema.
+
     * `:map` - A map consisting of `:atom` keys. Shorthand for `{:map, :atom, :any}`.
       Keys can be specified using the `keys` option.
 
@@ -224,7 +230,6 @@ defmodule Spark.Options do
     * `:quoted` -> retains the quoted value of the code provided to the option
 
     * `{:wrap_list, type}` -> Allows a single value or a list of values.
-
 
     * `{:custom, mod, fun, args}` - A custom type. The related value must be validated
       by `mod.fun(values, ...args)`. The function should return `{:ok, value}` or
@@ -813,7 +818,7 @@ defmodule Spark.Options do
       :error ->
         case Keyword.fetch(schema, :*) do
           :error ->
-            if Keyword.get(schema, :required, false) do
+            if Keyword.get(schema, :required, false) == true do
               error_tuple(
                 key,
                 nil,
@@ -916,9 +921,33 @@ defmodule Spark.Options do
     end
   end
 
+  defp validate_type({:keyword_list, schema}, key, value) do
+    if keyword_list?(value) do
+      validate_options_with_schema_and_path(value, schema, _path = [key])
+    else
+      error_tuple(
+        key,
+        value,
+        "invalid value for #{render_key(key)}: expected keyword list, got: #{inspect(value)}"
+      )
+    end
+  end
+
   defp validate_type(:non_empty_keyword_list, key, value) do
     if keyword_list?(value) and value != [] do
       {:ok, value}
+    else
+      error_tuple(
+        key,
+        value,
+        "invalid value for #{render_key(key)}: expected non-empty keyword list, got: #{inspect(value)}"
+      )
+    end
+  end
+
+  defp validate_type({:non_empty_keyword_list, schema}, key, value) do
+    if keyword_list?(value) and value != [] do
+      validate_options_with_schema_and_path(value, schema, _path = [key])
     else
       error_tuple(
         key,
@@ -1495,6 +1524,13 @@ defmodule Spark.Options do
     {:ok, value}
   end
 
+  def validate_type({keyword_list, schema})
+      when keyword_list in [:keyword_list, :non_empty_keyword_list] do
+    with {:ok, validated_schema} <- validate_options_with_schema(schema, options_schema()) do
+      {:ok, {keyword_list, validated_schema}}
+    end
+  end
+
   def validate_type({:wrap_list, type}) do
     with {:ok, type} <- validate_type(type) do
       {:ok, {:wrap_list, type}}
@@ -1652,7 +1688,7 @@ defmodule Spark.Options do
   def validate_type({:list, subtype}) do
     case validate_type(subtype) do
       {:ok, validated_subtype} -> {:ok, {:list, validated_subtype}}
-      {:error, reason} -> {:error, "invalid subtype given to :list type: #{reason}"}
+      {:error, reason} -> {:error, "invalid subtype given to :list type: #{inspect(reason)}"}
     end
   end
 
@@ -1660,8 +1696,11 @@ defmodule Spark.Options do
     validated_def =
       Enum.map(tuple_def, fn subtype ->
         case validate_type(subtype) do
-          {:ok, validated_subtype} -> validated_subtype
-          {:error, reason} -> throw({:error, "invalid subtype given to :tuple type: #{reason}"})
+          {:ok, validated_subtype} ->
+            validated_subtype
+
+          {:error, reason} ->
+            throw({:error, "invalid subtype given to :tuple type: #{inspect(reason)}"})
         end
       end)
 
@@ -1674,13 +1713,16 @@ defmodule Spark.Options do
     valid_key_type =
       case validate_type(key_type) do
         {:ok, validated_key_type} -> validated_key_type
-        {:error, reason} -> throw({:error, "invalid key_type for :map type: #{reason}"})
+        {:error, reason} -> throw({:error, "invalid key_type for :map type: #{inspect(reason)}"})
       end
 
     valid_values_type =
       case validate_type(value_type) do
-        {:ok, validated_values_type} -> validated_values_type
-        {:error, reason} -> throw({:error, "invalid value_type for :map type: #{reason}"})
+        {:ok, validated_values_type} ->
+          validated_values_type
+
+        {:error, reason} ->
+          throw({:error, "invalid value_type for :map type: #{inspect(reason)}"})
       end
 
     {:ok, {:map, valid_key_type, valid_values_type}}

@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
             {:ok, "DSL-" <> rest}
 
           "documentation/dsls/DSL:-" <> rest ->
-          {:ok, "documentation/dsls/DSL-" <> rest}
+            {:ok, "documentation/dsls/DSL-" <> rest}
 
           other ->
             {:ok, other}
