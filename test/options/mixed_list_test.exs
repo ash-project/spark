@@ -6,29 +6,27 @@ defmodule Spark.Options.MixedListTypeTest do
   require Spark.Options.Validator
 
   defmodule MyMixedListSchema do
-    @foo_opts [
-      enabled?: [type: :boolean, required?: true]
-    ]
-    @bar_opts [
-      enabled?: [type: :boolean, required?: false]
-    ]
-    @baz_opts [
-      enabled?: [type: :boolean, required?: false]
-    ]
-
-    @allowed_keys [:foo, :bar, :baz]
-
-    @optional_key_opts [
-      foo: {:non_empty_keyword_list, @foo_opts},
-      bar: {:non_empty_keyword_list, @bar_opts},
-      baz: {:non_empty_keyword_list, @baz_opts},
+    @option_spec [
+      foo: [
+        enabled?: [type: :boolean, required: true]
+      ],
+      bar: [
+        enabled?: [type: :boolean, required: false]
+      ],
+      baz: [
+        enabled?: [type: :boolean, required: false]
+      ]
     ]
 
-    @list_type {:in, @allowed_keys ++ @optional_key_opts}
+    @literals @option_spec |> Keyword.keys() |> Enum.map(&{:literal, &1})
+    @tuples @option_spec
+            |> Enum.map(fn {key, spec} ->
+              {:tuple, [{:literal, key}, {:keyword_list, spec}]}
+            end)
 
     @schema [
       schema: [
-        type: {:list, @list_type},
+        type: {:list, {:or, @literals ++ @tuples}}
       ]
     ]
 
@@ -45,27 +43,30 @@ defmodule Spark.Options.MixedListTypeTest do
     test "can use only keywords" do
       MyMixedListSchema.validate!(
         schema: [
-          foo: [enabled?: true],
+          foo: [enabled?: true]
         ]
       )
+
+      MyMixedListSchema.validate!(
+        schema: [
+          foo: [enabled?: true],
+          bar: [enabled?: false]
+        ]
+      )
+
       MyMixedListSchema.validate!(
         schema: [
           foo: [enabled?: true],
           bar: [enabled?: false],
+          baz: [enabled?: false]
         ]
       )
-      MyMixedListSchema.validate!(
-        schema: [
-          foo: [enabled?: true],
-          bar: [enabled?: false],
-          baz: [enabled?: false],
-        ]
-      )
+
       MyMixedListSchema.validate!(
         schema: [
           foo: [enabled?: true],
           bar: [],
-          baz: [enabled?: false],
+          baz: [enabled?: false]
         ]
       )
     end
@@ -73,7 +74,7 @@ defmodule Spark.Options.MixedListTypeTest do
     test "can mix atoms and keywords" do
       MyMixedListSchema.validate!(schema: [:foo, bar: [enabled?: true]])
       MyMixedListSchema.validate!(schema: [:foo, bar: [enabled?: true], baz: [enabled?: true]])
-      MyMixedListSchema.validate!(schema: [:foo, [bar: [enabled?: true]], :baz])
+      MyMixedListSchema.validate!(schema: [:foo, :baz, bar: [enabled?: true]])
     end
   end
 end
