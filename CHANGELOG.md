@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.36](https://github.com/ash-project/spark/compare/v2.2.35...v2.2.36) (2024-12-16)
+
+
+
+
+### Bug Fixes:
+
+* make igniter an optional dependency
+
+### Improvements:
+
+* Support nested keyword list specifications (#115)
+
+* support `{:keyword_list, ...}` types
+
 ## [v2.2.35](https://github.com/ash-project/spark/compare/v2.2.34...v2.2.35) (2024-10-17)
 
 
