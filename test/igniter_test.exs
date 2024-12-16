@@ -6,7 +6,7 @@ defmodule Spark.IgniterTest do
   test "options are found in DSLs" do
     assert {_igniter, {:ok, Bar.Baz}} =
              test_project()
-             |> Igniter.Code.Project.create_module(TedDansen, """
+             |> Igniter.Project.Module.create_module(TedDansen, """
                use Spark.Test.Contact
 
                contact do
@@ -19,7 +19,7 @@ defmodule Spark.IgniterTest do
   test "options are found in fragments" do
     assert {_igniter, {:ok, "foobar"}} =
              test_project()
-             |> Igniter.Code.Project.create_module(TedDansenFragment, """
+             |> Igniter.Project.Module.create_module(TedDansenFragment, """
              @moduledoc false
              use Spark.Dsl.Fragment, of: Spark.Test.Contact
 
@@ -27,7 +27,7 @@ defmodule Spark.IgniterTest do
                street("foobar")
              end
              """)
-             |> Igniter.Code.Project.create_module(TedDansen, """
+             |> Igniter.Project.Module.create_module(TedDansen, """
                use Spark.Test.Contact, fragments: [TedDansenFragment]
 
                contact do
