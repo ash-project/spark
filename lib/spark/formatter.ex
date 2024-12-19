@@ -52,41 +52,47 @@ defmodule Spark.Formatter do
     [extensions: [".ex", ".exs"]]
   end
 
-  def format(contents, opts) do
-    config =
-      :spark
-      |> Application.get_env(:formatter, [])
-      |> Enum.map(fn
-        {key, value} when key in [:remove_parens?] ->
-          {key, value}
+  if Code.ensure_loaded?(Sourceror) do
+    def format(contents, opts) do
+      config =
+        :spark
+        |> Application.get_env(:formatter, [])
+        |> Enum.map(fn
+          {key, value} when key in [:remove_parens?] ->
+            {key, value}
 
-        {key, value} ->
-          {Module.concat([key]), value}
-      end)
+          {key, value} ->
+            {Module.concat([key]), value}
+        end)
 
-    parse_result =
-      try do
-        {:ok, Sourceror.parse_string!(contents)}
-      rescue
-        _ ->
-          :error
+      parse_result =
+        try do
+          {:ok, Sourceror.parse_string!(contents)}
+        rescue
+          _ ->
+            :error
+        end
+
+      case parse_result do
+        {:ok, parsed} ->
+          parsed
+          |> format_resources(opts, config)
+          |> then(fn patches ->
+            Sourceror.patch_string(contents, patches)
+          end)
+          |> Code.format_string!(opts_without_plugin(opts))
+          |> then(fn iodata ->
+            [iodata, ?\n]
+          end)
+          |> IO.iodata_to_binary()
+
+        :error ->
+          contents
       end
-
-    case parse_result do
-      {:ok, parsed} ->
-        parsed
-        |> format_resources(opts, config)
-        |> then(fn patches ->
-          Sourceror.patch_string(contents, patches)
-        end)
-        |> Code.format_string!(opts_without_plugin(opts))
-        |> then(fn iodata ->
-          [iodata, ?\n]
-        end)
-        |> IO.iodata_to_binary()
-
-      :error ->
-        contents
+    end
+  else
+    def format(_content, _opts) do
+      raise "#{inspect(__MODULE__)} requires sourceror to run. Please add it as a dev/test dependency"
     end
   end
 

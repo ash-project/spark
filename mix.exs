@@ -98,9 +98,8 @@ defmodule Spark.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sourceror, "~> 1.2"},
-      # in 3.x, make this dependency optional
-      {:jason, "~> 1.4"},
+      {:sourceror, "~> 1.2", optional: true},
+      {:jason, "~> 1.4", optional: true},
       {:igniter, "~> 0.2 and >= 0.3.64", optional: true},
       # Dev/Test dependencies
       {:benchee, "~> 1.3", only: [:dev, :test]},

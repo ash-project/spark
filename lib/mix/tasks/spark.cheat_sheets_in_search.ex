@@ -3,35 +3,41 @@ defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
   @moduledoc @shortdoc
   use Mix.Task
 
-  def run(opts) do
-    Mix.Task.run("compile")
+  if Code.ensure_loaded?(Jason) do
+    def run(opts) do
+      Mix.Task.run("compile")
 
-    {opts, _} =
-      OptionParser.parse!(opts,
-        switches: [strip_prefix: :string, check: :boolean, extensions: :string]
-      )
+      {opts, _} =
+        OptionParser.parse!(opts,
+          switches: [strip_prefix: :string, check: :boolean, extensions: :string]
+        )
 
-    unless opts[:extensions] do
-      raise "Must supply a comma separated list of extensions to generate a .formatter.exs for"
+      unless opts[:extensions] do
+        raise "Must supply a comma separated list of extensions to generate a .formatter.exs for"
+      end
+
+      extensions =
+        opts[:extensions]
+        |> String.split(",")
+        |> Enum.map(&Module.concat([&1]))
+        |> Enum.uniq()
+
+      with {:ok, search_data_file, search_data} <- search_data_file(),
+           {:ok, sidebar_items_file, sidebar_items} <- sidebar_items_file() do
+        {search_data, sidebar_items} =
+          Enum.reduce(extensions, {search_data, sidebar_items}, fn extension, acc ->
+            add_extension_to_search_data(extension, acc, opts)
+          end)
+
+        File.write!(search_data_file, "searchData=" <> Jason.encode!(search_data))
+        File.write!(sidebar_items_file, "sidebarNodes=" <> Jason.encode!(sidebar_items))
+      else
+        {:error, error} -> raise error
+      end
     end
-
-    extensions =
-      opts[:extensions]
-      |> String.split(",")
-      |> Enum.map(&Module.concat([&1]))
-      |> Enum.uniq()
-
-    with {:ok, search_data_file, search_data} <- search_data_file(),
-         {:ok, sidebar_items_file, sidebar_items} <- sidebar_items_file() do
-      {search_data, sidebar_items} =
-        Enum.reduce(extensions, {search_data, sidebar_items}, fn extension, acc ->
-          add_extension_to_search_data(extension, acc, opts)
-        end)
-
-      File.write!(search_data_file, "searchData=" <> Jason.encode!(search_data))
-      File.write!(sidebar_items_file, "sidebarNodes=" <> Jason.encode!(sidebar_items))
-    else
-      {:error, error} -> raise error
+  else
+    def run(opts) do
+      raise "#{inspect(__MODULE__)} requires Jason. Please add it as a dev/test dependency."
     end
   end
 
