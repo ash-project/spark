@@ -203,7 +203,7 @@ else
     @moduledoc @shortdoc
     use Mix.Task
 
-    def run(opts) do
+    def run(_opts) do
       raise "#{inspect(__MODULE__)} requires Jason. Please add it as a dev/test dependency."
     end
   end
