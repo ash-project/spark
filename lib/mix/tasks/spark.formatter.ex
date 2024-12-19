@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.Spark.Formatter do
-  @shortdoc "Manages a variable called `spark_locals_without_parens` in the .formatter.exs from a list of DSL extensions."
-  @moduledoc @shortdoc
-  use Mix.Task
+if Code.ensure_loaded?(Sourceror) do
+  defmodule Mix.Tasks.Spark.Formatter do
+    @shortdoc "Manages a variable called `spark_locals_without_parens` in the .formatter.exs from a list of DSL extensions."
+    @moduledoc @shortdoc
+    use Mix.Task
 
-  if Code.ensure_loaded?(Sourceror) do
     @spec run(term) :: no_return
     def run(opts) do
       Mix.Task.run("compile")
@@ -83,21 +83,27 @@ defmodule Mix.Tasks.Spark.Formatter do
         File.write!(".formatter.exs", contents_with_newline)
       end
     end
-  else
+
+    def all_entity_builders_everywhere(sections, extensions, path \\ []) do
+      sections
+      |> Enum.flat_map(fn section ->
+        all_entity_builders_everywhere(
+          section.sections,
+          extensions,
+          path ++ [section.name]
+        )
+      end)
+      |> Enum.concat(Spark.Formatter.all_entity_builders(sections, extensions, path))
+    end
+  end
+else
+  defmodule Mix.Tasks.Spark.Formatter do
+    @shortdoc "Manages a variable called `spark_locals_without_parens` in the .formatter.exs from a list of DSL extensions."
+    @moduledoc @shortdoc
+    use Mix.Task
+
     def run(_opts) do
       raise "This task requires sourceror to run. Please add it as a dev/test dependency"
     end
-  end
-
-  def all_entity_builders_everywhere(sections, extensions, path \\ []) do
-    sections
-    |> Enum.flat_map(fn section ->
-      all_entity_builders_everywhere(
-        section.sections,
-        extensions,
-        path ++ [section.name]
-      )
-    end)
-    |> Enum.concat(Spark.Formatter.all_entity_builders(sections, extensions, path))
   end
 end
