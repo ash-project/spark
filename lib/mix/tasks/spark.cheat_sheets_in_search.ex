@@ -176,7 +176,7 @@ if Code.ensure_loaded?(Jason) do
           %{
             "anchor" => dash_path,
             "deprecated" => false,
-            "type" => "DSL Entity",
+            "label" => "DSL Entity",
             "id" => "#{dot_path}/#{Enum.count(entity.args)}",
             "header" => "#{tail_path}/#{Enum.count(entity.args)}",
             "title" => "#{dot_path}/#{Enum.count(entity.args)}"
@@ -229,7 +229,7 @@ if Code.ensure_loaded?(Jason) do
           %{
             "anchor" => dash_path,
             "deprecated" => Keyword.has_key?(deprecations, key),
-            "type" => "DSL Option",
+            "label" => "DSL Option",
             "id" => dot_path,
             "hidden" => true,
             "title" => dot_path
