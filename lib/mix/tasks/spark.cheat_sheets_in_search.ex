@@ -126,15 +126,15 @@ if Code.ensure_loaded?(Jason) do
           path ++ [section.name]
         )
 
-      sidebar_items =
-        add_schema_to_sidebar_items(
-          sidebar_items,
-          extension_name,
-          to_string(Enum.at(path, 0) || section.name),
-          section.schema,
-          section.deprecations,
-          path ++ [section.name]
-        )
+      # sidebar_items =
+      #   add_schema_to_sidebar_items(
+      #     sidebar_items,
+      #     extension_name,
+      #     to_string(Enum.at(path, 0) || section.name),
+      #     section.schema,
+      #     section.deprecations,
+      #     path ++ [section.name]
+      #   )
 
       acc =
         Enum.reduce(
@@ -166,22 +166,22 @@ if Code.ensure_loaded?(Jason) do
           }
         )
 
-      tail_path = Enum.join(tl(path), ".")
+      # tail_path = Enum.join(tl(path), ".")
 
-      sidebar_items =
-        add_sidebar_item(
-          sidebar_items,
-          extension_name,
-          to_string(Enum.at(path, 0)),
-          %{
-            "anchor" => dash_path,
-            "deprecated" => false,
-            "label" => "DSL Entity",
-            "id" => "#{dot_path}/#{Enum.count(entity.args)}",
-            "header" => "#{tail_path}/#{Enum.count(entity.args)}",
-            "title" => "#{dot_path}/#{Enum.count(entity.args)}"
-          }
-        )
+      # sidebar_items =
+      #   add_sidebar_item(
+      #     sidebar_items,
+      #     extension_name,
+      #     to_string(Enum.at(path, 0)),
+      #     %{
+      #       "anchor" => dash_path,
+      #       "deprecated" => false,
+      #       "label" => "DSL Entity",
+      #       "id" => "#{dot_path}/#{Enum.count(entity.args)}",
+      #       "header" => "#{tail_path}/#{Enum.count(entity.args)}",
+      #       "title" => "#{dot_path}/#{Enum.count(entity.args)}"
+      #     }
+      #   )
 
       search_data =
         add_schema_to_search_data(
@@ -191,15 +191,15 @@ if Code.ensure_loaded?(Jason) do
           path
         )
 
-      sidebar_items =
-        add_schema_to_sidebar_items(
-          sidebar_items,
-          extension_name,
-          to_string(Enum.at(path, 0)),
-          entity.schema,
-          entity.deprecations,
-          path 
-        )
+      # sidebar_items =
+      #   add_schema_to_sidebar_items(
+      #     sidebar_items,
+      #     extension_name,
+      #     to_string(Enum.at(path, 0)),
+      #     entity.schema,
+      #     entity.deprecations,
+      #     path
+      #   )
 
       entity.entities
       |> Enum.flat_map(&List.wrap(elem(&1, 1)))
@@ -209,82 +209,84 @@ if Code.ensure_loaded?(Jason) do
       )
     end
 
-    defp add_schema_to_sidebar_items(
-           sidebar_items,
-           extension_name,
-           node_group_name,
-           schema,
-           deprecations,
-           path
-         ) do
-      Enum.reduce(schema || [], sidebar_items, fn {key, _config}, sidebar_items ->
-        path = path ++ [key]
-        dash_path = Enum.join(path, "-")
-        dot_path = Enum.join(path, ".")
+    # defp add_schema_to_sidebar_items(
+    #        sidebar_items,
+    #        extension_name,
+    #        node_group_name,
+    #        schema,
+    #        deprecations,
+    #        path
+    #      ) do
+    #   Enum.reduce(schema || [], sidebar_items, fn {key, _config}, sidebar_items ->
+    #     path = path ++ [key]
+    #     dash_path = Enum.join(path, "-")
+    #     dot_path = Enum.join(path, ".")
+    #
+    #     add_sidebar_item(
+    #       sidebar_items,
+    #       extension_name,
+    #       node_group_name,
+    #       %{
+    #         "anchor" => dash_path,
+    #         "deprecated" => Keyword.has_key?(deprecations, key),
+    #         "label" => "DSL Option",
+    #         "id" => dot_path,
+    #         "hidden" => true,
+    #         "title" => dot_path
+    #       }
+    #     )
+    #   end)
+    # end
 
-        add_sidebar_item(
-          sidebar_items,
-          extension_name,
-          node_group_name,
-          %{
-            "anchor" => dash_path,
-            "deprecated" => Keyword.has_key?(deprecations, key),
-            "label" => "DSL Option",
-            "id" => dot_path,
-            "hidden" => true,
-            "title" => dot_path
-          }
-        )
-      end)
-    end
+    # defp add_sidebar_item(sidebar_items, extension_name, node_group_name, item) do
+    #   sidebar_items
+    #   |> Map.put_new("extras", [])
+    #   |> Map.update!("extras", fn group ->
+    #     group_id = dsl_search_name(extension_name)
+    #
+    #     group
+    #     |> Enum.map(fn group ->
+    #       if group["id"] == group_id do
+    #         group
+    #         |> Map.delete("headers")
+    #         |> Map.put("sections", [])
+    #         |> Map.put_new("nodeGroups", [])
+    #         |> Map.update!("nodeGroups", fn node_groups ->
+    #           node_groups
+    #           |> ensure_node_group(node_group_name)
+    #           |> Enum.map(fn node_group ->
+    #             if node_group["name"] == node_group_name do
+    #               node_group
+    #               |> Map.put_new("nodes", [])
+    #               |> Map.update!("nodes", fn nodes ->
+    #                 nodes ++ [item]
+    #               end)
+    #             else
+    #               node_group
+    #             end
+    #           end)
+    #         end)
+    #       else
+    #         group
+    #       end
+    #     end)
+    #   end)
+    # end
 
-
-    defp add_sidebar_item(sidebar_items, extension_name, node_group_name, item) do
-      sidebar_items
-      |> Map.put_new("extras", [])
-      |> Map.update!("extras", fn group ->
-        group_id = dsl_search_name(extension_name)
-
-        group
-        |> Enum.map(fn group ->
-          if group["id"] == group_id do
-            group
-            |> Map.delete("headers")
-            |> Map.put("sections", [])
-            |> Map.put_new("nodeGroups", [])
-            |> Map.update!("nodeGroups", fn node_groups ->
-              node_groups
-              |> ensure_node_group(node_group_name)
-              |> Enum.map(fn node_group ->
-                if node_group["name"] == node_group_name do
-                  node_group
-                  |> Map.put_new("nodes", [])
-                  |> Map.update!("nodes", fn nodes ->
-                    nodes ++ [item]
-                  end)
-                else
-                  node_group
-                end
-              end)
-            end)
-          else
-            group
-          end
-        end)
-      end)
-    end
-
-    defp ensure_node_group(node_groups, node_group_name) do
-      if Enum.any?(node_groups, &(&1["name"] == node_group_name)) do
-        node_groups
-      else
-        node_groups ++ [%{
-          "key" => node_group_name,
-          "name" => node_group_name,
-          "nodes" => []
-        }]
-      end
-    end
+    # defp ensure_node_group(node_groups, node_group_name) do
+    #   if Enum.any?(node_groups, &(&1["name"] == node_group_name)) do
+    #     node_groups
+    #   else
+    #     node_groups ++
+    #       [
+    #         %{
+    #           "key" => node_group_name,
+    #           "name" => node_group_name,
+    #           "nodes" => []
+    #         }
+    #       ]
+    #   end
+    # end
 
     defp add_schema_to_search_data(
            search_data,
