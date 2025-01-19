@@ -27,7 +27,7 @@ defmodule Spark.CheatSheet do
 
     title =
       if String.ends_with?(extension_name, ".Dsl") || String.ends_with?(extension_name, ".DSL") do
-        String.slice(extension_name, 0..-5//-1)
+        String.slice(extension_name, 0..-5//1)
       else
         extension_name
       end
