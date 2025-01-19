@@ -297,7 +297,7 @@ if Code.ensure_loaded?(Sourceror) do
       end)
       |> Enum.concat(config[:extensions] || [])
       |> Enum.concat(type.default_extensions() || [])
-      |> Enum.flat_map(fn extension -> 
+      |> Enum.flat_map(fn extension ->
         [extension | extension.add_extensions()]
       end)
     end

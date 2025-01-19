@@ -1,4 +1,8 @@
 defmodule Spark.Docs do
+  @moduledoc """
+  Tools for generating docs & search data for extras.
+  """
+
   @doc """
   Generates searchable documentation suitable for ex_doc
   """
