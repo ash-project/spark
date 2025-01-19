@@ -45,6 +45,9 @@ defmodule Mix.Tasks.Spark.CheatSheets do
               "documentation/dsls/DSL:-" <> rest ->
                 {:ok, "documentation/dsls/DSL-" <> rest}
 
+              "documentation/dsls/DSL-" <> rest ->
+                {:ok, "documentation/dsls/" <> rest}
+
               other ->
                 {:ok, other}
             end)
@@ -58,7 +61,7 @@ defmodule Mix.Tasks.Spark.CheatSheets do
         File.mkdir_p!("documentation/dsls")
         extension_name = Spark.Mix.Helpers.extension_name(extension, opts)
 
-        filename = "documentation/dsls/DSL-#{extension_name}.md"
+        filename = "documentation/dsls/#{extension_name}.md"
 
         if opts[:check] do
           if File.exists?(filename) &&
