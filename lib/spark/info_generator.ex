@@ -341,7 +341,7 @@ defmodule Spark.InfoGenerator do
 
   def spec_for_type({:fun, arity}, _opts) do
     args =
-      0..(arity - 1)
+      0..(arity - 1)//-1
       |> Enum.map(fn _ -> {:any, [], Elixir} end)
 
     [{:->, [], [args, {:any, [], Elixir}]}]
