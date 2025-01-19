@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.37](https://github.com/ash-project/spark/compare/v2.2.36...v2.2.37) (2025-01-19)
+
+
+
+
+### Bug Fixes:
+
+* include `add_extensions` list in formatter parens remover
+
+### Improvements:
+
+* new patterns for DSL docs using new search data
+
+* modify sidebar-items for DSLs
+
+* make sourceror and jason optional also
+
 ## [v2.2.36](https://github.com/ash-project/spark/compare/v2.2.35...v2.2.36) (2024-12-16)
 
 
