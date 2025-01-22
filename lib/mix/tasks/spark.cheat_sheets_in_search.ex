@@ -10,7 +10,7 @@ if Code.ensure_loaded?(Jason) do
 
       i.e
 
-        {"documentation/dsls/Ash.Resource.md",
+        {"documentation/dsls/DSL-Ash.Resource.md",
          search_data: Spark.Docs.search_data_for(Ash.Resource.Dsl)},
       """)
 
