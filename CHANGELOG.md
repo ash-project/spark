@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.39](https://github.com/ash-project/spark/compare/v2.2.38...v2.2.39) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* unbreak DSL doc generation
+
 ## [v2.2.38](https://github.com/ash-project/spark/compare/v2.2.37...v2.2.38) (2025-01-22)
 
 
