@@ -415,7 +415,17 @@ else
     end
 
     def format(_content, _opts) do
-      raise "#{inspect(__MODULE__)} requires sourceror to run. Please add it as a dev/test dependency"
+      raise """
+      #{inspect(__MODULE__)} requires sourceror to run. Please add it as a dev/test dependency
+
+        defp deps do
+          [ 
+            ...,
+            {:sourceror, "~> 1.7", only: [:dev, :test]}
+          ]
+
+        end
+      """
     end
   end
 end
