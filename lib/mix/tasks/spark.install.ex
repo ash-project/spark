@@ -14,6 +14,7 @@ if Code.ensure_loaded?(Igniter) do
     def igniter(igniter, _argv) do
       igniter
       |> Igniter.Project.Formatter.add_formatter_plugin(Spark.Formatter)
+      |> Igniter.Project.Deps.add_dep({:sourceror, "~> 1.7", only: [:dev, :test]})
       |> Igniter.Project.Config.configure(
         "config.exs",
         :spark,
