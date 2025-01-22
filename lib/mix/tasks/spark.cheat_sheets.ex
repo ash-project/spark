@@ -32,30 +32,6 @@ defmodule Mix.Tasks.Spark.CheatSheets do
 
       Application.ensure_all_started(:rewrite)
 
-      Igniter.new()
-      |> Igniter.update_elixir_file("mix.exs", fn zipper ->
-        Igniter.Code.Common.update_all_matches(
-          zipper,
-          &Igniter.Code.String.string?/1,
-          fn zipper ->
-            Igniter.Code.String.update_string(zipper, fn
-              "DSL:-" <> rest ->
-                {:ok, "DSL-" <> rest}
-
-              "documentation/dsls/DSL:-" <> rest ->
-                {:ok, "documentation/dsls/DSL-" <> rest}
-
-              "documentation/dsls/DSL-" <> rest ->
-                {:ok, "documentation/dsls/" <> rest}
-
-              other ->
-                {:ok, other}
-            end)
-          end
-        )
-      end)
-      |> Igniter.do_or_dry_run(yes: true)
-
       for extension <- extensions do
         cheat_sheet = Spark.CheatSheet.cheat_sheet(extension)
         File.mkdir_p!("documentation/dsls")
