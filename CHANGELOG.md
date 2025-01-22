@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.38](https://github.com/ash-project/spark/compare/v2.2.37...v2.2.38) (2025-01-22)
+
+
+
+
+### Bug Fixes:
+
+* undo docs changes
+
+### Improvements:
+
+* install sourceror as a dev/test dependency
+
 ## [v2.2.37](https://github.com/ash-project/spark/compare/v2.2.36...v2.2.37) (2025-01-19)
 
 
