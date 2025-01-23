@@ -304,6 +304,7 @@ defmodule Spark.InfoGenerator do
     end
   end
 
+  # TODO: this should be combined with `Spark.Options.Docs.type_to_spec
   def spec_for_type({:literal, value}, _opts) when is_atom(value) or is_integer(value) do
     value
   end
@@ -340,9 +341,7 @@ defmodule Spark.InfoGenerator do
       )
 
   def spec_for_type({:fun, arity}, _opts) do
-    args =
-      0..(arity - 1)//-1
-      |> Enum.map(fn _ -> {:any, [], Elixir} end)
+    args = List.duplicate({:any, [], Elixir}, arity)
 
     [{:->, [], [args, {:any, [], Elixir}]}]
   end
