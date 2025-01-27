@@ -44,7 +44,7 @@ defmodule Spark.Options.Validator do
   \#{MyOptions.docs()}
   \"""
   @doc spark_opts: [{1, MyOptions.schema()}]
-  def your_function(arg, opts \\ []) do
+  def your_function(arg, opts \\\\ []) do
     options = Spark.Options.validate!(opts)
 
     options.foo
