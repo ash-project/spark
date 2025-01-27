@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.41](https://github.com/ash-project/spark/compare/v2.2.40...v2.2.41) (2025-01-27)
+
+
+
+
+### Improvements:
+
+* show DSL entities & sections in search
+
 ## [v2.2.40](https://github.com/ash-project/spark/compare/v2.2.39...v2.2.40) (2025-01-23)
 
 
