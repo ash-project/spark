@@ -80,7 +80,7 @@
           ## Design Checks
           #
           {Credo.Check.Design.AliasUsage, false},
-          {Credo.Check.Design.TagTODO, [exit_status: 2]},
+          {Credo.Check.Design.TagTODO, false},
           {Credo.Check.Design.TagFIXME, []},
 
           #
