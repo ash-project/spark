@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.43](https://github.com/ash-project/spark/compare/v2.2.42...v2.2.43) (2025-01-28)
+
+
+
+
+### Bug Fixes:
+
+* fix anchor links to top level sections in ex_doc search
+
 ## [v2.2.42](https://github.com/ash-project/spark/compare/v2.2.41...v2.2.42) (2025-01-28)
 
 
