@@ -12,8 +12,7 @@ defmodule Spark.Docs do
       section_search_data(section)
     end)
     |> Enum.concat(
-      dsl.dsl_patches()
-      |> Enum.flat_map(fn %Spark.Dsl.Patch.AddEntity{section_path: section_path, entity: entity} ->
+      Enum.flat_map(dsl.dsl_patches(), fn %Spark.Dsl.Patch.AddEntity{section_path: section_path, entity: entity} ->
         entity_search_data(entity, section_path)
       end)
     )
@@ -37,7 +36,8 @@ defmodule Spark.Docs do
         }
       ],
       schema_search_data(section.schema, schema_path),
-      Enum.flat_map(section.entities, &entity_search_data(&1, path ++ [section.name]))
+      Enum.flat_map(section.entities, &entity_search_data(&1, schema_path)),
+      Enum.flat_map(section.sections, &section_search_data(&1, schema_path))
     ])
   end
 
