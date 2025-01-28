@@ -12,7 +12,10 @@ defmodule Spark.Docs do
       section_search_data(section)
     end)
     |> Enum.concat(
-      Enum.flat_map(dsl.dsl_patches(), fn %Spark.Dsl.Patch.AddEntity{section_path: section_path, entity: entity} ->
+      Enum.flat_map(dsl.dsl_patches(), fn %Spark.Dsl.Patch.AddEntity{
+                                            section_path: section_path,
+                                            entity: entity
+                                          } ->
         entity_search_data(entity, section_path)
       end)
     )
