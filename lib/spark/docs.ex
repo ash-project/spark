@@ -42,6 +42,13 @@ defmodule Spark.Docs do
       Enum.flat_map(section.entities, &entity_search_data(&1, schema_path)),
       Enum.flat_map(section.sections, &section_search_data(&1, schema_path))
     ])
+    |> Enum.map(fn search_item ->
+      if section.top_level? do
+        %{search_item | anchor: "#{section.name}-#{search_item.anchor}"}
+      else
+        search_item
+      end
+    end)
   end
 
   defp entity_search_data(entity, path) do
