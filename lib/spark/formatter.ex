@@ -374,7 +374,8 @@ if Code.ensure_loaded?(Sourceror) do
       end)
     end
 
-    defp entity_option_builders(entity) do
+    @doc false
+    def entity_option_builders(entity) do
       entity_args_to_drop = Spark.Dsl.Entity.required_arg_names(entity)
 
       entity.schema

@@ -25,7 +25,11 @@ if Code.ensure_loaded?(Sourceror) do
             other -> raise "Error ensuring extension compiled #{inspect(other)}"
           end
 
-          all_entity_builders_everywhere(extension_mod.sections(), extensions)
+          all_entity_builders_everywhere(
+            extension_mod.sections(),
+            extension_mod.dsl_patches(),
+            extensions
+          )
         end)
         |> Enum.uniq()
         |> Enum.sort()
@@ -84,7 +88,19 @@ if Code.ensure_loaded?(Sourceror) do
       end
     end
 
-    def all_entity_builders_everywhere(sections, extensions, path \\ []) do
+    def all_entity_builders_everywhere(sections, dsl_patches, extensions, path \\ []) do
+      patch_builders =
+        dsl_patches
+        |> Enum.filter(fn
+          %Spark.Dsl.Patch.AddEntity{} ->
+            true
+
+          _ ->
+            false
+        end)
+        |> Enum.map(& &1.entity)
+        |> Enum.flat_map(&Spark.Formatter.entity_option_builders/1)
+
       sections
       |> Enum.flat_map(fn section ->
         all_entity_builders_everywhere(
@@ -94,6 +110,7 @@ if Code.ensure_loaded?(Sourceror) do
         )
       end)
       |> Enum.concat(Spark.Formatter.all_entity_builders(sections, extensions, path))
+      |> Enum.concat(patch_builders)
     end
   end
 else
