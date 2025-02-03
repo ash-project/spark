@@ -420,7 +420,7 @@ else
       #{inspect(__MODULE__)} requires sourceror to run. Please add it as a dev/test dependency
 
         defp deps do
-          [ 
+          [
             ...,
             {:sourceror, "~> 1.7", only: [:dev, :test]}
           ]

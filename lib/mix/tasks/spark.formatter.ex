@@ -105,6 +105,7 @@ if Code.ensure_loaded?(Sourceror) do
       |> Enum.flat_map(fn section ->
         all_entity_builders_everywhere(
           section.sections,
+          [],
           extensions,
           path ++ [section.name]
         )
