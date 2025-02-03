@@ -63,8 +63,8 @@ defmodule Spark.Docs do
       ],
       schema_search_data(entity.schema, path ++ [entity.name]),
       Enum.flat_map(entity.entities, fn {_key, entities} ->
-        Enum.flat_map(entities, fn entity ->
-          entity_search_data(entity, path ++ [entity.name])
+        Enum.flat_map(entities, fn nested_entity ->
+          entity_search_data(nested_entity, path ++ [entity.name])
         end)
       end)
     ])
