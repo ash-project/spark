@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.44](https://github.com/ash-project/spark/compare/v2.2.43...v2.2.44) (2025-02-03)
+
+
+
+
+### Bug Fixes:
+
+* proper path to nested entities in search data
+
+* include dsl patches in .formatter.exs
+
 ## [v2.2.43](https://github.com/ash-project/spark/compare/v2.2.42...v2.2.43) (2025-01-28)
 
 
