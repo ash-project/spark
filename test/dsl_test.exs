@@ -481,4 +481,65 @@ defmodule Spark.DslTest do
 
     refute to_string(filename) =~ "?"
   end
+
+  describe "DSL default options" do
+    defmodule DefaultOptionExtension do
+      @moduledoc false
+      @section %Spark.Dsl.Section{
+        name: :example,
+        schema: [
+          opt_with_default: [
+            type: :atom,
+            required: false,
+            default: :default
+          ],
+          opt_without_default: [
+            type: :atom,
+            required: false
+          ]
+        ]
+      }
+
+      use Spark.Dsl.Extension, sections: [@section]
+    end
+
+    defmodule ExampleDsl do
+      @moduledoc false
+      use Spark.Dsl, default_extensions: [extensions: DefaultOptionExtension]
+    end
+
+    test "defaults are applied when any option is set" do
+      defmodule AnyOptionSet do
+        @moduledoc false
+        use ExampleDsl
+
+        example do
+          opt_without_default(:marty)
+        end
+      end
+
+      assert :default == Spark.Dsl.Extension.get_opt(AnyOptionSet, [:example], :opt_with_default)
+    end
+
+    test "defaults are applied when the section is present but empty" do
+      defmodule NoOptionSet do
+        @moduledoc false
+        use ExampleDsl
+
+        example do
+        end
+      end
+
+      assert :default == Spark.Dsl.Extension.get_opt(NoOptionSet, [:example], :opt_with_default)
+    end
+
+    test "defaults are applied when the section is not present at all" do
+      defmodule NoSection do
+        @moduledoc false
+        use ExampleDsl
+      end
+
+      assert :default == Spark.Dsl.Extension.get_opt(NoSection, [:example], :opt_with_default)
+    end
+  end
 end
