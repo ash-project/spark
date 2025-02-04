@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.45](https://github.com/ash-project/spark/compare/v2.2.44...v2.2.45) (2025-02-04)
+
+
+
+
+### Bug Fixes:
+
+* ensure empty sections set their defaults
+
+* Crash in `mix spark.formatter`. (#128)
+
 ## [v2.2.44](https://github.com/ash-project/spark/compare/v2.2.43...v2.2.44) (2025-02-03)
 
 
