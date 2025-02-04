@@ -816,8 +816,20 @@ defmodule Spark.Dsl.Extension do
         )
 
       @doc false
-      def __set_and_validate_options__(unquote(path ++ [section.name]) = section_path, module) do
+      def __set_and_validate_options__(
+            unquote(path ++ [section.name]) = section_path,
+            module,
+            extension
+          ) do
         schema = unquote(Macro.escape(Map.get(section, :schema, [])))
+
+        current_sections = Process.get({module, :spark_sections}, [])
+
+        unless {extension, section_path} in current_sections do
+          Process.put({module, :spark_sections}, [
+            {extension, section_path} | current_sections
+          ])
+        end
 
         current_config =
           Process.get(
@@ -884,7 +896,8 @@ defmodule Spark.Dsl.Extension do
 
                   unquote(__MODULE__).__set_and_validate_options__(
                     unquote(section_path),
-                    __MODULE__
+                    __MODULE__,
+                    unquote(extension)
                   )
                 end
               ]
