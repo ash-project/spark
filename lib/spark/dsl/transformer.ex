@@ -76,7 +76,7 @@ defmodule Spark.Dsl.Transformer do
   fields = the_primary_key_fields
 
   dsl_state =
-    Transformer.eval(
+    Spark.Dsl.Transformer.eval(
       dsl_state,
       [fields: fields],
       quote do
