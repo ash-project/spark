@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.46](https://github.com/ash-project/spark/compare/v2.2.45...v2.2.46) (2025-03-07)
+
+
+
+
+### Bug Fixes:
+
+* don't ask for confirmation on adding sourceror, skip if present
+
 ## [v2.2.45](https://github.com/ash-project/spark/compare/v2.2.44...v2.2.45) (2025-02-04)
 
 
