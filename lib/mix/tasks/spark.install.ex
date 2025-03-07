@@ -7,14 +7,24 @@ if Code.ensure_loaded?(Igniter) do
 
     @impl true
     def info(_argv, _parent) do
-      %Igniter.Mix.Task.Info{}
+      %Igniter.Mix.Task.Info{
+        schema: [
+          yes: :boolean
+        ],
+        aliases: [
+          y: :yes
+        ]
+      }
     end
 
     @impl true
-    def igniter(igniter, _argv) do
+    def igniter(igniter) do
       igniter
       |> Igniter.Project.Formatter.add_formatter_plugin(Spark.Formatter)
-      |> Igniter.Project.Deps.add_dep({:sourceror, "~> 1.7", only: [:dev, :test]})
+      |> Igniter.Project.Deps.add_dep({:sourceror, "~> 1.7", only: [:dev, :test]},
+        yes?: igniter.args.options[:yes],
+        notify_on_present?: false
+      )
       |> Igniter.Project.Config.configure(
         "config.exs",
         :spark,
