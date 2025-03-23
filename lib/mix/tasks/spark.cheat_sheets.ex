@@ -1,66 +1,79 @@
-defmodule Mix.Tasks.Spark.CheatSheets do
-  @shortdoc "Creates cheat sheets for each Extension provided. Useful for CI with `--check` flag."
-  @moduledoc @shortdoc
+defmodule Mix.Tasks.Spark.CheatSheets.Docs do
+  @moduledoc false
 
-  if !Code.ensure_loaded?(Igniter) do
-    @shortdoc "\#{@shortdoc} | Install `igniter` to use"
+  def short_doc do
+    "Creates cheat sheets for each Extension provided. Useful for CI with `--check` flag."
   end
 
-  use Mix.Task
+  def example do
+    "mix spark.cheat_sheets --extensions MyApp.Foo,MyApp.Bar"
+  end
 
-  if Code.ensure_loaded?(Igniter) do
-    def run(opts) do
-      Mix.Task.run("compile")
+  def long_doc do
+    """
+    #{short_doc()}
 
-      {opts, _} =
-        OptionParser.parse!(opts,
-          switches: [strip_prefix: :string, check: :boolean, extensions: :string, check: :string]
-        )
+    ## Example
 
-      extensions =
-        opts
-        |> Keyword.get(:extensions, "")
-        |> Kernel.||("")
-        |> String.split(",")
-        |> Enum.reject(&(&1 == ""))
-        |> Enum.map(&Module.concat([&1]))
-        |> Enum.uniq()
+    ```bash
+    #{example()}
+    ```
 
-      if !opts[:check] do
-        File.rm_rf!("documentation/dsls")
-      end
+    ## Options
 
-      Application.ensure_all_started(:rewrite)
+    * `--extensions` - The list of extensions to generate cheat sheets for
+    """
+  end
+end
 
-      for extension <- extensions do
+if Code.ensure_loaded?(Igniter) do
+  defmodule Mix.Tasks.Spark.CheatSheets do
+    @shortdoc "#{__MODULE__.Docs.short_doc()}"
+
+    @moduledoc __MODULE__.Docs.long_doc()
+
+    use Igniter.Mix.Task
+
+    @impl Igniter.Mix.Task
+    def info(_argv, _composing_task) do
+      %Igniter.Mix.Task.Info{
+        group: :spark,
+        schema: [extensions: :csv],
+        required: [:extensions]
+      }
+    end
+
+    @impl Igniter.Mix.Task
+    def igniter(igniter) do
+      igniter.args.options[:extensions]
+      |> Enum.map(&Igniter.Project.Module.parse/1)
+      |> Enum.uniq()
+      |> Enum.reduce(igniter, fn extension, igniter ->
         cheat_sheet = Spark.CheatSheet.cheat_sheet(extension)
-        File.mkdir_p!("documentation/dsls")
-        extension_name = Spark.Mix.Helpers.extension_name(extension, opts)
+
+        extension_name = Spark.Mix.Helpers.extension_name(extension, [])
 
         filename = "documentation/dsls/DSL-#{extension_name}.md"
 
-        if opts[:check] do
-          if File.exists?(filename) &&
-               String.trim(File.read!(filename)) == String.trim(cheat_sheet) do
-            Mix.shell().info("Cheat sheet for #{extension_name} is up to date")
-          else
-            raise """
-            The cheat sheet for #{extension_name} is out of date. Please regenerate spark cheat sheets.
-            """
-          end
-        else
-          File.write!(filename, cheat_sheet)
-        end
-      end
+        Igniter.create_or_update_file(igniter, filename, cheat_sheet, fn source ->
+          Rewrite.Source.update(source, :content, cheat_sheet)
+        end)
+      end)
     end
-  else
+  end
+else
+  defmodule Mix.Tasks.Spark.CheatSheets do
+    @shortdoc "#{__MODULE__.Docs.short_doc()} | Install `igniter` to use"
+
+    @moduledoc __MODULE__.Docs.long_doc()
+
+    use Mix.Task
+
     def run(_argv) do
       Mix.shell().error("""
-      The task 'spark.cheat_sheets' requires igniter to be run.
+      The task 'spark.cheat_sheets' requires igniter. Please install igniter and try again.
 
-      Please install igniter and try again.
-
-      For more information, see: https://hexdocs.pm/igniter
+      For more information, see: https://hexdocs.pm/igniter/readme.html#installation
       """)
 
       exit({:shutdown, 1})
