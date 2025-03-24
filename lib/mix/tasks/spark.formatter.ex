@@ -99,7 +99,12 @@ if Code.ensure_loaded?(Sourceror) do
             false
         end)
         |> Enum.map(& &1.entity)
-        |> Enum.flat_map(&Spark.Formatter.entity_option_builders/1)
+        |> Enum.flat_map(fn entity ->
+          Enum.concat([
+            Spark.Formatter.entity_option_builders(entity),
+            Spark.Formatter.entity_builders(entity)
+          ])
+        end)
 
       sections
       |> Enum.flat_map(fn section ->
