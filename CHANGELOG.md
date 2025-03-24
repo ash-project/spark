@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.48](https://github.com/ash-project/spark/compare/v2.2.47...v2.2.48) (2025-03-24)
+
+
+
+
+### Bug Fixes:
+
+* include dsl patch entity builders in .formatter.exs
+
 ## [v2.2.47](https://github.com/ash-project/spark/compare/v2.2.46...v2.2.47) (2025-03-23)
 
 
