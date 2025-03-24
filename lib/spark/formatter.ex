@@ -359,7 +359,7 @@ if Code.ensure_loaded?(Sourceror) do
       end) ++ all_entity_builders(section.sections, extensions, path ++ [section.name])
     end
 
-    defp entity_builders(entity) do
+    def entity_builders(entity) do
       arg_count = Enum.count(entity.args)
       non_optional_arg_count = Enum.count(entity.args, &is_atom/1)
 
