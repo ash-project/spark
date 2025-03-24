@@ -32,7 +32,7 @@ defmodule MyApp.PersonValidator do
 
     field :email, :string do
       check &String.contains?(&1, "@")
-      process &String.trim/1
+      transform &String.trim/1
     end
 
     # This syntax is also supported
@@ -431,6 +431,7 @@ defmodule MyLibrary.Validator do
 
         :error ->
           {:cont, {:ok, acc}}
+      end
     end)
   end
 
