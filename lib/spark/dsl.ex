@@ -578,7 +578,6 @@ defmodule Spark.Dsl do
           Code.eval_quoted(block, bindings, __ENV__)
         end
 
-
         def __spark_placeholder__, do: nil
 
         @doc false
