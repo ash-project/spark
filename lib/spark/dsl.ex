@@ -578,6 +578,7 @@ defmodule Spark.Dsl do
           Code.eval_quoted(block, bindings, __ENV__)
         end
 
+
         def __spark_placeholder__, do: nil
 
         @doc false
@@ -597,6 +598,8 @@ defmodule Spark.Dsl do
         end
 
         def fetch_opt(_, _), do: :error
+
+        @spark_dsl_config Map.delete(@spark_dsl_config, :eval)
 
         @doc false
         def spark_dsl_config do
