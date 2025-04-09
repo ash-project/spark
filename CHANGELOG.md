@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.49](https://github.com/ash-project/spark/compare/v2.2.48...v2.2.49) (2025-04-09)
+
+
+
+
+### Improvements:
+
+* strip `eval` out of `spark_dsl_config`
+
 ## [v2.2.48](https://github.com/ash-project/spark/compare/v2.2.47...v2.2.48) (2025-03-24)
 
 
