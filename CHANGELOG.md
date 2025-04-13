@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.50](https://github.com/ash-project/spark/compare/v2.2.49...v2.2.50) (2025-04-13)
+
+
+
+
+### Improvements:
+
+* only add sourceror if its not present
+
 ## [v2.2.49](https://github.com/ash-project/spark/compare/v2.2.48...v2.2.49) (2025-04-09)
 
 
