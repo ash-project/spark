@@ -25,7 +25,7 @@ if Code.ensure_loaded?(Igniter) do
         if Igniter.Project.Deps.has_dep?(igniter, :sourceror) do
           igniter
         else
-          Igniter.Project.Deps.add_dep(igniter, {:sourceror, "~> 1.7", only: [:dev, :test]},
+          Igniter.Project.Deps.add_dep(igniter, {:sourceror, "~> 1.8", only: [:dev, :test]},
             yes?: igniter.args.options[:yes],
             notify_on_present?: false
           )
