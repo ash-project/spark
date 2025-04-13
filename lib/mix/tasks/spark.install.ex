@@ -21,10 +21,16 @@ if Code.ensure_loaded?(Igniter) do
     def igniter(igniter) do
       igniter
       |> Igniter.Project.Formatter.add_formatter_plugin(Spark.Formatter)
-      |> Igniter.Project.Deps.add_dep({:sourceror, "~> 1.7", only: [:dev, :test]},
-        yes?: igniter.args.options[:yes],
-        notify_on_present?: false
-      )
+      |> then(fn igniter ->
+        if Igniter.Project.Deps.has_dep?(igniter, :sourceror) do
+          igniter
+        else
+          Igniter.Project.Deps.add_dep(igniter, {:sourceror, "~> 1.7", only: [:dev, :test]},
+            yes?: igniter.args.options[:yes],
+            notify_on_present?: false
+          )
+        end
+      end)
       |> Igniter.Project.Config.configure(
         "config.exs",
         :spark,
