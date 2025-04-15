@@ -921,7 +921,7 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   def entity_mod_name(mod, nested_entity_path, section_path, entity) do
-    nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
+    nested_entity_parts = Enum.map(Enum.drop(nested_entity_path, Enum.count(section_path)), &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
 
     mod_parts =
@@ -1000,7 +1000,7 @@ defmodule Spark.Dsl.Extension do
         Spark.Dsl.Extension.async_compile(agent, fn ->
           {:module, module, _, _} =
             Module.create(
-              mod_name,
+              mod_name |> IO.inspect(),
               quote generated: true do
                 @moduledoc false
                 alias Spark.Dsl
@@ -1026,7 +1026,7 @@ defmodule Spark.Dsl.Extension do
 
     if opts_mod_name do
       Module.create(
-        opts_mod_name,
+        opts_mod_name |> IO.inspect(),
         quote generated: true,
               bind_quoted: [
                 section: Macro.escape(section),
@@ -1149,7 +1149,7 @@ defmodule Spark.Dsl.Extension do
 
     async_compile(agent, fn ->
       Module.create(
-        mod_name,
+        mod_name |> IO.inspect(),
         quote generated: true,
               location: :keep,
               bind_quoted: [
@@ -1413,7 +1413,7 @@ defmodule Spark.Dsl.Extension do
       end
 
     Module.create(
-      module_name,
+      module_name |> IO.inspect(),
       quote generated: true,
             bind_quoted: [
               entity: Macro.escape(entity),
