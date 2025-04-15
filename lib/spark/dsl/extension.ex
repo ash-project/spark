@@ -873,6 +873,7 @@ defmodule Spark.Dsl.Extension do
             |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
             |> Enum.reject(&(&1 in entity_modules))
 
+
           section_imports =
             for module <- unquote(section_modules) do
               quote generated: true do
@@ -921,7 +922,7 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   def entity_mod_name(mod, nested_entity_path, section_path, entity) do
-    nested_entity_parts = Enum.map(Enum.drop(nested_entity_path, Enum.count(section_path)), &Macro.camelize(to_string(&1)))
+    nested_entity_parts = Enum.map(nested_entity_path, &Macro.camelize(to_string(&1)))
     section_path_parts = Enum.map(section_path, &Macro.camelize(to_string(&1)))
 
     mod_parts =
@@ -1000,7 +1001,7 @@ defmodule Spark.Dsl.Extension do
         Spark.Dsl.Extension.async_compile(agent, fn ->
           {:module, module, _, _} =
             Module.create(
-              mod_name |> IO.inspect(),
+              mod_name,
               quote generated: true do
                 @moduledoc false
                 alias Spark.Dsl
@@ -1026,7 +1027,7 @@ defmodule Spark.Dsl.Extension do
 
     if opts_mod_name do
       Module.create(
-        opts_mod_name |> IO.inspect(),
+        opts_mod_name,
         quote generated: true,
               bind_quoted: [
                 section: Macro.escape(section),
@@ -1107,12 +1108,12 @@ defmodule Spark.Dsl.Extension do
               entity_mod =
                 build_entity(
                   agent,
-                  mod_name,
+                  mod,
                   extension,
                   section_path,
                   nested_entity,
                   nested_entity.deprecations,
-                  nested_entity_path ++ [key],
+                  nested_entity_path ++ [entity.name, key],
                   key
                 )
 
@@ -1149,7 +1150,7 @@ defmodule Spark.Dsl.Extension do
 
     async_compile(agent, fn ->
       Module.create(
-        mod_name |> IO.inspect(),
+        mod_name,
         quote generated: true,
               location: :keep,
               bind_quoted: [
@@ -1413,7 +1414,7 @@ defmodule Spark.Dsl.Extension do
       end
 
     Module.create(
-      module_name |> IO.inspect(),
+      module_name,
       quote generated: true,
             bind_quoted: [
               entity: Macro.escape(entity),
