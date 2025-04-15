@@ -439,6 +439,7 @@ defmodule Spark.Dsl.Extension do
     body =
       quote generated: true, location: :keep do
         Module.register_attribute(__MODULE__, :extensions, persist: true)
+        Module.register_attribute(__MODULE__, :validate_sections, persist: true, accumulate: true)
         @extensions unquote(extensions)
         @persist {:spark_extensions, @extensions}
       end
@@ -579,6 +580,8 @@ defmodule Spark.Dsl.Extension do
         |> Keyword.put(:extensions, @extensions || [])
         |> Enum.into(%{})
 
+      validate_sections = Module.get_attribute(__MODULE__, :validate_sections)
+
       spark_dsl_config =
         {__MODULE__, :spark_sections}
         |> Process.get([])
@@ -586,7 +589,7 @@ defmodule Spark.Dsl.Extension do
           {section_path,
            Process.get(
              {__MODULE__, :spark, section_path},
-             []
+             %{entities: [], opts: []}
            )}
         end)
         |> Enum.into(%{})
@@ -596,6 +599,21 @@ defmodule Spark.Dsl.Extension do
           &Map.merge(&1, persist)
         )
         |> Spark.Dsl.handle_fragments(fragments)
+
+      spark_dsl_config =
+        if transform? do
+          Enum.reduce(validate_sections, spark_dsl_config, fn
+            {section_path, validator, extension}, dsl_config ->
+              validator.__set_and_validate_options__(
+                dsl_config,
+                section_path,
+                __MODULE__,
+                extension
+              )
+          end)
+        else
+          spark_dsl_config
+        end
 
       for {key, _value} <- Process.get() do
         if is_tuple(key) and elem(key, 0) == __MODULE__ do
@@ -817,45 +835,29 @@ defmodule Spark.Dsl.Extension do
 
       @doc false
       def __set_and_validate_options__(
+            dsl_config,
             unquote(path ++ [section.name]) = section_path,
             module,
             extension
           ) do
         schema = unquote(Macro.escape(Map.get(section, :schema, [])))
 
-        current_sections = Process.get({module, :spark_sections}, [])
+        dsl_config
+        |> Map.put_new(section_path, %{opts: [], entities: []})
+        |> Map.update!(section_path, fn config ->
+          Map.update!(config, :opts, fn opts ->
+            case Spark.Options.validate(Keyword.new(opts), schema) do
+              {:ok, opts} ->
+                opts
 
-        unless {extension, section_path} in current_sections do
-          Process.put({module, :spark_sections}, [
-            {extension, section_path} | current_sections
-          ])
-        end
-
-        current_config =
-          Process.get(
-            {module, :spark, section_path},
-            %{entities: [], opts: []}
-          )
-
-        opts =
-          case Spark.Options.validate(Keyword.new(current_config.opts), schema) do
-            {:ok, opts} ->
-              opts
-
-            {:error, error} ->
-              raise Spark.Error.DslError,
-                module: module,
-                message: error,
-                path: section_path
-          end
-
-        Process.put(
-          {module, :spark, section_path},
-          %{
-            entities: current_config.entities,
-            opts: opts
-          }
-        )
+              {:error, error} ->
+                raise Spark.Error.DslError,
+                  module: module,
+                  message: error,
+                  path: section_path
+            end
+          end)
+        end)
       end
 
       unless section.top_level? && path == [] do
@@ -894,11 +896,16 @@ defmodule Spark.Dsl.Extension do
                 quote generated: true do
                   unquote(body[:do])
 
-                  unquote(__MODULE__).__set_and_validate_options__(
-                    unquote(section_path),
-                    __MODULE__,
-                    unquote(extension)
-                  )
+                  current_sections = Process.get({__MODULE__, :spark_sections}, [])
+
+                  unless {unquote(extension), unquote(section_path)} in current_sections do
+                    Process.put({__MODULE__, :spark_sections}, [
+                      {unquote(extension), unquote(section_path)} | current_sections
+                    ])
+                  end
+
+                  @validate_sections {unquote(section_path), unquote(__MODULE__),
+                                      unquote(extension)}
                 end
               ]
 
