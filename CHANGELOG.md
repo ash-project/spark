@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.52](https://github.com/ash-project/spark/compare/v2.2.51...v2.2.52) (2025-04-16)
+
+
+
+
+### Bug Fixes:
+
+* properly user shorter module names
+
+* don't doubly-nested module names
+
 ## [v2.2.51](https://github.com/ash-project/spark/compare/v2.2.50...v2.2.51) (2025-04-15)
 
 
