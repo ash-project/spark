@@ -873,7 +873,6 @@ defmodule Spark.Dsl.Extension do
             |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
             |> Enum.reject(&(&1 in entity_modules))
 
-
           section_imports =
             for module <- unquote(section_modules) do
               quote generated: true do
