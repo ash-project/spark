@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.53](https://github.com/ash-project/spark/compare/v2.2.52...v2.2.53) (2025-04-21)
+
+
+
+
+### Bug Fixes:
+
+* validate sections that only appear in fragments
+
 ## [v2.2.52](https://github.com/ash-project/spark/compare/v2.2.51...v2.2.52) (2025-04-16)
 
 
