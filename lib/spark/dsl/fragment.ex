@@ -88,6 +88,10 @@ defmodule Spark.Dsl.Fragment do
         @spark_dsl_config
       end
 
+      def validate_sections do
+        @validate_sections || []
+      end
+
       @persisted @spark_dsl_config[:persist]
 
       def persisted do

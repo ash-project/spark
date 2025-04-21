@@ -580,7 +580,11 @@ defmodule Spark.Dsl.Extension do
         |> Keyword.put(:extensions, @extensions || [])
         |> Enum.into(%{})
 
-      validate_sections = Module.get_attribute(__MODULE__, :validate_sections)
+      validate_sections =
+        Module.get_attribute(__MODULE__, :validate_sections)
+        |> Kernel.||([])
+        |> Enum.concat(Enum.flat_map(fragments || [], & &1.validate_sections))
+        |> Enum.uniq_by(&elem(&1, 0))
 
       spark_dsl_config =
         {__MODULE__, :spark_sections}
