@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.54](https://github.com/ash-project/spark/compare/v2.2.53...v2.2.54) (2025-04-21)
+
+
+
+
+### Bug Fixes:
+
+* silence warning from not using parenthesis
+
 ## [v2.2.53](https://github.com/ash-project/spark/compare/v2.2.52...v2.2.53) (2025-04-21)
 
 
