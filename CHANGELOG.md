@@ -5,6 +5,11 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.55](https://github.com/ash-project/spark/compare/v2.2.54...v2.2.55) (2025-04-24)
+
+
+
+
 ## [v2.2.54](https://github.com/ash-project/spark/compare/v2.2.53...v2.2.54) (2025-04-21)
 
 
