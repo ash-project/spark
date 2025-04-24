@@ -89,7 +89,7 @@ defmodule Spark.Dsl.Fragment do
       end
 
       def validate_sections do
-        @validate_sections || []
+        List.wrap(@validate_sections)
       end
 
       @persisted @spark_dsl_config[:persist]
