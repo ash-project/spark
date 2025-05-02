@@ -36,7 +36,7 @@ defmodule MyApp.PersonValidator do
     end
 
     # This syntax is also supported
-    # field :email, :string, check: &String.contains?(&1, "@"), process: &String.trim/1
+    # field :email, :string, check: &String.contains?(&1, "@"), transform: &String.trim/1
   end
 end
 
