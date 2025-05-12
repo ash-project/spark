@@ -182,7 +182,7 @@ defmodule Spark.InfoGenerator do
           dsl_or_extended,
           unquote(option.path),
           unquote(option.name),
-          unquote(option.default)
+          unquote(Macro.escape(option.default))
         )
       end
 
@@ -221,7 +221,7 @@ defmodule Spark.InfoGenerator do
                  unquote(option.path),
                  unquote(option.name)
                ) do
-            :error -> {:ok, unquote(option.default)}
+            :error -> {:ok, unquote(Macro.escape(option.default))}
             {:ok, value} -> {:ok, value}
           end
         end
@@ -259,7 +259,7 @@ defmodule Spark.InfoGenerator do
                  unquote(option.name)
                ) do
             :error ->
-              unquote(option.default)
+              unquote(Macro.escape(option.default))
 
             {:ok, value} ->
               value
