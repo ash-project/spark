@@ -281,6 +281,7 @@ if Code.ensure_loaded?(Igniter) do
     @spec add_extension(Igniter.t(), module(), module(), atom(), module(), boolean()) ::
             Igniter.t()
     def add_extension(igniter, module, type, key, extension, singleton? \\ false) do
+      extension_mod = extension
       extension = {:__aliases__, [], Enum.map(Module.split(extension), &String.to_atom/1)}
 
       Igniter.Project.Module.find_and_update_module!(igniter, module, fn zipper ->
@@ -300,8 +301,11 @@ if Code.ensure_loaded?(Igniter) do
                 if singleton? do
                   with {:ok, arg_zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
                        {:ok, value_zipper} <- Igniter.Code.Keyword.get_key(arg_zipper, key),
+                       false <- Igniter.Code.Common.nodes_equal?(value_zipper, extension_mod),
                        module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
-                       {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
+                       {:__aliases__, _, parts} <- Zipper.node(module_zipper),
+                      to_remove <- Module.concat(parts),
+                      false <- to_remove == extension do
                     {:ok, Module.concat(parts)}
                   else
                     _ ->
