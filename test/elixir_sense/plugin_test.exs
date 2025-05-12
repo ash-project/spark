@@ -319,7 +319,7 @@ defmodule Spark.ElixirSense.PluginTest do
 
       assert suggestions ==
                Enum.sort([
-                 "MyExtension",
+                 "Spark.Test.Contact.Dsl",
                  "Spark.Test.ContactPatcher",
                  "Spark.Test.Recursive.Dsl",
                  "Spark.Test.TopLevel.Dsl"
