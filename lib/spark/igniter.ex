@@ -303,9 +303,7 @@ if Code.ensure_loaded?(Igniter) do
                        {:ok, value_zipper} <- Igniter.Code.Keyword.get_key(arg_zipper, key),
                        false <- Igniter.Code.Common.nodes_equal?(value_zipper, extension_mod),
                        module_zipper <- Igniter.Code.Common.expand_aliases(value_zipper),
-                       {:__aliases__, _, parts} <- Zipper.node(module_zipper),
-                      to_remove <- Module.concat(parts),
-                      false <- to_remove == extension do
+                       {:__aliases__, _, parts} <- Zipper.node(module_zipper) do
                     {:ok, Module.concat(parts)}
                   else
                     _ ->
