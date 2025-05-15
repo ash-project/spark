@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.56](https://github.com/ash-project/spark/compare/v2.2.55...v2.2.56) (2025-05-15)
+
+
+
+
+### Bug Fixes:
+
+* when adding an extension, don't remove it if its already there
+
+* escape default values in info generator
+
 ## [v2.2.55](https://github.com/ash-project/spark/compare/v2.2.54...v2.2.55) (2025-04-24)
 
 
