@@ -578,6 +578,7 @@ defmodule Spark.Dsl do
           Code.eval_quoted(block, bindings, __ENV__)
         end
 
+        # remove
         def __spark_placeholder__, do: nil
 
         @doc false
@@ -598,12 +599,20 @@ defmodule Spark.Dsl do
 
         def fetch_opt(_, _), do: :error
 
-        @spark_dsl_config Map.delete(@spark_dsl_config, :eval)
+        for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
+          def section_opts(unquote(path)) do
+            unquote(Macro.escape(opts))
+          end
+        end
 
         @doc false
-        def spark_dsl_config do
-          @spark_dsl_config
+        def section_opts(_) do
+          []
         end
+
+        @spark_dsl_config @spark_dsl_config
+                          |> Map.delete(:eval)
+                          |> Map.update!(:persist, &Map.drop(&1, [:env]))
 
         @persisted Map.drop(@spark_dsl_config[:persist], [:env])
 
@@ -627,6 +636,35 @@ defmodule Spark.Dsl do
         end
 
         def persisted(_), do: nil
+
+        persisted_keys =
+          {:persist,
+           {:%{}, [],
+            Enum.map(
+              Map.keys(@spark_dsl_config[:persist]),
+              &{&1,
+               quote do
+                 persisted(unquote(&1))
+               end}
+            )}}
+
+        section_keys =
+          for {path, _} <- @spark_dsl_config, is_list(path) do
+            {path,
+             quote do
+               %{
+                 opts: section_opts(unquote(path)),
+                 entities: entities(unquote(path))
+               }
+             end}
+          end
+
+        @spark_dsl_config_quoted {:%{}, [], [persisted_keys | section_keys]}
+
+        @doc false
+        def spark_dsl_config do
+          unquote(@spark_dsl_config_quoted)
+        end
 
         @doc false
         def persisted do
