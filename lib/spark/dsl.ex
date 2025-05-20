@@ -612,7 +612,9 @@ defmodule Spark.Dsl do
 
         @spark_dsl_config @spark_dsl_config
                           |> Map.delete(:eval)
-                          |> Map.update!(:persist, &Map.drop(&1, [:env, {:foo, :bar, :baz}]))
+                          |> Map.update!(:persist, &Map.drop(&1, [:env]))
+
+        @persisted @spark_dsl_config[:persist]
 
         @doc false
         for {key, value} <- @spark_dsl_config[:persist] do
