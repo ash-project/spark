@@ -257,9 +257,19 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    defmodule Transformer do
+      @moduledoc false
+      use Spark.Dsl.Transformer
+
+      def transform(dsl) do
+        {:ok, Spark.Dsl.Transformer.persist(dsl, {:foo, :bar, :baz}, 10)}
+      end
+    end
+
     use Spark.Dsl.Extension,
       sections: [@contact, @personal_details, @address, @presets, @awesome_status],
-      verifiers: [Spark.Test.Contact.Verifiers.VerifyNotGandalf]
+      verifiers: [Spark.Test.Contact.Verifiers.VerifyNotGandalf],
+      transformers: [Transformer]
 
     def explain(dsl_state) do
       """

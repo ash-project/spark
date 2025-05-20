@@ -612,26 +612,24 @@ defmodule Spark.Dsl do
 
         @spark_dsl_config @spark_dsl_config
                           |> Map.delete(:eval)
-                          |> Map.update!(:persist, &Map.drop(&1, [:env]))
-
-        @persisted Map.drop(@spark_dsl_config[:persist], [:env])
+                          |> Map.update!(:persist, &Map.drop(&1, [:env, {:foo, :bar, :baz}]))
 
         @doc false
-        for {key, value} <- @persisted do
+        for {key, value} <- @spark_dsl_config[:persist] do
           def persisted(unquote(Macro.escape(key)), _), do: unquote(Macro.escape(value))
         end
 
         def persisted(_, default), do: default
 
         @doc false
-        for {key, value} <- @persisted do
+        for {key, value} <- @spark_dsl_config[:persist] do
           def fetch_persisted(unquote(Macro.escape(key))), do: {:ok, unquote(Macro.escape(value))}
         end
 
         def fetch_persisted(_), do: :error
 
         @doc false
-        for {key, value} <- @persisted do
+        for {key, value} <- @spark_dsl_config[:persist] do
           def persisted(unquote(Macro.escape(key))), do: unquote(Macro.escape(value))
         end
 
@@ -642,15 +640,15 @@ defmodule Spark.Dsl do
            {:%{}, [],
             Enum.map(
               Map.keys(@spark_dsl_config[:persist]),
-              &{&1,
+              &{Macro.escape(&1),
                quote do
-                 persisted(unquote(&1))
+                 persisted(unquote(Macro.escape(&1)))
                end}
             )}}
 
         section_keys =
           for {path, _} <- @spark_dsl_config, is_list(path) do
-            {path,
+            {Macro.escape(path),
              quote do
                %{
                  opts: section_opts(unquote(path)),
@@ -660,6 +658,7 @@ defmodule Spark.Dsl do
           end
 
         @spark_dsl_config_quoted {:%{}, [], [persisted_keys | section_keys]}
+        @persisted_quoted persisted_keys
 
         @doc false
         def spark_dsl_config do
@@ -668,7 +667,7 @@ defmodule Spark.Dsl do
 
         @doc false
         def persisted do
-          @persisted
+          unquote(@persisted_quoted)
         end
 
         cond do
