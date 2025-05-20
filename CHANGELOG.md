@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.58](https://github.com/ash-project/spark/compare/v2.2.57...v2.2.58) (2025-05-20)
+
+
+
+
+### Bug Fixes:
+
+* properly escape persisted keys
+
 ## [v2.2.57](https://github.com/ash-project/spark/compare/v2.2.56...v2.2.57) (2025-05-20)
 
 
