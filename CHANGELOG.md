@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.57](https://github.com/ash-project/spark/compare/v2.2.56...v2.2.57) (2025-05-20)
+
+
+
+
+### Improvements:
+
+* make compiled modules smaller via deriving spark_dsl_config
+
 ## [v2.2.56](https://github.com/ash-project/spark/compare/v2.2.55...v2.2.56) (2025-05-15)
 
 
