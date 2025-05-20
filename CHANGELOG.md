@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.59](https://github.com/ash-project/spark/compare/v2.2.58...v2.2.59) (2025-05-20)
+
+
+
+
+### Bug Fixes:
+
+* retain persisted module attribute
+
 ## [v2.2.58](https://github.com/ash-project/spark/compare/v2.2.57...v2.2.58) (2025-05-20)
 
 
