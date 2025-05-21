@@ -623,7 +623,10 @@ defmodule Spark.Dsl do
         def fetch_persisted(key), do: Map.fetch(persisted(), key)
 
         persisted_keys =
-          {:persist, quote do persisted() end}
+          {:persist,
+           quote do
+             persisted()
+           end}
 
         section_keys =
           for {path, _} <- @spark_dsl_config, is_list(path) do
