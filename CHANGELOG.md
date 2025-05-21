@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.60](https://github.com/ash-project/spark/compare/v2.2.59...v2.2.60) (2025-05-21)
+
+
+
+
+### Bug Fixes:
+
+* don't define a bajillion functions for persisted
+
 ## [v2.2.59](https://github.com/ash-project/spark/compare/v2.2.58...v2.2.59) (2025-05-20)
 
 
