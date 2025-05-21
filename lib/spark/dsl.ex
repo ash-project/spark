@@ -617,36 +617,13 @@ defmodule Spark.Dsl do
         @persisted @spark_dsl_config[:persist]
 
         @doc false
-        for {key, value} <- @spark_dsl_config[:persist] do
-          def persisted(unquote(Macro.escape(key)), _), do: unquote(Macro.escape(value))
-        end
-
-        def persisted(_, default), do: default
+        def persisted(key, value), do: persisted() |> Map.get(key, value)
 
         @doc false
-        for {key, value} <- @spark_dsl_config[:persist] do
-          def fetch_persisted(unquote(Macro.escape(key))), do: {:ok, unquote(Macro.escape(value))}
-        end
-
-        def fetch_persisted(_), do: :error
-
-        @doc false
-        for {key, value} <- @spark_dsl_config[:persist] do
-          def persisted(unquote(Macro.escape(key))), do: unquote(Macro.escape(value))
-        end
-
-        def persisted(_), do: nil
+        def fetch_persisted(key), do: Map.fetch(persisted(), key)
 
         persisted_keys =
-          {:persist,
-           {:%{}, [],
-            Enum.map(
-              Map.keys(@spark_dsl_config[:persist]),
-              &{Macro.escape(&1),
-               quote do
-                 persisted(unquote(Macro.escape(&1)))
-               end}
-            )}}
+          {:persist, quote do persisted() end}
 
         section_keys =
           for {path, _} <- @spark_dsl_config, is_list(path) do
@@ -669,7 +646,7 @@ defmodule Spark.Dsl do
 
         @doc false
         def persisted do
-          unquote(@persisted_quoted)
+          @persisted
         end
 
         cond do
