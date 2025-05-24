@@ -198,39 +198,37 @@ defmodule MyLibrary.Verifiers.UniqueNames do
 end
 ```
 
-## Common Patterns
+## Info Modules
 
-### 1. Extension Composition
+Spark provides an Info Generator system for introspection of DSL-defined modules. All introspection should go through info modules rather than accessing DSL state directly.
 
+### 1. Info Module Generation
 ```elixir
-defmodule MyApp.Resource do
-  use Spark.Dsl,
-    single_extension_kinds: [:data_layer],
-    many_extension_kinds: [:notifiers],
-    default_extensions: [
-      extensions: [
-        MyApp.Resource.Dsl,
-        AnotherExtension
-      ]
-    ]
-end
-```
-
-### 2. Info Module Generation
-
-```elixir
+# Define an info module for your extension
 defmodule MyLibrary.Info do
   use Spark.InfoGenerator,
     extension: MyLibrary.Dsl,
     sections: [:my_section]
 end
 
-# Generates functions like:
-# MyLibrary.Info.my_section_entities(module)
-# MyLibrary.Info.my_section_option!(module, :option_name)
+# The info generator creates accessor functions for DSL data:
+# - MyLibrary.Info.my_section_entities(module)
+# - MyLibrary.Info.my_section_option!(module, :option_name)
+# - MyLibrary.Info.my_section_option(module, :option_name, default)
+
+# Example usage:
+entities = MyLibrary.Info.my_section_entities(MyApp.Example)
+required_option = MyLibrary.Info.my_section_option!(MyApp.Example, :required)
+optional_value = MyLibrary.Info.my_section_option(MyApp.Example, :optional, "default")
 ```
 
-## Key APIs for Claude-code
+Benefits of using info modules:
+- **Type Safety**: Generated functions provide compile-time guarantees
+- **Performance**: Info data is cached and optimized for runtime access
+- **Consistency**: Standardized API across all Spark-based libraries
+- **Documentation**: Auto-generated docs for introspection functions
+
+## Key APIs for Development
 
 ### Essential Functions
 
