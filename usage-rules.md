@@ -219,7 +219,8 @@ end
 # Example usage:
 entities = MyLibrary.Info.my_section_entities(MyApp.Example)
 required_option = MyLibrary.Info.my_section_option!(MyApp.Example, :required)
-optional_value = MyLibrary.Info.my_section_option(MyApp.Example, :optional, "default")
+{:ok,optional_value} = MyLibrary.Info.my_section_option(MyApp.Example, :optional, "default")
+
 ```
 
 Benefits of using info modules:
