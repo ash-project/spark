@@ -4,12 +4,6 @@
 
 Spark is a framework for building Domain-Specific Languages (DSLs) in Elixir. It enables developers to create declarative DSLs with minimal boilerplate.
 
-### Key Characteristics
-- **Purpose**: Build extensible, validated DSLs with compile-time processing
-- **Version**: This guide covers v2.2.60
-- **Dependencies**: `nimble_options` for validation, `sourceror` for code manipulation
-- **Philosophy**: Declarative over imperative, extensibility-first design
-
 ## Core Architecture
 
 ### 1. Entity-Section-Extension Model
