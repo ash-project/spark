@@ -235,7 +235,9 @@ defmodule Spark.Options do
 
     * `{:custom, mod, fun, args}` - A custom type. The related value must be validated
       by `mod.fun(values, ...args)`. The function should return `{:ok, value}` or
-      `{:error, message}`.
+      `{:error, message}`. `args` allow for passing static arguments to the function. If
+      the list is empty, the function must have exactly one argument, i.e. `{:custom, mod, fun, []}`
+      expects `mod.fun/1` to exist.
 
     * `{:or, subtypes}` - A value that matches one of the given `subtypes`. The value is
       matched against the subtypes in the order specified in the list of `subtypes`. If
