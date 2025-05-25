@@ -490,6 +490,45 @@ defmodule Spark.Options do
   function returns `{:error, validation_error}` where `validation_error` is a
   `Spark.Options.ValidationError` struct explaining what's wrong with the options.
   You can use `raise/1` with that struct or `Exception.message/1` to turn it into a string.
+
+  ## Examples
+
+
+      iex> Spark.Options.validate(
+      ...>   [
+      ...>     a: 123,
+      ...>     b: 4.2,
+      ...>     c: :"",
+      ...>     d: "a string"
+      ...>   ],
+      ...>   [
+      ...>     a: [type: :pos_integer],
+      ...>     b: [type: :number],
+      ...>     c: [type: :atom],
+      ...>     d: [type: :string]
+      ...>   ]
+      ...> )
+      {:ok, [a: 123, b: 4.2, c: :"", d: "a string"]}
+
+      iex> Spark.Options.validate(
+      ...>   [
+      ...>     a: 0,
+      ...>     b: -13,
+      ...>   ],
+      ...>   [
+      ...>     a: [type: :pos_integer],
+      ...>     b: [type: :string]
+      ...>   ]
+      ...> )
+      {:error,
+       %Spark.Options.ValidationError{
+         message: "invalid value for :a option: expected positive integer, got: 0",
+         key: :a,
+         value: 0,
+         keys_path: []
+       }}
+
+
   """
   @spec validate(keyword(), schema() | t()) ::
           {:ok, validated_options :: keyword()} | {:error, ValidationError.t()}
