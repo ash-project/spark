@@ -164,9 +164,11 @@ defmodule Spark.Options do
 
     * `:non_neg_integer` - A non-negative integer.
 
-    * `:pos_integer` - A positive integer.
+    * `:pos_integer` - A positive integer (greater than zero).
 
     * `:float` - A float.
+
+    * `:number` - An integer or a float.
 
     * `:timeout` - A non-negative integer or the atom `:infinity`.
 
@@ -379,6 +381,7 @@ defmodule Spark.Options do
     :non_neg_integer,
     :pos_integer,
     :float,
+    :number,
     :module,
     :mfa,
     :mod_arg,
@@ -407,6 +410,7 @@ defmodule Spark.Options do
           | :non_neg_integer
           | :pos_integer
           | :float
+          | :number
           | :timeout
           | :pid
           | :reference
@@ -873,6 +877,14 @@ defmodule Spark.Options do
       key,
       value,
       "invalid value for #{render_key(key)}: expected float, got: #{inspect(value)}"
+    )
+  end
+
+  defp validate_type(:number, key, value) when not is_float(value) and not is_integer(value) do
+    error_tuple(
+      key,
+      value,
+      "invalid value for #{render_key(key)}: expected integer or float, got: #{inspect(value)}"
     )
   end
 
