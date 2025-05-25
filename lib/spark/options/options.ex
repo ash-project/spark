@@ -164,9 +164,11 @@ defmodule Spark.Options do
 
     * `:non_neg_integer` - A non-negative integer.
 
-    * `:pos_integer` - A positive integer.
+    * `:pos_integer` - A positive integer (greater than zero).
 
     * `:float` - A float.
+
+    * `:number` - An integer or a float.
 
     * `:timeout` - A non-negative integer or the atom `:infinity`.
 
@@ -233,7 +235,9 @@ defmodule Spark.Options do
 
     * `{:custom, mod, fun, args}` - A custom type. The related value must be validated
       by `mod.fun(values, ...args)`. The function should return `{:ok, value}` or
-      `{:error, message}`.
+      `{:error, message}`. `args` allow for passing static arguments to the function. If
+      the list is empty, the function must have exactly one argument, i.e. `{:custom, mod, fun, []}`
+      expects `mod.fun/1` to exist.
 
     * `{:or, subtypes}` - A value that matches one of the given `subtypes`. The value is
       matched against the subtypes in the order specified in the list of `subtypes`. If
@@ -379,6 +383,7 @@ defmodule Spark.Options do
     :non_neg_integer,
     :pos_integer,
     :float,
+    :number,
     :module,
     :mfa,
     :mod_arg,
@@ -407,6 +412,7 @@ defmodule Spark.Options do
           | :non_neg_integer
           | :pos_integer
           | :float
+          | :number
           | :timeout
           | :pid
           | :reference
@@ -484,6 +490,45 @@ defmodule Spark.Options do
   function returns `{:error, validation_error}` where `validation_error` is a
   `Spark.Options.ValidationError` struct explaining what's wrong with the options.
   You can use `raise/1` with that struct or `Exception.message/1` to turn it into a string.
+
+  ## Examples
+
+
+      iex> Spark.Options.validate(
+      ...>   [
+      ...>     a: 123,
+      ...>     b: 4.2,
+      ...>     c: :"",
+      ...>     d: "a string"
+      ...>   ],
+      ...>   [
+      ...>     a: [type: :pos_integer],
+      ...>     b: [type: :number],
+      ...>     c: [type: :atom],
+      ...>     d: [type: :string]
+      ...>   ]
+      ...> )
+      {:ok, [a: 123, b: 4.2, c: :"", d: "a string"]}
+
+      iex> Spark.Options.validate(
+      ...>   [
+      ...>     a: 0,
+      ...>     b: -13,
+      ...>   ],
+      ...>   [
+      ...>     a: [type: :pos_integer],
+      ...>     b: [type: :string]
+      ...>   ]
+      ...> )
+      {:error,
+       %Spark.Options.ValidationError{
+         message: "invalid value for :a option: expected positive integer, got: 0",
+         key: :a,
+         value: 0,
+         keys_path: []
+       }}
+
+
   """
   @spec validate(keyword(), schema() | t()) ::
           {:ok, validated_options :: keyword()} | {:error, ValidationError.t()}
@@ -873,6 +918,14 @@ defmodule Spark.Options do
       key,
       value,
       "invalid value for #{render_key(key)}: expected float, got: #{inspect(value)}"
+    )
+  end
+
+  defp validate_type(:number, key, value) when not is_float(value) and not is_integer(value) do
+    error_tuple(
+      key,
+      value,
+      "invalid value for #{render_key(key)}: expected integer or float, got: #{inspect(value)}"
     )
   end
 
