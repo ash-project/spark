@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.61](https://github.com/ash-project/spark/compare/v2.2.60...v2.2.61) (2025-05-26)
+
+
+
+
+### Bug Fixes:
+
+* support more formats for lifting anonymous functions out of quoted contents
+
+### Improvements:
+
+* add `:number` type to handle integers _or_ floats (#183)
+
 ## [v2.2.60](https://github.com/ash-project/spark/compare/v2.2.59...v2.2.60) (2025-05-21)
 
 
