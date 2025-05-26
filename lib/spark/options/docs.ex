@@ -247,6 +247,7 @@ defmodule Spark.Options.Docs do
   def dsl_docs_type(:non_neg_integer), do: "non_neg_integer"
   def dsl_docs_type(:pos_integer), do: "pos_integer"
   def dsl_docs_type(:float), do: "float"
+  def dsl_docs_type(:number), do: "number"
   def dsl_docs_type(:timeout), do: "timeout"
   def dsl_docs_type(:pid), do: "pid"
   def dsl_docs_type(:mfa), do: "mfa"
