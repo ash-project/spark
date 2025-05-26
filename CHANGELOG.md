@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.62](https://github.com/ash-project/spark/compare/v2.2.61...v2.2.62) (2025-05-26)
+
+
+
+
+### Bug Fixes:
+
+* add `get_raw_type/1` clause for `:number` type fixes regressions after the `:number` type implementation (#186)
+
+* add `dsl_docs_type/1` clause for `:number` type
+
 ## [v2.2.61](https://github.com/ash-project/spark/compare/v2.2.60...v2.2.61) (2025-05-26)
 
 
