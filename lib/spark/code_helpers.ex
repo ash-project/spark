@@ -114,6 +114,100 @@ defmodule Spark.CodeHelpers do
   """
   @spec lift_functions(Macro.t(), atom, Macro.Env.t()) :: Macro.t()
   # (Don't) lift functions of the `&Module.function/arity` format
+  # This is a temporary hack to support keyword lists needed by Ash
+  def lift_functions(value, key, caller) when is_list(value) do
+    if Keyword.keyword?(value) do
+      Enum.reduce(value, {[], nil}, fn {k, v}, {keyword, funs} ->
+        {v, functions} = lift_functions(v, key, caller)
+
+        funs =
+          if functions do
+            quote do
+              unquote(funs)
+              unquote(functions)
+            end
+          else
+            funs
+          end
+
+        {[{k, v} | keyword], funs}
+      end)
+      |> then(fn {keyword, funs} ->
+        {Enum.reverse(keyword), funs}
+      end)
+    else
+      {value, nil}
+    end
+  end
+
+  # This is a temporary hack to support function calls needed by Ash
+  def lift_functions({function, meta, args}, key, caller) when is_atom(meta) and is_list(args) do
+    if Keyword.keyword?(args) do
+      Enum.reduce(args, {[], nil}, fn {k, v}, {keyword, funs} ->
+        {v, functions} = lift_functions(v, key, caller)
+
+        funs =
+          if functions do
+            quote do
+              unquote(funs)
+              unquote(functions)
+            end
+          else
+            funs
+          end
+
+        {[{k, v} | keyword], funs}
+      end)
+      |> then(fn {keyword, funs} ->
+        {{function, meta, Enum.reverse(keyword)}, funs}
+      end)
+    else
+      Enum.reduce(args, {[], nil}, fn v, {list, funs} ->
+        {v, functions} = lift_functions(v, key, caller)
+
+        funs =
+          if functions do
+            quote do
+              unquote(funs)
+              unquote(functions)
+            end
+          else
+            funs
+          end
+
+        {[v | list], funs}
+      end)
+      |> then(fn {list, funs} ->
+        {{function, meta, Enum.reverse(list)}, funs}
+      end)
+    end
+  end
+
+  def lift_functions(value, key, caller) when is_list(value) do
+    if Keyword.keyword?(value) do
+      Enum.reduce(value, {[], nil}, fn {k, v}, {keyword, funs} ->
+        {v, functions} = lift_functions(v, key, caller)
+
+        funs =
+          if functions do
+            quote do
+              unquote(funs)
+              unquote(functions)
+            end
+          else
+            funs
+          end
+
+        {[{k, v} | keyword], funs}
+      end)
+      |> then(fn {keyword, funs} ->
+        {Enum.reverse(keyword), funs}
+      end)
+    else
+      {value, nil}
+    end
+  end
+
   def lift_functions({:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value, _key, _caller),
     do: {value, nil}
 
