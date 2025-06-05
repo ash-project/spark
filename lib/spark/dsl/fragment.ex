@@ -51,6 +51,11 @@ defmodule Spark.Dsl.Fragment do
         __CALLER__
       )
 
+    extensions =
+      extensions
+      |> Enum.flat_map(&[&1 | &1.add_extensions()])
+      |> Enum.uniq()
+
     Module.register_attribute(__CALLER__.module, :spark_extension_kinds, persist: true)
     Module.register_attribute(__CALLER__.module, :spark_fragment_of, persist: true)
 
