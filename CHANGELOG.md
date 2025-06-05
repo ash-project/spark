@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.63](https://github.com/ash-project/spark/compare/v2.2.62...v2.2.63) (2025-06-05)
+
+
+
+
+### Bug Fixes:
+
+* handle `adds_extensions` in `Spark.Dsl.Fragment` by Zach Daniel
+
 ## [v2.2.62](https://github.com/ash-project/spark/compare/v2.2.61...v2.2.62) (2025-05-26)
 
 
