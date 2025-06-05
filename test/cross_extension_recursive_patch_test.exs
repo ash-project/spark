@@ -78,6 +78,10 @@ defmodule CrossExtensionPatchTest do
       ]
   end
 
+  defmodule Imports do
+    def foo(), do: 10
+  end
+
   defmodule ExtensionB do
     @moduledoc false
     use Spark.Dsl.Extension,
@@ -89,6 +93,19 @@ defmodule CrossExtensionPatchTest do
   defmodule Dsl do
     @moduledoc false
     use Spark.Dsl, default_extensions: [extensions: [ExtensionA, ExtensionB]]
+  end
+
+  defmodule ExtensionC do
+    use Spark.Dsl.Extension,
+      imports: [Imports]
+  end
+
+  test "fragments include imports from extensions" do
+    defmodule ImportsFragments do
+      use Spark.Dsl.Fragment, of: Dsl, extensions: [ExtensionC]
+
+      10 = foo()
+    end
   end
 
   test "non patched entities are recursive" do
