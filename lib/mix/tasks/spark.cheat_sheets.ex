@@ -43,10 +43,6 @@ if Code.ensure_loaded?(Igniter) do
       }
     end
 
-    def run(argv) do
-      super(argv ++ ["--yes"])
-    end
-
     @impl Igniter.Mix.Task
     def igniter(igniter) do
       igniter.args.options[:extensions]
