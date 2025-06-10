@@ -79,7 +79,7 @@ defmodule CrossExtensionPatchTest do
   end
 
   defmodule Imports do
-    def foo(), do: 10
+    def foo, do: 10
   end
 
   defmodule ExtensionB do
