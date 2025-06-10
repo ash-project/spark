@@ -1116,7 +1116,7 @@ defmodule Spark.Dsl.Extension do
                   section_path,
                   nested_entity,
                   nested_entity.deprecations,
-                  nested_entity_path ++ [entity.name, key],
+                  nested_entity_path ++ [entity.name],
                   key
                 )
 
