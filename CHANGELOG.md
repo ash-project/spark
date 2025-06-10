@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.64](https://github.com/ash-project/spark/compare/v2.2.63...v2.2.64) (2025-06-10)
+
+
+
+
+### Bug Fixes:
+
+* add usage-rules.md to package files list (#197) by Frank Dugan III
+
+* reduce duplication in nested entity names by Zach Daniel
+
 ## [v2.2.63](https://github.com/ash-project/spark/compare/v2.2.62...v2.2.63) (2025-06-05)
 
 
