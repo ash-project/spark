@@ -185,6 +185,12 @@ defmodule Spark.Options do
       Usually used for process initialization using `start_link` and similar. The
       second element of the tuple can be any term.
 
+    * `:regex_as_mfa` - A regex pattern that gets converted to an MFA tuple for caching.
+      Accepts a compiled regex (`~r/pattern/flags`), a string pattern (`"pattern"`), or a
+      tuple of pattern and flags (`{"pattern", "flags"}`) and converts it to
+      `{Spark.Regex, :cache, [source, opts]}` to work around OTP 28's restriction on
+      compile-time regex creation.
+
     * `:fun` - Any function.
 
     * `{:fun, arity}` - Any function with the specified arity.
@@ -387,6 +393,7 @@ defmodule Spark.Options do
     :module,
     :mfa,
     :mod_arg,
+    :regex_as_mfa,
     :string,
     :boolean,
     :timeout,
@@ -1075,6 +1082,33 @@ defmodule Spark.Options do
       key,
       value,
       "invalid value for #{render_key(key)}: expected tuple {mod, fun, args}, got: #{inspect(value)}"
+    )
+  end
+
+
+  defp validate_type(:regex_as_mfa, _key, {Spark.Regex, :cache, [source, opts]}) do
+    {:ok, {Spark.Regex, :cache, [source, opts]}}
+  end
+  defp validate_type(:regex_as_mfa, _key, %Regex{} = regex) do
+    source = Regex.source(regex)
+    opts = Regex.opts(regex)
+    {:ok, {Spark.Regex, :cache, [source, opts]}}
+  end
+
+  defp validate_type(:regex_as_mfa, _key, pattern) when is_binary(pattern) do
+    {:ok, {Spark.Regex, :cache, [pattern, ""]}}
+  end
+
+  defp validate_type(:regex_as_mfa, _key, {pattern, flags})
+       when is_binary(pattern) and is_binary(flags) do
+    {:ok, {Spark.Regex, :cache, [pattern, flags]}}
+  end
+
+  defp validate_type(:regex_as_mfa, key, value) when not is_nil(value) do
+    error_tuple(
+      key,
+      value,
+      "invalid value for #{render_key(key)}: expected regex, string, or {pattern, flags} tuple, got: #{inspect(value)}"
     )
   end
 
