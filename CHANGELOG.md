@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.65](https://github.com/ash-project/spark/compare/v2.2.64...v2.2.65) (2025-06-11)
+
+
+
+
+### Improvements:
+
+* add `:regex_as_mfa` type, for better OTP28+ compatibility by Zach Daniel
+
 ## [v2.2.64](https://github.com/ash-project/spark/compare/v2.2.63...v2.2.64) (2025-06-10)
 
 
