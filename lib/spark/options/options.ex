@@ -1085,10 +1085,10 @@ defmodule Spark.Options do
     )
   end
 
-
   defp validate_type(:regex_as_mfa, _key, {Spark.Regex, :cache, [source, opts]}) do
     {:ok, {Spark.Regex, :cache, [source, opts]}}
   end
+
   defp validate_type(:regex_as_mfa, _key, %Regex{} = regex) do
     source = Regex.source(regex)
     opts = Regex.opts(regex)
