@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.66](https://github.com/ash-project/spark/compare/v2.2.65...v2.2.66) (2025-06-18)
+
+
+
+
+### Bug Fixes:
+
+* add back in --yes in spark.cheat_sheets by Zach Daniel
+
 ## [v2.2.65](https://github.com/ash-project/spark/compare/v2.2.64...v2.2.65) (2025-06-11)
 
 
