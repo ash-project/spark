@@ -301,7 +301,6 @@ defmodule Spark.ElixirSense.PluginTest do
     end
   end
 
-
   describe "function that accepts a spark option schema" do
     test "it autocompletes the opts" do
       buffer = """
