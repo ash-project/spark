@@ -303,10 +303,14 @@ defmodule Spark.Dsl.Transformer do
               :ok
 
             left_before_right? ->
-              :digraph.add_edge(digraph, left, right)
+              if !right in :digraph.out_neighbours(digraph, left) do
+                :digraph.add_edge(digraph, left, right)
+              end
 
             left_after_right? ->
-              :digraph.add_edge(digraph, right, left)
+              if !left in :digraph.out_neighbours(digraph, right) do
+                :digraph.add_edge(digraph, right, left)
+              end
 
             true ->
               :ok
@@ -315,13 +319,13 @@ defmodule Spark.Dsl.Transformer do
       end)
     end)
 
-    transformers = walk_rest(digraph)
+    transformers = walk_rest(digraph, transformers)
     :digraph.delete(digraph)
 
     transformers
   end
 
-  defp walk_rest(digraph, acc \\ []) do
+  defp walk_rest(digraph, transformers, acc \\ []) do
     case :digraph.vertices(digraph) do
       [] ->
         Enum.reverse(acc)
@@ -331,16 +335,22 @@ defmodule Spark.Dsl.Transformer do
           nil ->
             case Enum.find(vertices, &(:digraph.out_neighbours(digraph, &1) == [])) do
               nil ->
-                raise "Cycle detected in transformer order"
+                vertex =
+                  Enum.min_by(vertices, fn l ->
+                    Enum.find_index(transformers, &(&1 == l))
+                  end)
+
+                :digraph.del_vertex(digraph, vertex)
+                walk_rest(digraph, transformers, acc ++ [vertex])
 
               vertex ->
                 :digraph.del_vertex(digraph, vertex)
-                walk_rest(digraph, acc ++ [vertex])
+                walk_rest(digraph, transformers, acc ++ [vertex])
             end
 
           vertex ->
             :digraph.del_vertex(digraph, vertex)
-            walk_rest(digraph, [vertex | acc])
+            walk_rest(digraph, transformers, [vertex | acc])
         end
     end
   end
