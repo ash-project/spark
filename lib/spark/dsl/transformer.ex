@@ -303,12 +303,12 @@ defmodule Spark.Dsl.Transformer do
               :ok
 
             left_before_right? ->
-              if !right in :digraph.out_neighbours(digraph, left) do
+              if right not in :digraph.out_neighbours(digraph, left) do
                 :digraph.add_edge(digraph, left, right)
               end
 
             left_after_right? ->
-              if !left in :digraph.out_neighbours(digraph, right) do
+              if left not in :digraph.out_neighbours(digraph, right) do
                 :digraph.add_edge(digraph, right, left)
               end
 
