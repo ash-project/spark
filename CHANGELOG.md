@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.67](https://github.com/ash-project/spark/compare/v2.2.66...v2.2.67) (2025-06-25)
+
+
+
+
+### Bug Fixes:
+
+* take first transformer in order when graph sorting fails by Zach Daniel
+
 ## [v2.2.66](https://github.com/ash-project/spark/compare/v2.2.65...v2.2.66) (2025-06-18)
 
 
