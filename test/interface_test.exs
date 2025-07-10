@@ -33,18 +33,20 @@ defmodule Spark.InterfaceTest do
 
       assert TestInterface.is_interface?()
       assert TestInterface.interface_for() == Spark.Test.Contact
-      
+
       # Interface should have required values
       required_values = TestInterface.required_values()
       assert length(required_values) > 0
-      
+
       # Check that street is a required value
-      street_required = Enum.any?(required_values, fn
-        {:option, [:address], :street, "123 Main St"} -> true
-        _ -> false
-      end)
-      
+      street_required =
+        Enum.any?(required_values, fn
+          {:option, [:address], :street, "123 Main St"} -> true
+          _ -> false
+        end)
+
       assert street_required
     end
   end
 end
+
