@@ -599,7 +599,11 @@ defmodule Spark.Dsl do
 
         # Validate interfaces at compile time
         for interface <- Module.get_attribute(__MODULE__, :spark_interfaces) || [] do
-          Spark.Dsl.Interface.validate_implementation_at_compile_time(__MODULE__, interface, @spark_dsl_config)
+          Spark.Dsl.Interface.validate_implementation_at_compile_time(
+            __MODULE__,
+            interface,
+            @spark_dsl_config
+          )
         end
 
         # remove

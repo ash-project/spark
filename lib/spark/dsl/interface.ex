@@ -165,49 +165,51 @@ defmodule Spark.Dsl.Interface do
 
       defp extract_required_values(config) do
         config
-        |> Enum.flat_map(fn 
-          {:persist, _} -> 
+        |> Enum.flat_map(fn
+          {:persist, _} ->
             # Skip the :persist key as it's not a section
             []
-          
+
           {section_name, section_config} when is_list(section_name) ->
             # Process regular sections with their path
             extract_section_required_values(section_name, section_config)
-            
+
           _ ->
             []
         end)
       end
 
       defp extract_section_required_values(section_path, section_config) do
-        opts_values = 
+        opts_values =
           case section_config do
             %{opts: opts} when is_list(opts) ->
               extract_options_required_values(section_path, opts)
+
             _ ->
               []
           end
-          
-        entity_values = 
+
+        entity_values =
           case section_config do
             %{entities: entities} when is_list(entities) ->
               Enum.flat_map(entities, &extract_entity_required_values(section_path, &1))
+
             _ ->
               []
           end
-          
+
         opts_values ++ entity_values
       end
 
       defp extract_entity_required_values(section_path, entity) do
         case entity do
           %{name: name, opts: opts} ->
-            non_placeholder_opts = 
+            non_placeholder_opts =
               opts
-              |> Enum.reject(fn {_key, value} -> 
-                Placeholder.placeholder?(value) 
+              |> Enum.reject(fn {_key, value} ->
+                Placeholder.placeholder?(value)
               end)
-            
+
             if non_placeholder_opts == [] do
               []
             else
@@ -221,8 +223,8 @@ defmodule Spark.Dsl.Interface do
 
       defp extract_options_required_values(section_path, opts) do
         opts
-        |> Enum.reject(fn {_key, value} -> 
-          Placeholder.placeholder?(value) 
+        |> Enum.reject(fn {_key, value} ->
+          Placeholder.placeholder?(value)
         end)
         |> Enum.map(fn {key, value} -> {:option, section_path, key, value} end)
       end
@@ -244,9 +246,9 @@ defmodule Spark.Dsl.Interface do
   def validate_implementation(resource_module, interface_module) do
     _interface_contract = interface_module.interface_contract()
     resource_config = resource_module.spark_dsl_config()
-    
+
     required_values = interface_module.required_values()
-    
+
     validate_required_values(resource_config, required_values, interface_module, resource_module)
   end
 
@@ -255,14 +257,19 @@ defmodule Spark.Dsl.Interface do
   """
   def validate_implementation_at_compile_time(resource_module, interface_module, resource_config) do
     _interface_contract = interface_module.interface_contract()
-    
+
     required_values = interface_module.required_values()
-    
+
     validate_required_values(resource_config, required_values, interface_module, resource_module)
   end
 
-  defp validate_required_values(resource_config, required_values, interface_module, resource_module) do
-    missing_values = 
+  defp validate_required_values(
+         resource_config,
+         required_values,
+         interface_module,
+         resource_module
+       ) do
+    missing_values =
       required_values
       |> Enum.filter(fn required_value ->
         not value_present_in_resource?(resource_config, required_value)
@@ -290,8 +297,8 @@ defmodule Spark.Dsl.Interface do
     case Map.get(resource_config, section_path) do
       %{entities: entities} when is_list(entities) ->
         Enum.any?(entities, fn entity ->
-          entity.name == entity_name and 
-          options_match?(entity.opts, required_opts)
+          entity.name == entity_name and
+            options_match?(entity.opts, required_opts)
         end)
 
       _ ->
@@ -317,11 +324,12 @@ defmodule Spark.Dsl.Interface do
   end
 
   defp raise_missing_values_error(missing_values, interface_module, resource_module) do
-    missing_descriptions = 
+    missing_descriptions =
       missing_values
       |> Enum.map(fn
         {:entity, section_path, name, opts} ->
           "Entity #{name} in #{inspect(section_path)} with options #{inspect(opts)}"
+
         {:option, section_path, key, value} ->
           "Option #{key} in #{inspect(section_path)} with value #{inspect(value)}"
       end)
@@ -329,9 +337,9 @@ defmodule Spark.Dsl.Interface do
 
     raise """
     Resource #{inspect(resource_module)} does not implement interface #{inspect(interface_module)}.
-    
+
     Missing required values: #{missing_descriptions}
-    
+
     The interface defines these as required, but they are not present in the implementing resource.
     """
   end

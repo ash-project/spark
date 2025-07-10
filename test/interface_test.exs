@@ -49,4 +49,3 @@ defmodule Spark.InterfaceTest do
     end
   end
 end
-
