@@ -1,7 +1,6 @@
 defmodule Spark.InterfaceIntegrationTest do
   use ExUnit.Case, async: true
 
-
   describe "Interface integration with DSL" do
     test "resource can implement interface successfully" do
       defmodule TestInterface do
