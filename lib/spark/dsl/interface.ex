@@ -250,6 +250,17 @@ defmodule Spark.Dsl.Interface do
     validate_required_values(resource_config, required_values, interface_module, resource_module)
   end
 
+  @doc """
+  Validates interface implementation during compile time when DSL config is available as module attribute.
+  """
+  def validate_implementation_at_compile_time(resource_module, interface_module, resource_config) do
+    _interface_contract = interface_module.interface_contract()
+    
+    required_values = interface_module.required_values()
+    
+    validate_required_values(resource_config, required_values, interface_module, resource_module)
+  end
+
   defp validate_required_values(resource_config, required_values, interface_module, resource_module) do
     missing_values = 
       required_values
@@ -309,10 +320,10 @@ defmodule Spark.Dsl.Interface do
     missing_descriptions = 
       missing_values
       |> Enum.map(fn
-        {:entity, name, opts} ->
-          "Entity #{name} with options #{inspect(opts)}"
-        {:option, key, value} ->
-          "Option #{key} with value #{inspect(value)}"
+        {:entity, section_path, name, opts} ->
+          "Entity #{name} in #{inspect(section_path)} with options #{inspect(opts)}"
+        {:option, section_path, key, value} ->
+          "Option #{key} in #{inspect(section_path)} with value #{inspect(value)}"
       end)
       |> Enum.join(", ")
 

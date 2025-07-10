@@ -147,6 +147,11 @@ defmodule Spark.Dsl do
           type: {:list, :module},
           doc:
             "Fragments to include in the `#{inspect(__MODULE__)}`. See the fragments guide for more."
+        ],
+        interfaces: [
+          type: {:list, :module},
+          doc:
+            "Interfaces to include in the `#{inspect(__MODULE__)}`. See the interfaces guide for more."
         ]
       )
 
@@ -267,6 +272,15 @@ defmodule Spark.Dsl do
             []
           end
 
+        interfaces =
+          if Keyword.keyword?(opts) do
+            opts[:interfaces]
+            |> List.wrap()
+            |> Enum.map(&Spark.Dsl.Extension.do_expand(&1, __CALLER__))
+          else
+            []
+          end
+
         {opts, extensions} =
           parent_opts[:default_extensions]
           |> Enum.reduce(opts, fn {key, defaults}, opts ->
@@ -333,6 +347,11 @@ defmodule Spark.Dsl do
 
         if :elixir_module.mode(__CALLER__.module) == :all do
           Module.put_attribute(__CALLER__.module, :extensions, extensions)
+        end
+
+        # Store interfaces for compile-time validation
+        if :elixir_module.mode(__CALLER__.module) == :all do
+          Module.put_attribute(__CALLER__.module, :spark_interfaces, interfaces)
         end
 
         body =
@@ -576,6 +595,11 @@ defmodule Spark.Dsl do
 
         for {block, bindings} <- Enum.reverse(@spark_dsl_config[:eval] || []) do
           Code.eval_quoted(block, bindings, __ENV__)
+        end
+
+        # Validate interfaces at compile time
+        for interface <- Module.get_attribute(__MODULE__, :spark_interfaces) || [] do
+          Spark.Dsl.Interface.validate_implementation_at_compile_time(__MODULE__, interface, @spark_dsl_config)
         end
 
         # remove
