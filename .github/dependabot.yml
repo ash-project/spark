@@ -1,7 +1,8 @@
-version: 2
+---
 updates:
-- package-ecosystem: mix
-  versioning-strategy: lockfile-only
-  directory: "/"
-  schedule:
-    interval: "daily"
+  - directory: /
+    package-ecosystem: mix
+    schedule:
+      interval: monthly
+    versioning-strategy: lockfile-only
+version: 2
