@@ -30,6 +30,7 @@ defmodule Spark.Dsl.Section do
     describe: "",
     snippet: "",
     links: nil,
+    after_define: nil,
     examples: [],
     modules: [],
     top_level?: false,

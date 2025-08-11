@@ -194,8 +194,14 @@ defmodule Spark.Dsl.Extension do
   rescue
     _ in [UndefinedFunctionError, ArgumentError] ->
       try do
-        dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
-        Spark.Dsl.Transformer.get_entities(dsl, path) || []
+        case Process.get({resource, :spark, path}) do
+          %{entities: entities} ->
+            entities
+
+          _ ->
+            dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
+            Spark.Dsl.Transformer.get_entities(dsl, path) || []
+        end
       rescue
         ArgumentError ->
           try do
@@ -302,8 +308,15 @@ defmodule Spark.Dsl.Extension do
   rescue
     _ in [UndefinedFunctionError, ArgumentError] ->
       try do
-        dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
-        Spark.Dsl.Transformer.fetch_option(dsl, path, key)
+        case Process.get({resource, :spark, :lists.droplast(path)}) do
+          %{options: options} ->
+            Keyword.fetch(options, key)
+
+          _ ->
+            dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
+
+            Spark.Dsl.Transformer.fetch_option(dsl, path, key)
+        end
       rescue
         ArgumentError ->
           try do
@@ -913,9 +926,19 @@ defmodule Spark.Dsl.Extension do
                 end
               ]
 
+          after_define = unquote(section.after_define)
+
           quote do
             with do
               unquote(all_the_code)
+
+              case unquote(after_define) do
+                nil ->
+                  :ok
+
+                {m, f} ->
+                  Code.eval_quoted(apply(m, f, []), [], __ENV__)
+              end
             end
           end
         end
