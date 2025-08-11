@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.68](https://github.com/ash-project/spark/compare/v2.2.67...v2.2.68) (2025-08-11)
+
+
+
+
+### Bug Fixes:
+
+* add after_define option, and use pdict for inline info generation by Zach Daniel
+
 ## [v2.2.67](https://github.com/ash-project/spark/compare/v2.2.66...v2.2.67) (2025-06-25)
 
 
