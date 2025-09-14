@@ -526,6 +526,12 @@ defmodule Spark.Dsl do
             @spark_dsl_config,
             __ENV__
           )
+        catch
+          kind, reason ->
+            IO.warn(
+              "Exception while verifying `#{inspect(__MODULE__)}`\n\n" <>
+                Exception.format(kind, reason, __STACKTRACE__)
+            )
         end
       end
 
