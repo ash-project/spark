@@ -396,6 +396,53 @@ defmodule Spark.DslTest do
     end
   end
 
+  describe "DSL section and entity syntax validation" do
+    test "mixed inline/block syntax should provide helpful error" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Cannot use both inline syntax and block syntax.*personal_details/,
+                   fn ->
+                     defmodule MixedSyntax do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       personal_details first_name: "Luke" do
+                         last_name("Skywalker")
+                       end
+                     end
+                   end
+    end
+
+    test "inline syntax for DSL section should provide helpful error" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Cannot use inline syntax for DSL section.*personal_details/,
+                   fn ->
+                     defmodule InlineSyntax do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       personal_details(first_name: "Luke", last_name: "Skywalker")
+                     end
+                   end
+    end
+
+    test "mixed inline/block syntax for entity should provide helpful error" do
+      assert_raise Spark.Error.DslError,
+                   ~r/Cannot use both inline syntax and block syntax.*preset/,
+                   fn ->
+                     defmodule EntityMixedSyntax do
+                       @moduledoc false
+                       use Spark.Test.Contact
+
+                       presets do
+                         preset :einstein, default_message: "E=mc²" do
+                           contacter(fn x -> x end)
+                         end
+                       end
+                     end
+                   end
+    end
+  end
+
   describe "optional entity arguments" do
     test "optional arguments can be supplied either as arguments or as dsl options" do
       defmodule OptionEinstein do

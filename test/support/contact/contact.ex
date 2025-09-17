@@ -15,7 +15,7 @@ defmodule Spark.Test.Contact do
           doc: "A module"
         ],
         contacter: [
-          doc: "A function that wil contact this person with a message",
+          doc: "A function that will contact this person with a message",
           type:
             {:spark_function_behaviour, Spark.Test.Contact.Contacter,
              Spark.Test.ContacterBuiltins, {Spark.Test.Contact.Contacter.Function, 1}}

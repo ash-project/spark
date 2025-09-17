@@ -471,7 +471,7 @@ defmodule Spark.Dsl.Extension do
         only_sections =
           sections
           |> Enum.reject(& &1.top_level?)
-          |> Enum.map(&{&1.name, 1})
+          |> Enum.flat_map(&[{&1.name, 1}, {&1.name, 2}])
 
         quote generated: true, location: :keep do
           require Spark.Dsl.Extension
@@ -878,11 +878,37 @@ defmodule Spark.Dsl.Extension do
       end
 
       unless section.top_level? && path == [] do
-        defmacro unquote(section.name)(body) do
+        # Handle mixed syntax - personal_details(opts, do: block)
+        defmacro unquote(section.name)(opts, [do: _] = _block) do
+          section_name = unquote(section.name)
+
+          raise Spark.Error.DslError,
+            module: __CALLER__.module,
+            message:
+              "Cannot use both inline syntax and block syntax for DSL section `#{section_name}`. " <>
+                "Use block syntax `#{section_name} do ... end`",
+            path: unquote(path ++ [section.name])
+        end
+
+        # Handle inline syntax and normal block syntax
+        defmacro unquote(section.name)(body_or_opts) do
+          section_name = unquote(section.name)
+
+          # Check if this is inline syntax (keyword list without :do)
+          if is_list(body_or_opts) and not Keyword.has_key?(body_or_opts, :do) do
+            raise Spark.Error.DslError,
+              module: __CALLER__.module,
+              message:
+                "Cannot use inline syntax for DSL section `#{section_name}`. " <>
+                  "Use block syntax: `#{section_name} do ... end`.",
+              path: unquote(path ++ [section.name])
+          end
+
+          body = body_or_opts
+
           opts_module = unquote(opts_module)
           section_path = unquote(path ++ [section.name])
           extension = unquote(extension)
-
           entity_modules = unquote(entity_modules)
 
           patch_modules =
@@ -1226,6 +1252,25 @@ defmodule Spark.Dsl.Extension do
           end
 
           @moduledoc false
+
+          # Generate mixed syntax macro only for entities without optional args
+          if not Enum.any?(entity.args, fn
+               {:optional, _, _} -> true
+               {:optional, _} -> true
+               _ -> false
+             end) do
+            defmacro unquote(entity.name)(unquote_splicing(args), extra_opts, [do: _] = _block) do
+              entity_name = unquote(entity.name)
+
+              raise Spark.Error.DslError,
+                module: __CALLER__.module,
+                message:
+                  "Cannot use both inline syntax and block syntax for entity `#{entity_name}`. " <>
+                    "Use block syntax `#{entity_name} args... do ... end`",
+                path: unquote(section_path ++ nested_entity_path)
+            end
+          end
+
           defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
             section_path = unquote(Macro.escape(section_path))
             entity_schema = unquote(Macro.escape(entity.schema))
