@@ -285,15 +285,15 @@ defmodule Spark.DslTest do
       import ExUnit.CaptureIO
 
       assert capture_io(:stderr, fn ->
-        defmodule Gandalf do
-          @moduledoc false
-          use Spark.Test.Contact
+               defmodule Gandalf do
+                 @moduledoc false
+                 use Spark.Test.Contact
 
-          personal_details do
-            first_name("Gandalf")
-          end
-        end
-      end) =~ "Cannot be gandalf"
+                 personal_details do
+                   first_name("Gandalf")
+                 end
+               end
+             end) =~ "Cannot be gandalf"
     end
 
     test "extensions can add entities to other entities extensions" do
@@ -319,15 +319,15 @@ defmodule Spark.DslTest do
       import ExUnit.CaptureIO
 
       assert capture_io(:stderr, fn ->
-        defmodule Squidward do
-          use Spark.Test.Contact
+               defmodule Squidward do
+                 use Spark.Test.Contact
 
-          presets do
-            preset(:foo)
-            preset(:foo)
-          end
-        end
-      end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+                 presets do
+                   preset(:foo)
+                   preset(:foo)
+                 end
+               end
+             end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
     end
 
     test "singleton entities are validated" do
@@ -382,17 +382,17 @@ defmodule Spark.DslTest do
       import ExUnit.CaptureIO
 
       assert capture_io(:stderr, fn ->
-        defmodule Doc do
-          @moduledoc false
-          use Spark.Test.Contact,
-            extensions: [Spark.Test.ContactPatcher]
+               defmodule Doc do
+                 @moduledoc false
+                 use Spark.Test.Contact,
+                   extensions: [Spark.Test.ContactPatcher]
 
-          presets do
-            preset(:foo)
-            special_preset(:foo)
-          end
-        end
-      end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+                 presets do
+                   preset(:foo)
+                   special_preset(:foo)
+                 end
+               end
+             end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
     end
   end
 
