@@ -1,6 +1,6 @@
 defmodule Spark.Error.DslError do
   @moduledoc "Used when a DSL is incorrectly configured."
-  @attrs [:module, :message, :path, :stacktrace]
+  @attrs [:module, :message, :path, :stacktrace, :location]
   defexception @attrs
 
   @type t :: %__MODULE__{
@@ -8,7 +8,8 @@ defmodule Spark.Error.DslError do
           module: nil | module,
           message: String.t() | any,
           path: [:atom],
-          stacktrace: any
+          stacktrace: any,
+          location: :erl_anno.anno() | nil
         }
 
   defmodule Stacktrace do
@@ -39,12 +40,12 @@ defmodule Spark.Error.DslError do
   end
 
   @impl true
-  def message(%{module: module, message: message, path: blank})
+  def message(%{module: module, message: message, path: blank, location: location})
       when is_nil(blank) or blank == [] do
-    "#{module_line(module)}#{get_message(message)}"
+    "#{module_line(module)}#{get_message(message)}#{get_location(location)}"
   end
 
-  def message(%{module: module, message: message, path: dsl_path}) do
+  def message(%{module: module, message: message, path: dsl_path, location: location}) do
     dsl_path =
       Enum.map_join(dsl_path, " -> ", fn item ->
         try do
@@ -55,7 +56,23 @@ defmodule Spark.Error.DslError do
         end
       end)
 
-    "#{module_line(module)}#{dsl_path}:\n  #{get_message(message)}"
+    "#{module_line(module)}#{dsl_path} #{get_location(location)}:\n  #{get_message(message)}"
+  end
+
+  defp get_location(location)
+  defp get_location(nil), do: ""
+
+  defp get_location(location) do
+    file =
+      case :erl_anno.file(location) do
+        :undefined -> "unknown_file"
+        file -> Path.relative_to_cwd(to_string(file))
+      end
+
+    case :erl_anno.location(location) do
+      {line, column} -> " defined in #{Exception.format_file_line_column(file, line, column)}"
+      line -> "defined in #{Exception.format_file_line(file, line)}"
+    end
   end
 
   defp get_message(message) when is_exception(message) do

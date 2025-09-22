@@ -38,6 +38,10 @@ defmodule Spark.Test.Contact do
         contact: [
           type: :string,
           doc: "Added to incur a conflict between this and the `contact` top level section."
+        ],
+        nicknames: [
+          type: {:list, :string},
+          doc: "A list of nicknames for this contact"
         ]
       ]
     }
@@ -61,19 +65,21 @@ defmodule Spark.Test.Contact do
         :thing,
         :singleton,
         :__identifier__,
+        :anno,
         special?: false
       ]
     end
 
     defmodule Singleton do
       @moduledoc false
-      defstruct [:value]
+      defstruct [:value, :anno]
     end
 
     @singleton %Spark.Dsl.Entity{
       name: :singleton,
       args: [:value],
       target: Singleton,
+      anno_field: :anno,
       schema: [
         value: [
           type: :any
@@ -105,6 +111,7 @@ defmodule Spark.Test.Contact do
       args: [:name],
       target: Preset,
       identifier: :name,
+      anno_field: :anno,
       entities: [
         singleton: [@singleton]
       ],

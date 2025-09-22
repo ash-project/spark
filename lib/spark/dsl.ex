@@ -546,7 +546,7 @@ defmodule Spark.Dsl do
               current_config =
                 Process.get(
                   {__MODULE__, :spark, [section.name]},
-                  %{entities: [], opts: []}
+                  Spark.Dsl.Extension.default_section_config()
                 )
 
               opts =
@@ -561,15 +561,13 @@ defmodule Spark.Dsl do
                     raise Spark.Error.DslError,
                       module: __MODULE__,
                       message: error,
-                      path: [section.name]
+                      path: [section.name],
+                      location: current_config.section_anno
                 end
 
               Process.put(
                 {__MODULE__, :spark, [section.name]},
-                %{
-                  entities: current_config.entities,
-                  opts: opts
-                }
+                %{current_config | entities: current_config.entities, opts: opts}
               )
             end
           end
@@ -595,6 +593,18 @@ defmodule Spark.Dsl do
         def entities(_), do: []
 
         @doc false
+        @spec entities_anno(list(atom)) :: list(:erl_anno.anno() | nil)
+        for {path, %{entities_anno: entities_anno}} <- @spark_dsl_config,
+            is_list(path),
+            is_list(entities_anno) do
+          def entities_anno(unquote(path)) do
+            unquote(Macro.escape(entities_anno))
+          end
+        end
+
+        def entities_anno(_), do: []
+
+        @doc false
         for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           for {key, value} <- opts do
             def fetch_opt(unquote(path), unquote(key)) do
@@ -604,6 +614,44 @@ defmodule Spark.Dsl do
         end
 
         def fetch_opt(_, _), do: :error
+
+        @doc false
+        @spec section_anno(list(atom)) :: :erl_anno.anno() | nil
+        for {path, %{section_anno: section_anno}} <- @spark_dsl_config,
+            is_list(path),
+            not is_nil(section_anno) do
+          def section_anno(unquote(path)) do
+            unquote(Macro.escape(section_anno))
+          end
+        end
+
+        def section_anno(_), do: nil
+
+        @doc false
+        @spec opt_anno(list(atom), atom) :: :erl_anno.anno() | nil
+        for {path, %{opts_anno: opts_anno}} <- @spark_dsl_config,
+            is_list(path),
+            is_list(opts_anno) do
+          for {key, anno} <- opts_anno do
+            def opt_anno(unquote(path), unquote(key)) do
+              unquote(Macro.escape(anno))
+            end
+          end
+        end
+
+        def opt_anno(_, _), do: nil
+
+        @doc false
+        @spec opts_anno(list(atom)) :: Keyword.t()
+        for {path, %{opts_anno: opts_anno}} <- @spark_dsl_config,
+            is_list(path),
+            is_list(opts_anno) do
+          def opts_anno(unquote(path)) do
+            unquote(Macro.escape(opts_anno))
+          end
+        end
+
+        def opts_anno(_), do: []
 
         for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           def section_opts(unquote(path)) do
@@ -639,8 +687,11 @@ defmodule Spark.Dsl do
             {Macro.escape(path),
              quote do
                %{
+                 section_anno: section_anno(unquote(path)),
+                 entities: entities(unquote(path)),
+                 entities_anno: entities_anno(unquote(path)),
                  opts: section_opts(unquote(path)),
-                 entities: entities(unquote(path))
+                 opts_anno: opts_anno(unquote(path))
                }
              end}
           end
@@ -692,10 +743,21 @@ defmodule Spark.Dsl do
       config = Map.delete(fragment.spark_dsl_config(), :persist)
 
       Map.merge(acc, config, fn
-        key, %{entities: entities, opts: opts}, %{entities: right_entities, opts: right_opts} ->
+        key, left_config, right_config ->
           %{
-            entities: entities ++ right_entities,
-            opts: merge_with_warning(opts, right_opts, key, "fragment: #{fragment}")
+            entities: (left_config[:entities] || []) ++ (right_config[:entities] || []),
+            opts:
+              merge_with_warning(
+                left_config[:opts] || [],
+                right_config[:opts] || [],
+                key,
+                "fragment: #{fragment}"
+              ),
+            opts_anno:
+              Keyword.merge(left_config[:opts_anno] || [], right_config[:opts_anno] || []),
+            section_anno: right_config[:section_anno] || left_config[:section_anno],
+            entities_anno:
+              (left_config[:entities_anno] || []) ++ (right_config[:entities_anno] || [])
           }
       end)
     end)

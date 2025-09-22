@@ -1,7 +1,7 @@
 defmodule Spark.Dsl.Extension.Entity do
   @moduledoc false
 
-  def setup(module, recursive_as, nested_key, opts, arg_values) do
+  def setup(module, recursive_as, nested_key, opts, arg_values, anno) do
     parent_recursive_as = Process.get(:parent_recursive_as)
     original_nested_entity_path = Process.get(:recursive_builder_path)
 
@@ -40,7 +40,8 @@ defmodule Spark.Dsl.Extension.Entity do
           raise Spark.Error.DslError,
             module: module,
             message: "Multiple values for key `#{inspect(key)}`",
-            path: nested_entity_path
+            path: nested_entity_path,
+            location: anno
         end
       )
 
@@ -49,7 +50,10 @@ defmodule Spark.Dsl.Extension.Entity do
       keyword_opts
     )
 
-    {original_nested_entity_path, parent_recursive_as, nested_entity_path, current_sections}
+    # Store annotation for entity options error reporting
+    Process.put({:builder_anno, nested_entity_path}, anno)
+
+    {original_nested_entity_path, parent_recursive_as, nested_entity_path, current_sections, anno}
   end
 
   def handle(
@@ -58,7 +62,8 @@ defmodule Spark.Dsl.Extension.Entity do
         nested_entity_keys,
         entity_builder,
         extension,
-        {original_nested_entity_path, parent_recursive_as, nested_entity_path, current_sections}
+        {original_nested_entity_path, parent_recursive_as, nested_entity_path, current_sections,
+         anno}
       ) do
     Process.put(:recursive_builder_path, original_nested_entity_path)
     Process.put(:parent_recursive_as, parent_recursive_as)
@@ -66,10 +71,11 @@ defmodule Spark.Dsl.Extension.Entity do
     current_config =
       Process.get(
         {module, :spark, section_path ++ nested_entity_path},
-        %{entities: [], opts: []}
+        Spark.Dsl.Extension.default_section_config()
       )
 
     opts = Process.delete({:builder_opts, nested_entity_path})
+    Process.delete({:builder_anno, nested_entity_path})
 
     nested_entities =
       nested_entity_keys
@@ -88,9 +94,13 @@ defmodule Spark.Dsl.Extension.Entity do
         end)
       end)
 
-    built = entity_builder.__build__(module, opts, nested_entities)
+    built = entity_builder.__build__(module, opts, nested_entities, anno)
 
-    new_config = %{current_config | entities: current_config.entities ++ [built]}
+    new_config = %{
+      current_config
+      | entities: current_config.entities ++ [built],
+        entities_anno: (current_config.entities_anno || []) ++ [anno]
+    }
 
     unless {extension, section_path} in current_sections do
       Process.put({module, :spark_sections}, [

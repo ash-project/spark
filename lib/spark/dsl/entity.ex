@@ -68,6 +68,7 @@ defmodule Spark.Dsl.Entity do
     :target,
     :transform,
     :recursive_as,
+    :anno_field,
     examples: [],
     entities: [],
     singleton_entity_keys: [],
@@ -212,7 +213,8 @@ defmodule Spark.Dsl.Entity do
           singleton_entity_keys: singleton_entity_keys(),
           snippet: snippet(),
           target: target(),
-          transform: transform()
+          transform: transform(),
+          anno_field: atom() | nil
         }
 
   @doc false
@@ -244,19 +246,22 @@ defmodule Spark.Dsl.Entity do
           transform: transform,
           identifier: identifier,
           singleton_entity_keys: singleton_entity_keys,
-          entities: nested_entity_definitions
+          entities: nested_entity_definitions,
+          anno_field: anno_field
         },
         opts,
-        nested_entities
+        nested_entities,
+        anno
       ) do
     with {:ok, opts, more_nested_entities} <-
-           fetch_single_argument_entities_from_opts(opts, nested_entity_definitions),
+           fetch_single_argument_entities_from_opts(opts, nested_entity_definitions, anno),
          opts <- Keyword.new(opts),
          {before_validate_auto, after_validate_auto} =
            Keyword.split(auto_set_fields || [], Keyword.keys(schema)),
          {:ok, opts} <- Spark.Options.validate(Keyword.merge(opts, before_validate_auto), schema),
          opts <- Keyword.merge(opts, after_validate_auto),
          opts <- Enum.map(opts, fn {key, value} -> {schema[key][:as] || key, value} end),
+         opts <- if(anno_field, do: Keyword.put(opts, anno_field, anno), else: opts),
          built <- struct(target, opts),
          built <-
            struct(
@@ -275,7 +280,7 @@ defmodule Spark.Dsl.Entity do
     end
   end
 
-  defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions) do
+  defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions, anno) do
     Enum.reduce_while(nested_entity_definitions, {:ok, opts, []}, fn
       {key, entity_definitions}, {:ok, opts, more_nested_entities} ->
         entity_definitions
@@ -286,27 +291,27 @@ defmodule Spark.Dsl.Entity do
             values = Keyword.get_values(opts, entity_definition.name)
             opts = Keyword.delete(opts, entity_definition.name)
 
-            Enum.reduce_while(values, {:ok, opts, more_nested_entities}, fn single_arg,
-                                                                            {:ok, opts,
-                                                                             more_nested_entities} ->
-              case build(
-                     entity_definition,
-                     [{Enum.at(entity_definition.args, 0), single_arg}],
-                     []
-                   ) do
-                {:ok, built} ->
-                  {:cont,
-                   {:ok, opts,
-                    Keyword.update(
-                      more_nested_entities,
-                      key,
-                      [built],
-                      &[built | &1]
-                    )}}
+            Enum.reduce_while(values, {:ok, opts, more_nested_entities}, fn
+              single_arg, {:ok, opts, more_nested_entities} ->
+                case build(
+                       entity_definition,
+                       [{Enum.at(entity_definition.args, 0), single_arg}],
+                       [],
+                       anno
+                     ) do
+                  {:ok, built} ->
+                    {:cont,
+                     {:ok, opts,
+                      Keyword.update(
+                        more_nested_entities,
+                        key,
+                        [built],
+                        &[built | &1]
+                      )}}
 
-                {:error, error} ->
-                  {:halt, {:error, error}}
-              end
+                  {:error, error} ->
+                    {:halt, {:error, error}}
+                end
             end)
             |> case do
               {:ok, opts, more_nested_entities} ->

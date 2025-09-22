@@ -179,19 +179,30 @@ Verifiers validate the final DSL state:
 ```elixir
 defmodule MyLibrary.Verifiers.UniqueNames do
   use Spark.Dsl.Verifier
-  
+
   def verify(dsl_state) do
     entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
+    entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:my_section])
     names = Enum.map(entities, & &1.name)
-    
+
     if length(names) == length(Enum.uniq(names)) do
       :ok
     else
+      # Find the duplicate entity to get its location
+      duplicate_name =
+        names
+        |> Enum.frequencies()
+        |> Enum.find_value(fn {name, count} -> if count > 1, do: name end)
+
+      duplicate_index = Enum.find_index(entities, &(&1.name == duplicate_name))
+      location = if duplicate_index, do: Enum.at(entities_anno, duplicate_index)
+
       {:error,
-       Spark.Error.DslError.exception(,
-         message: "Entity names must be unique",
-         path: [:my_section],
-         module: Spark.Dsl.Verifier.get_persisted(dsl_state, :module)
+       Spark.Error.DslError.exception(
+         message: "Entity names must be unique, found duplicate: #{duplicate_name}",
+         path: [:my_section, duplicate_name],
+         module: Spark.Dsl.Verifier.get_persisted(dsl_state, :module),
+         location: location
        )}
     end
   end
@@ -249,6 +260,12 @@ value = Spark.Dsl.Transformer.get_persisted(dsl_state, :key)
 
 # Get current module being compiled
 module = Spark.Dsl.Verifier.get_persisted(dsl_state, :module)
+
+# Get annotation information for error reporting
+section_anno = Spark.Dsl.Transformer.get_section_anno(dsl_state, [:section_path])
+option_anno = Spark.Dsl.Transformer.get_opt_anno(dsl_state, [:section_path], :option_name)
+entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:section_path])
+entity_anno = Spark.Dsl.Transformer.get_entity_anno(dsl_state, [:section_path], entity_index)
 ```
 
 ### Schema Definition with Spark.Options
@@ -289,7 +306,33 @@ Always provide context in errors:
  Spark.Error.DslError.exception(
    message: "Clear error message",
    path: [:section, :subsection],  # DSL path
-   module: module                   # Module being compiled
+   module: module,                  # Module being compiled
+   location: annotation             # Source location (when available)
+ )}
+```
+
+### Error Location Information
+
+When creating DslErrors, include location information whenever possible to help developers quickly identify the source of issues:
+
+```elixir
+# For entity-related errors, get entity annotations
+entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:section_path])
+entity_location = Enum.at(entities_anno, entity_index)
+
+# For section-related errors, get section annotations
+section_location = Spark.Dsl.Transformer.get_section_anno(dsl_state, [:section_path])
+
+# For option-related errors, get option annotations
+option_location = Spark.Dsl.Transformer.get_opt_anno(dsl_state, [:section_path], :option_name)
+
+# Include in DslError
+{:error,
+ Spark.Error.DslError.exception(
+   message: "Detailed error message",
+   path: [:section_path],
+   module: module,
+   location: entity_location  # or section_location, option_location
  )}
 ```
 
@@ -345,6 +388,7 @@ When coding with Spark:
 2. Leverage compile-time processing for validation
 3. Use transformers for complex logic
 4. Test DSLs thoroughly
-5. Provide clear error messages
-6. Document your DSLs well
+5. Provide clear error messages with location information
+6. Use annotation introspection for better debugging
+7. Document your DSLs well
 

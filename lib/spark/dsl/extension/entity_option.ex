@@ -31,10 +31,14 @@ defmodule Spark.Dsl.Extension.EntityOption do
     current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
     if Keyword.has_key?(current_opts, key) do
+      # Get the annotation for this entity from the Process store
+      entity_anno = Process.get({:builder_anno, nested_entity_path})
+
       raise Spark.Error.DslError,
         module: module,
         message: "Multiple values for key `#{inspect(key)}`",
-        path: nested_entity_path
+        path: nested_entity_path,
+        location: entity_anno
     end
 
     Process.put(
