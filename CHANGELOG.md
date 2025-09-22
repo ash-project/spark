@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.2.69](https://github.com/ash-project/spark/compare/v2.2.68...v2.2.69) (2025-09-22)
+
+
+
+
+### Bug Fixes:
+
+* don't raise in verifiers, as it breaks compilation sometimes by Zach Daniel
+
 ## [v2.2.68](https://github.com/ash-project/spark/compare/v2.2.67...v2.2.68) (2025-08-11)
 
 
