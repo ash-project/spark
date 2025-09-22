@@ -111,10 +111,7 @@ defmodule Spark.MixProject do
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:git_ops, "~> 2.5", only: [:dev, :test]},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:elixir_sense,
-       github: "zachdaniel/elixir_sense",
-       only: [:dev, :test, :docs],
-       ref: "572c81c4046e12857b734abc28aa14b7d1f6f595"},
+      {:elixir_sense, github: "elixir-lsp/elixir_sense", only: [:dev, :test, :docs]},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false}
     ]
   end

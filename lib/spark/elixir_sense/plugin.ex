@@ -362,9 +362,9 @@ defmodule Spark.ElixirSense.Plugin do
     {ast, find_cursor_in_params(params, call, meta)}
   end
 
-  defp find_call_pre({atom, meta, params} = ast, _state)
-       when is_atom(atom) and is_list(params) and atom not in [:{}, :%{}] do
-    {ast, find_cursor_in_params(params, atom, meta)}
+  # Special handling for use calls
+  defp find_call_pre({:use, meta, [module_ast | params]} = ast, _state) do
+    {ast, find_cursor_in_params([module_ast | params], [module_ast, :use], meta)}
   end
 
   defp find_call_pre({atom, meta, params} = ast, _state)
@@ -587,29 +587,35 @@ defmodule Spark.ElixirSense.Plugin do
   defp cursor_at_value_type_path(_), do: nil
 
   defp autocomplete_spark_options(hint, _, {module, function_call, arg_index, info}, opts) do
-    case Code.fetch_docs(module) do
-      {:docs_v1, _a, :elixir, _b, _c, _d, functions} ->
-        schema =
-          Enum.find_value(functions, fn
-            {{_, ^function_call, _}, _, _, _, %{spark_opts: spark_opts}} ->
-              Enum.find_value(spark_opts, fn {index, schema} ->
-                if index == arg_index do
-                  schema
-                end
-              end)
+    if (function_call == :use and arg_index > 0) && Code.ensure_loaded?(module) &&
+         function_exported?(module, :opt_schema, 0) do
+      schema = module.opt_schema()
+      {:override, Enum.uniq(autocomplete_schema(schema, hint, info.value_type_path, opts))}
+    else
+      case Code.fetch_docs(module) do
+        {:docs_v1, _a, :elixir, _b, _c, _d, functions} ->
+          schema =
+            Enum.find_value(functions, fn
+              {{_, ^function_call, _}, _, _, _, %{spark_opts: spark_opts}} ->
+                Enum.find_value(spark_opts, fn {index, schema} ->
+                  if index == arg_index do
+                    schema
+                  end
+                end)
 
-            _ ->
-              nil
-          end)
+              _ ->
+                nil
+            end)
 
-        if schema do
-          {:override, Enum.uniq(autocomplete_schema(schema, hint, info.value_type_path, opts))}
-        else
+          if schema do
+            {:override, Enum.uniq(autocomplete_schema(schema, hint, info.value_type_path, opts))}
+          else
+            :ignore
+          end
+
+        _ ->
           :ignore
-        end
-
-      _ ->
-        :ignore
+      end
     end
   end
 
