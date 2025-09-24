@@ -319,7 +319,7 @@ defmodule Spark.CheatSheet do
     |> String.replace("|", "\\|")
     |> tap(fn thing ->
       if String.contains?(thing, "\n") do
-        IO.warn("""
+        Spark.Warning.warn("""
         Multi-line DSL option doc detected. Please move contextual information into the
         doc of a section, entity or module.
         #{thing}

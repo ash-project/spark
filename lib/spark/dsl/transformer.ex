@@ -13,11 +13,14 @@ defmodule Spark.Dsl.Transformer do
   but keep in mind that no modifications to the dsl structure will be retained, so there is no
   real point in modifying the dsl that you return.
   """
+
+  @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
+
   @callback transform(map) ::
               :ok
               | {:ok, map}
               | {:error, term}
-              | {:warn, map, String.t() | list(String.t())}
+              | {:warn, map, warning() | list(warning())}
               | :halt
   @callback before?(module) :: boolean
   @callback after?(module) :: boolean

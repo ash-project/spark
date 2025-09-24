@@ -5,14 +5,17 @@ if Code.ensure_loaded?(Jason) do
     use Mix.Task
 
     def run(opts) do
-      IO.warn("""
-      You should switch to using `Spark.Docs.search_data_for(dsl_module)` instead of this task.
+      Spark.Warning.warn_deprecated(
+        "mix spark.cheat_sheets_in_search task",
+        """
+        You should switch to using `Spark.Docs.search_data_for(dsl_module)` instead of this task.
 
-      i.e
+        i.e
 
-        {"documentation/dsls/DSL-Ash.Resource.md",
-         search_data: Spark.Docs.search_data_for(Ash.Resource.Dsl)},
-      """)
+          {"documentation/dsls/DSL-Ash.Resource.md",
+           search_data: Spark.Docs.search_data_for(Ash.Resource.Dsl)},
+        """
+      )
 
       Mix.Task.run("compile")
 

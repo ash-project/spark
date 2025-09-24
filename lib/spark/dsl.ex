@@ -481,7 +481,13 @@ defmodule Spark.Dsl do
                   {:warn, warnings} ->
                     warnings
                     |> List.wrap()
-                    |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+                    |> Enum.each(fn
+                      {warning, location} ->
+                        Spark.Warning.warn(warning, location, Macro.Env.stacktrace(__ENV__))
+
+                      warning ->
+                        Spark.Warning.warn(warning, nil, Macro.Env.stacktrace(__ENV__))
+                    end)
 
                     []
 
@@ -528,9 +534,16 @@ defmodule Spark.Dsl do
           )
         catch
           kind, reason ->
-            IO.warn(
-              "Exception while verifying `#{inspect(__MODULE__)}`\n\n" <>
-                Exception.format(kind, reason, __STACKTRACE__)
+            Spark.Warning.warn(
+              """
+              Exception while verifying `#{inspect(__MODULE__)}:`
+              #{Exception.format(kind, reason, __STACKTRACE__)}
+              """,
+              case reason do
+                %Spark.Error.DslError{location: location} -> location
+                _ -> nil
+              end,
+              __STACKTRACE__
             )
         end
       end
@@ -777,7 +790,7 @@ defmodule Spark.Dsl do
             ""
           end
 
-        IO.warn(
+        Spark.Warning.warn(
           "#{Enum.join(path ++ [key], ".")} is being overwritten from #{inspect(left)} to #{inspect(right)}#{by}"
         )
 

@@ -284,16 +284,24 @@ defmodule Spark.DslTest do
     test "verifiers are run" do
       import ExUnit.CaptureIO
 
-      assert capture_io(:stderr, fn ->
-               defmodule Gandalf do
-                 @moduledoc false
-                 use Spark.Test.Contact
+      base_line = __ENV__.line
 
-                 personal_details do
-                   first_name("Gandalf")
-                 end
-               end
-             end) =~ "Cannot be gandalf"
+      message =
+        capture_io(:stderr, fn ->
+          defmodule Gandalf do
+            @moduledoc false
+            use Spark.Test.Contact
+
+            personal_details do
+              # Line offset: +10
+              first_name("Gandalf")
+            end
+          end
+        end)
+
+      assert message =~ "Cannot be gandalf"
+      assert message =~ "(defined in test/dsl_test.exs:#{base_line + 10}:)"
+      assert message =~ "~~~"
     end
 
     test "extensions can add entities to other entities extensions" do

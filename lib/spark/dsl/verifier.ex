@@ -4,10 +4,13 @@ defmodule Spark.Dsl.Verifier do
 
   In a verifier, you can reference and depend on other modules without causing compile time dependencies.
   """
+
+  @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
+
   @callback verify(map) ::
               :ok
               | {:error, term}
-              | {:warn, String.t() | list(String.t())}
+              | {:warn, warning() | list(warning())}
 
   defmacro __using__(_) do
     quote generated: true do

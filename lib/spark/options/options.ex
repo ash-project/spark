@@ -862,7 +862,7 @@ defmodule Spark.Options do
     case Keyword.fetch(schema, key) do
       {:ok, schema} ->
         if message = Keyword.get(schema, :deprecated) do
-          IO.warn("#{render_key(key)} is deprecated. " <> message)
+          Spark.Warning.warn_deprecated("#{render_key(key)}", message)
         end
 
         {:ok, value, schema}

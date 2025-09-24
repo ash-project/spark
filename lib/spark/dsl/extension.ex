@@ -777,7 +777,13 @@ defmodule Spark.Dsl.Extension do
         {:warn, new_dsl, warnings} ->
           warnings
           |> List.wrap()
-          |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(env)))
+          |> Enum.each(fn
+            {warning, location} ->
+              Spark.Warning.warn(warning, location, Macro.Env.stacktrace(env))
+
+            warning ->
+              Spark.Warning.warn(warning, nil, Macro.Env.stacktrace(env))
+          end)
 
           {:cont, new_dsl}
 
@@ -1630,8 +1636,10 @@ defmodule Spark.Dsl.Extension do
           path -> "#{path}."
         end
 
-      IO.warn(
-        "The #{prefix}#{field} key will be deprecated in an upcoming release!\n\n#{deprecations[field]}",
+      Spark.Warning.warn_deprecated(
+        "The #{prefix}#{field} key",
+        "will be deprecated in an upcoming release!\n\n#{deprecations[field]}",
+        nil,
         Macro.Env.stacktrace(env)
       )
     end
@@ -2009,7 +2017,7 @@ defmodule Spark.Dsl.Extension do
         if section.patchable? || Enum.any?(section.entities, &(&1.target == entity.target)) do
           entities ++ [entity_mod_name(extension.module_prefix(), [], section_path, entity)]
         else
-          IO.warn(
+          Spark.Warning.warn(
             "Attempt to add an entity with a patch to a non-patchable DSL section that has no compatible entities"
           )
 

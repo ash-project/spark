@@ -9,7 +9,8 @@ defmodule Spark.Test.Contact.Verifiers.VerifyNotGandalf do
        Spark.Error.DslError.exception(
          message: "Cannot be gandalf",
          path: [:personal_details, :first_name],
-         module: Verifier.get_persisted(dsl, :module)
+         module: Verifier.get_persisted(dsl, :module),
+         location: Spark.Dsl.Transformer.get_opt_anno(dsl, [:personal_details], :first_name)
        )}
     else
       :ok
