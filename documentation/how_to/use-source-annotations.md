@@ -85,29 +85,40 @@ end)
 first_entity_anno = Spark.Dsl.Extension.get_entity_anno(dsl_state, [:my_section], 0)
 ```
 
-### Entity Anno Fields (Optional)
+### Entity Annotations
 
-For convenience, entities can also include annotations directly in their structs
-by defining an `anno_field`:
+For direct access to annotations, entities should include the
+`__spark_metadata__` field in their struct definition:
 
 ```elixir
-# Define entity with anno_field
+defmodule MyEntity do
+  defstruct [
+    :name,
+    :__spark_metadata__ # Required for annotation access
+  ]
+end
+
 @my_entity %Spark.Dsl.Entity{
   name: :my_entity,
   target: MyEntity,
-  anno_field: :anno, # Automatically populated with location info
   schema: [
     name: [type: :atom, required: true]
   ]
 }
 
-# Access annotation from entity struct
+# Access annotations
 entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
 Enum.each(entities, fn entity ->
-  if entity.anno do
-    line = :erl_anno.location(entity.anno)
-    file = :erl_anno.file(entity.anno) |> to_string()
-    IO.puts("Entity #{entity.name} defined at #{file}:#{line}")
+  if entity_anno = Spark.Dsl.Entity.anno(entity) do
+    line = :erl_anno.location(entity_anno)
+    file = :erl_anno.file(entity_anno) |> to_string()
+    IO.puts("Entity defined at #{file}:#{line}")
+  end
+
+  if name_anno = Spark.Dsl.Entity.property_anno(entity, :name) do
+    line = :erl_anno.location(name_anno)
+    file = :erl_anno.file(name_anno) |> to_string()
+    IO.puts("Entity name property defined at #{file}:#{line}")
   end
 end)
 ```

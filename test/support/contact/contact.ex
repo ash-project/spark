@@ -65,21 +65,20 @@ defmodule Spark.Test.Contact do
         :thing,
         :singleton,
         :__identifier__,
-        :anno,
+        :__spark_metadata__,
         special?: false
       ]
     end
 
     defmodule Singleton do
       @moduledoc false
-      defstruct [:value, :anno]
+      defstruct [:value, :__spark_metadata__]
     end
 
     @singleton %Spark.Dsl.Entity{
       name: :singleton,
       args: [:value],
       target: Singleton,
-      anno_field: :anno,
       schema: [
         value: [
           type: :any
@@ -111,7 +110,6 @@ defmodule Spark.Test.Contact do
       args: [:name],
       target: Preset,
       identifier: :name,
-      anno_field: :anno,
       entities: [
         singleton: [@singleton]
       ],

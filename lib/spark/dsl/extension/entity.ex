@@ -75,6 +75,7 @@ defmodule Spark.Dsl.Extension.Entity do
       )
 
     opts = Process.delete({:builder_opts, nested_entity_path})
+    opts_anno = Process.delete({:builder_opts_anno, nested_entity_path})
     Process.delete({:builder_anno, nested_entity_path})
 
     nested_entities =
@@ -94,7 +95,7 @@ defmodule Spark.Dsl.Extension.Entity do
         end)
       end)
 
-    built = entity_builder.__build__(module, opts, nested_entities, anno)
+    built = entity_builder.__build__(module, opts, nested_entities, anno, opts_anno)
 
     new_config = %{
       current_config

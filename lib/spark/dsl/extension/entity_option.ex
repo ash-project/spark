@@ -26,7 +26,7 @@ defmodule Spark.Dsl.Extension.EntityOption do
     Spark.CodeHelpers.lift_functions(value, field, caller)
   end
 
-  def set_entity_option(module, key, value) do
+  def set_entity_option(module, key, value, anno \\ nil) do
     nested_entity_path = Process.get(:recursive_builder_path)
     current_opts = Process.get({:builder_opts, nested_entity_path}, [])
 
@@ -45,5 +45,15 @@ defmodule Spark.Dsl.Extension.EntityOption do
       {:builder_opts, nested_entity_path},
       Keyword.put(current_opts, key, value)
     )
+
+    # Store property annotation if provided
+    if anno do
+      current_opts_anno = Process.get({:builder_opts_anno, nested_entity_path}, %{})
+
+      Process.put(
+        {:builder_opts_anno, nested_entity_path},
+        Map.put(current_opts_anno, key, anno)
+      )
+    end
   end
 end

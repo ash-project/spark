@@ -1305,12 +1305,13 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
-          def __build__(module, opts, nested_entities, anno) do
+          def __build__(module, opts, nested_entities, anno, opts_anno) do
             case Spark.Dsl.Entity.build(
                    unquote(Macro.escape(entity)),
                    opts,
                    nested_entities,
-                   anno
+                   anno,
+                   opts_anno
                  ) do
               {:ok, built} ->
                 built
@@ -1597,7 +1598,8 @@ defmodule Spark.Dsl.Extension do
               Spark.Dsl.Extension.EntityOption.set_entity_option(
                 __MODULE__,
                 unquote(key),
-                unquote(value)
+                unquote(value),
+                unquote(Spark.Dsl.Extension.macro_env_anno(__CALLER__, nil))
               )
             end
           end

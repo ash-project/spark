@@ -475,12 +475,14 @@ defmodule Spark.DslTest do
       entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
 
       [first, second] = Enum.sort_by(entities, & &1.name)
+      first_anno = Spark.Dsl.Entity.anno(first)
+      second_anno = Spark.Dsl.Entity.anno(second)
 
-      assert :erl_anno.location(first.anno) == base_line + 8
-      assert :erl_anno.location(second.anno) == base_line + 13
+      assert :erl_anno.location(first_anno) == base_line + 8
+      assert :erl_anno.location(second_anno) == base_line + 13
 
-      assert :erl_anno.file(first.anno) == String.to_charlist(__ENV__.file)
-      assert :erl_anno.file(second.anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(first_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(second_anno) == String.to_charlist(__ENV__.file)
     end
 
     test "nested entities capture annotations" do
@@ -502,11 +504,13 @@ defmodule Spark.DslTest do
       dsl_state = NestedEntityAnnoTest.spark_dsl_config()
       [entity | _] = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
 
-      assert :erl_anno.location(entity.anno) == base_line + 8
-      assert :erl_anno.file(entity.anno) == String.to_charlist(__ENV__.file)
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 8
+      assert :erl_anno.file(entity_anno) == String.to_charlist(__ENV__.file)
 
-      assert :erl_anno.location(entity.singleton.anno) == base_line + 10
-      assert :erl_anno.file(entity.singleton.anno) == String.to_charlist(__ENV__.file)
+      singleton_anno = Spark.Dsl.Entity.anno(entity.singleton)
+      assert :erl_anno.location(singleton_anno) == base_line + 10
+      assert :erl_anno.file(singleton_anno) == String.to_charlist(__ENV__.file)
     end
 
     test "annotations include end_location when available (OTP 28+)" do
@@ -531,11 +535,12 @@ defmodule Spark.DslTest do
       entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
 
       [entity | _] = entities
-      assert :erl_anno.location(entity.anno) == base_line + 8
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 8
 
       # Check if end_location is supported and set
       if function_exported?(:erl_anno, :set_end_location, 1) do
-        end_location = :erl_anno.end_location(entity.anno)
+        end_location = :erl_anno.end_location(entity_anno)
 
         # Should be at or after start
         assert end_location >= base_line + 8
@@ -584,8 +589,11 @@ defmodule Spark.DslTest do
       fragment_entity = Enum.find(entities, &(&1.name == :fragment_preset))
       main_entity = Enum.find(entities, &(&1.name == :main_preset))
 
-      assert String.to_charlist(__ENV__.file) == :erl_anno.file(fragment_entity.anno)
-      assert String.to_charlist(__ENV__.file) == :erl_anno.file(main_entity.anno)
+      fragment_anno = Spark.Dsl.Entity.anno(fragment_entity)
+      main_anno = Spark.Dsl.Entity.anno(main_entity)
+
+      assert String.to_charlist(__ENV__.file) == :erl_anno.file(fragment_anno)
+      assert String.to_charlist(__ENV__.file) == :erl_anno.file(main_anno)
     end
 
     test "introspection functions can extract annotations" do
@@ -601,7 +609,9 @@ defmodule Spark.DslTest do
         end
 
         presets do
-          preset(:test_preset)
+          preset :test_preset do
+            default_message("Hello World")
+          end
         end
       end
 
@@ -623,11 +633,15 @@ defmodule Spark.DslTest do
 
       assert :erl_anno.location(last_name_anno) == base_line + 8
 
-      # Test get_entities_with_anno returns entities with their annotations intact
+      # Test get_entities returns entities with their annotations intact
       entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
       assert length(entities) == 1
       [entity] = entities
-      assert :erl_anno.location(entity.anno) == base_line + 12
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 12
+
+      default_message_anno = Spark.Dsl.Entity.property_anno(entity, :default_message)
+      assert :erl_anno.location(default_message_anno) == base_line + 13
     end
 
     test "entity annotations can be accessed via introspection regardless of anno_field" do
