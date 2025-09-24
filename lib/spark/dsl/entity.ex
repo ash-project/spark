@@ -215,6 +215,18 @@ defmodule Spark.Dsl.Entity do
           transform: transform()
         }
 
+  @opaque spark_meta() :: %Spark.Dsl.Entity.Meta{
+            anno: :erl_anno.anno() | nil,
+            properties_anno: %{optional(atom()) => :erl_anno.anno() | nil}
+          }
+
+  @type entity() :: %{
+          required(:__struct__) => module(),
+          required(:__spark_metadata__) => spark_meta() | nil,
+          optional(:__identifier__) => term(),
+          optional(atom()) => term()
+        }
+
   @doc false
   def arg_names(entity) do
     entity.args
@@ -247,10 +259,17 @@ defmodule Spark.Dsl.Entity do
           entities: nested_entity_definitions
         },
         opts,
-        nested_entities
+        nested_entities,
+        anno,
+        opts_anno
       ) do
     with {:ok, opts, more_nested_entities} <-
-           fetch_single_argument_entities_from_opts(opts, nested_entity_definitions),
+           fetch_single_argument_entities_from_opts(
+             opts,
+             nested_entity_definitions,
+             anno,
+             opts_anno
+           ),
          opts <- Keyword.new(opts),
          {before_validate_auto, after_validate_auto} =
            Keyword.split(auto_set_fields || [], Keyword.keys(schema)),
@@ -270,12 +289,30 @@ defmodule Spark.Dsl.Entity do
              )
            ),
          {:ok, built} <- validate_singleton_entity_keys(built, singleton_entity_keys),
+         built <- maybe_set_spark_metadata(built, anno, opts_anno || %{}),
          {:ok, built} <- transform(transform, built) do
       maybe_apply_identifier(built, identifier)
     end
   end
 
-  defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions) do
+  defp maybe_set_spark_metadata(built, anno, opts_anno) do
+    if Map.has_key?(built, :__spark_metadata__) do
+      metadata = %Spark.Dsl.Entity.Meta{anno: anno, properties_anno: opts_anno}
+      %{built | __spark_metadata__: metadata}
+    else
+      Spark.Warning.warn_deprecated(
+        "Entity without __spark_metadata__ field",
+        "Entity #{inspect(built.__struct__)} does not define a `__spark_metadata__` field. " <>
+          "This field is required to access source annotations. " <>
+          "Add `__spark_metadata__: nil` to the defstruct for #{inspect(built.__struct__)}.",
+        anno
+      )
+
+      built
+    end
+  end
+
+  defp fetch_single_argument_entities_from_opts(opts, nested_entity_definitions, anno, opts_anno) do
     Enum.reduce_while(nested_entity_definitions, {:ok, opts, []}, fn
       {key, entity_definitions}, {:ok, opts, more_nested_entities} ->
         entity_definitions
@@ -286,27 +323,28 @@ defmodule Spark.Dsl.Entity do
             values = Keyword.get_values(opts, entity_definition.name)
             opts = Keyword.delete(opts, entity_definition.name)
 
-            Enum.reduce_while(values, {:ok, opts, more_nested_entities}, fn single_arg,
-                                                                            {:ok, opts,
-                                                                             more_nested_entities} ->
-              case build(
-                     entity_definition,
-                     [{Enum.at(entity_definition.args, 0), single_arg}],
-                     []
-                   ) do
-                {:ok, built} ->
-                  {:cont,
-                   {:ok, opts,
-                    Keyword.update(
-                      more_nested_entities,
-                      key,
-                      [built],
-                      &[built | &1]
-                    )}}
+            Enum.reduce_while(values, {:ok, opts, more_nested_entities}, fn
+              single_arg, {:ok, opts, more_nested_entities} ->
+                case build(
+                       entity_definition,
+                       [{Enum.at(entity_definition.args, 0), single_arg}],
+                       [],
+                       anno,
+                       opts_anno
+                     ) do
+                  {:ok, built} ->
+                    {:cont,
+                     {:ok, opts,
+                      Keyword.update(
+                        more_nested_entities,
+                        key,
+                        [built],
+                        &[built | &1]
+                      )}}
 
-                {:error, error} ->
-                  {:halt, {:error, error}}
-              end
+                  {:error, error} ->
+                    {:halt, {:error, error}}
+                end
             end)
             |> case do
               {:ok, opts, more_nested_entities} ->
@@ -370,5 +408,60 @@ defmodule Spark.Dsl.Entity do
 
   def transform({module, function, args}, built) do
     apply(module, function, [built | args])
+  end
+
+  @doc """
+  Get the annotation for an entity.
+
+  Returns the annotation that was captured when the entity was defined,
+  or `nil` if no annotation is available or the entity doesn't have the
+  `:__spark_metadata__` field.
+  """
+  @spec anno(entity()) :: :erl_anno.anno() | nil
+  def anno(entity)
+
+  def anno(%_{__spark_metadata__: %Spark.Dsl.Entity.Meta{anno: anno}}) when anno != nil,
+    do: anno
+
+  def anno(%_{__spark_metadata__: _}), do: nil
+
+  def anno(%struct{}) do
+    IO.warn(
+      "Entity #{inspect(struct)} does not define a `__spark_metadata__` field. " <>
+        "This field is required to access source annotations. " <>
+        "Add `__spark_metadata__: nil` to the defstruct for #{inspect(struct)}."
+    )
+
+    nil
+  end
+
+  @doc """
+  Get the annotation for a specific property of an entity.
+
+  Returns the annotation that was captured when the property was set on the entity,
+  or `nil` if no annotation is available for that property or the entity doesn't have
+  the `:__spark_metadata__` field.
+  """
+  @spec property_anno(entity(), atom()) :: :erl_anno.anno() | nil
+  def property_anno(entity, property)
+
+  def property_anno(
+        %_{__spark_metadata__: %Spark.Dsl.Entity.Meta{properties_anno: props}},
+        property
+      )
+      when is_atom(property) do
+    Map.get(props, property)
+  end
+
+  def property_anno(%_{__spark_metadata__: _}, _property), do: nil
+
+  def property_anno(%struct{}, _property) do
+    IO.warn(
+      "Entity #{inspect(struct)} does not define a `__spark_metadata__` field. " <>
+        "This field is required to access source annotations. " <>
+        "Add `:__spark_metadata__` to the defstruct for #{inspect(struct)}."
+    )
+
+    nil
   end
 end

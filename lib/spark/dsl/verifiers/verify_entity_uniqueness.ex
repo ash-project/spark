@@ -104,23 +104,22 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
 
   defp unique_entities_or_error(entities_to_check, identifier, module, path) do
     entities_to_check
-    |> Enum.frequencies_by(&{get_identifier(&1, identifier), &1.__struct__})
-    |> Enum.find_value(fn {key, value} ->
-      if value > 1 do
-        key
-      end
-    end)
+    |> Enum.group_by(&{get_identifier(&1, identifier), &1.__struct__})
+    |> Enum.find(&match?({_, [_first, _second | _]}, &1))
     |> case do
       nil ->
         :ok
 
-      {identifier, target} ->
+      {{identifier, target}, [duplicate_entity | _rest]} ->
+        location = Spark.Dsl.Entity.anno(duplicate_entity)
+
         raise Spark.Error.DslError,
           module: module,
           path: path ++ [identifier],
           message: """
           Got duplicate #{inspect(target)}: #{identifier}
-          """
+          """,
+          location: location
     end
   end
 

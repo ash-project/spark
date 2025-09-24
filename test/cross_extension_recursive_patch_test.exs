@@ -12,7 +12,7 @@ defmodule CrossExtensionPatchTest do
 
   defmodule Argument do
     @moduledoc false
-    defstruct name: nil, value: nil
+    defstruct name: nil, value: nil, __spark_metadata__: nil
 
     def entity do
       %Spark.Dsl.Entity{
@@ -30,7 +30,7 @@ defmodule CrossExtensionPatchTest do
 
   defmodule Step do
     @moduledoc false
-    defstruct name: nil, steps: [], arguments: []
+    defstruct name: nil, steps: [], arguments: [], __spark_metadata__: nil
 
     def entity(name) do
       %Spark.Dsl.Entity{
@@ -51,7 +51,7 @@ defmodule CrossExtensionPatchTest do
 
   defmodule Input do
     @moduledoc false
-    defstruct name: nil
+    defstruct name: nil, __spark_metadata__: nil
 
     def entity do
       %Spark.Dsl.Entity{

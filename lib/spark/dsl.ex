@@ -481,7 +481,13 @@ defmodule Spark.Dsl do
                   {:warn, warnings} ->
                     warnings
                     |> List.wrap()
-                    |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(__ENV__)))
+                    |> Enum.each(fn
+                      {warning, location} ->
+                        Spark.Warning.warn(warning, location, Macro.Env.stacktrace(__ENV__))
+
+                      warning ->
+                        Spark.Warning.warn(warning, nil, Macro.Env.stacktrace(__ENV__))
+                    end)
 
                     []
 
@@ -528,9 +534,16 @@ defmodule Spark.Dsl do
           )
         catch
           kind, reason ->
-            IO.warn(
-              "Exception while verifying `#{inspect(__MODULE__)}`\n\n" <>
-                Exception.format(kind, reason, __STACKTRACE__)
+            Spark.Warning.warn(
+              """
+              Exception while verifying `#{inspect(__MODULE__)}:`
+              #{Exception.format(kind, reason, __STACKTRACE__)}
+              """,
+              case reason do
+                %Spark.Error.DslError{location: location} -> location
+                _ -> nil
+              end,
+              __STACKTRACE__
             )
         end
       end
@@ -546,7 +559,7 @@ defmodule Spark.Dsl do
               current_config =
                 Process.get(
                   {__MODULE__, :spark, [section.name]},
-                  %{entities: [], opts: []}
+                  Spark.Dsl.Extension.default_section_config()
                 )
 
               opts =
@@ -561,15 +574,13 @@ defmodule Spark.Dsl do
                     raise Spark.Error.DslError,
                       module: __MODULE__,
                       message: error,
-                      path: [section.name]
+                      path: [section.name],
+                      location: current_config.section_anno
                 end
 
               Process.put(
                 {__MODULE__, :spark, [section.name]},
-                %{
-                  entities: current_config.entities,
-                  opts: opts
-                }
+                %{current_config | entities: current_config.entities, opts: opts}
               )
             end
           end
@@ -605,6 +616,44 @@ defmodule Spark.Dsl do
 
         def fetch_opt(_, _), do: :error
 
+        @doc false
+        @spec section_anno(list(atom)) :: :erl_anno.anno() | nil
+        for {path, %{section_anno: section_anno}} <- @spark_dsl_config,
+            is_list(path),
+            not is_nil(section_anno) do
+          def section_anno(unquote(path)) do
+            unquote(Macro.escape(section_anno))
+          end
+        end
+
+        def section_anno(_), do: nil
+
+        @doc false
+        @spec opt_anno(list(atom), atom) :: :erl_anno.anno() | nil
+        for {path, %{opts_anno: opts_anno}} <- @spark_dsl_config,
+            is_list(path),
+            is_list(opts_anno) do
+          for {key, anno} <- opts_anno do
+            def opt_anno(unquote(path), unquote(key)) do
+              unquote(Macro.escape(anno))
+            end
+          end
+        end
+
+        def opt_anno(_, _), do: nil
+
+        @doc false
+        @spec opts_anno(list(atom)) :: Keyword.t()
+        for {path, %{opts_anno: opts_anno}} <- @spark_dsl_config,
+            is_list(path),
+            is_list(opts_anno) do
+          def opts_anno(unquote(path)) do
+            unquote(Macro.escape(opts_anno))
+          end
+        end
+
+        def opts_anno(_), do: []
+
         for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           def section_opts(unquote(path)) do
             unquote(Macro.escape(opts))
@@ -639,8 +688,10 @@ defmodule Spark.Dsl do
             {Macro.escape(path),
              quote do
                %{
+                 section_anno: section_anno(unquote(path)),
+                 entities: entities(unquote(path)),
                  opts: section_opts(unquote(path)),
-                 entities: entities(unquote(path))
+                 opts_anno: opts_anno(unquote(path))
                }
              end}
           end
@@ -692,10 +743,19 @@ defmodule Spark.Dsl do
       config = Map.delete(fragment.spark_dsl_config(), :persist)
 
       Map.merge(acc, config, fn
-        key, %{entities: entities, opts: opts}, %{entities: right_entities, opts: right_opts} ->
+        key, left_config, right_config ->
           %{
-            entities: entities ++ right_entities,
-            opts: merge_with_warning(opts, right_opts, key, "fragment: #{fragment}")
+            entities: (left_config[:entities] || []) ++ (right_config[:entities] || []),
+            opts:
+              merge_with_warning(
+                left_config[:opts] || [],
+                right_config[:opts] || [],
+                key,
+                "fragment: #{fragment}"
+              ),
+            opts_anno:
+              Keyword.merge(left_config[:opts_anno] || [], right_config[:opts_anno] || []),
+            section_anno: right_config[:section_anno] || left_config[:section_anno]
           }
       end)
     end)
@@ -715,7 +775,7 @@ defmodule Spark.Dsl do
             ""
           end
 
-        IO.warn(
+        Spark.Warning.warn(
           "#{Enum.join(path ++ [key], ".")} is being overwritten from #{inspect(left)} to #{inspect(right)}#{by}"
         )
 

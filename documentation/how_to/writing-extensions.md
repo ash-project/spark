@@ -13,3 +13,7 @@ Extension writing gets a bit more complicated when you get into the world of tra
 ## Introspection
 
 Use functions in `Spark.Dsl.Extension` to retrieve the stored values from the DSL and expose them in a module. The convention is to place functions for something like `MyApp.MyExtension` in `MyApp.MyExtension.Info`. Using introspection functions like this allows for a richer introspection API (i.e not just getting and retrieving raw values), and it also allows us to add type specs and documentation, which is helpful when working generically. I.e `module_as_variable.table()` can't be known by dialyzer, whereas `Extension.table(module)` can be.
+
+## Source Annotations
+
+Spark automatically tracks source location information for all DSL elements. This enables better error messages, IDE integration, and debugging capabilities. See [Using Source Annotations](use-source-annotations.md) for details on accessing and using this information in your extensions.

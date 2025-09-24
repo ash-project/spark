@@ -1,6 +1,7 @@
 defmodule Spark.DslTest do
   use ExUnit.Case
 
+  import ExUnit.CaptureIO
   import Spark.CodeHelpers
 
   test "defining an instance of the DSL works" do
@@ -284,16 +285,24 @@ defmodule Spark.DslTest do
     test "verifiers are run" do
       import ExUnit.CaptureIO
 
-      assert capture_io(:stderr, fn ->
-               defmodule Gandalf do
-                 @moduledoc false
-                 use Spark.Test.Contact
+      base_line = __ENV__.line
 
-                 personal_details do
-                   first_name("Gandalf")
-                 end
-               end
-             end) =~ "Cannot be gandalf"
+      message =
+        capture_io(:stderr, fn ->
+          defmodule Gandalf do
+            @moduledoc false
+            use Spark.Test.Contact
+
+            personal_details do
+              # Line offset: +10
+              first_name("Gandalf")
+            end
+          end
+        end)
+
+      assert message =~ "Cannot be gandalf"
+      assert message =~ "(defined in test/dsl_test.exs:#{base_line + 10}:)"
+      assert message =~ "~~~"
     end
 
     test "extensions can add entities to other entities extensions" do
@@ -344,6 +353,330 @@ defmodule Spark.DslTest do
           end
         end
       end
+    end
+  end
+
+  describe "annotation tracking" do
+    test "section annotations are captured" do
+      base_line = __ENV__.line
+
+      defmodule SectionAnnoTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset(:test_preset)
+        end
+
+        contact do
+          module(Some.Module)
+        end
+      end
+
+      dsl_state = SectionAnnoTest.spark_dsl_config()
+
+      # Check section annotation for :presets (sections are stored with list keys)
+      presets_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:presets])
+      assert presets_anno != nil
+      assert :erl_anno.location(presets_anno) == base_line + 6
+      assert :erl_anno.file(presets_anno) == String.to_charlist(__ENV__.file)
+
+      # Check section annotation for :contact
+      contact_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:contact])
+      assert contact_anno != nil
+      assert :erl_anno.location(contact_anno) == base_line + 10
+      assert :erl_anno.file(contact_anno) == String.to_charlist(__ENV__.file)
+
+      # Check end_location if available (OTP 28+)
+      if function_exported?(:erl_anno, :end_location, 1) do
+        presets_end = :erl_anno.end_location(presets_anno)
+        contact_end = :erl_anno.end_location(contact_anno)
+
+        # Sections should have end locations that are at or after their start
+        assert presets_end >= base_line + 6
+        assert contact_end >= base_line + 10
+      end
+    end
+
+    test "option annotations are captured as keyword list" do
+      base_line = __ENV__.line
+
+      defmodule OptionAnnoTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        personal_details do
+          first_name("John")
+          last_name("Doe")
+          # Line offset: +10
+          nicknames([
+            "Johnny",
+            "J-Dog"
+          ])
+        end
+
+        contact do
+          module(Some.Module)
+        end
+      end
+
+      dsl_state = OptionAnnoTest.spark_dsl_config()
+
+      # Check option annotations for personal_details using introspection functions
+      first_name_anno =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :first_name)
+
+      assert first_name_anno != nil
+      assert :erl_anno.location(first_name_anno) == base_line + 7
+      assert :erl_anno.file(first_name_anno) == String.to_charlist(__ENV__.file)
+
+      last_name_anno =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :last_name)
+
+      assert last_name_anno != nil
+      assert :erl_anno.location(last_name_anno) == base_line + 8
+      assert :erl_anno.file(last_name_anno) == String.to_charlist(__ENV__.file)
+
+      nicknames_anno =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :nicknames)
+
+      assert nicknames_anno != nil
+      assert :erl_anno.location(nicknames_anno) == base_line + 10
+
+      # Options don't have end locations since they're passed as a value and not
+      # as AST
+
+      # Check option annotations for contact
+      module_anno = Spark.Dsl.Extension.get_opt_anno(dsl_state, [:contact], :module)
+      assert module_anno != nil
+      assert :erl_anno.location(module_anno) == base_line + 17
+    end
+
+    test "entities capture exact file and line information" do
+      base_line = __ENV__.line
+
+      defmodule EntityAnnoTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          # Line offset: +8
+          preset :first do
+            default_message("first")
+          end
+
+          # Line offset: +13
+          preset :second do
+            default_message("second")
+          end
+        end
+      end
+
+      dsl_state = EntityAnnoTest.spark_dsl_config()
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+      [first, second] = Enum.sort_by(entities, & &1.name)
+      first_anno = Spark.Dsl.Entity.anno(first)
+      second_anno = Spark.Dsl.Entity.anno(second)
+
+      assert :erl_anno.location(first_anno) == base_line + 8
+      assert :erl_anno.location(second_anno) == base_line + 13
+
+      assert :erl_anno.file(first_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(second_anno) == String.to_charlist(__ENV__.file)
+    end
+
+    test "nested entities capture annotations" do
+      base_line = __ENV__.line
+
+      defmodule NestedEntityAnnoTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          # Line offset: +8
+          preset :parent do
+            # Line offset: +10
+            singleton(:child_entity)
+          end
+        end
+      end
+
+      dsl_state = NestedEntityAnnoTest.spark_dsl_config()
+      [entity | _] = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 8
+      assert :erl_anno.file(entity_anno) == String.to_charlist(__ENV__.file)
+
+      singleton_anno = Spark.Dsl.Entity.anno(entity.singleton)
+      assert :erl_anno.location(singleton_anno) == base_line + 10
+      assert :erl_anno.file(singleton_anno) == String.to_charlist(__ENV__.file)
+    end
+
+    test "annotations include end_location when available (OTP 28+)" do
+      base_line = __ENV__.line
+
+      defmodule EndLocationTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          # Line offset: +8
+          preset :with_block do
+            default_message("start")
+            # more content
+          end
+
+          # Line offset: +14
+        end
+      end
+
+      dsl_state = EndLocationTest.spark_dsl_config()
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+      [entity | _] = entities
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 8
+
+      # Check if end_location is supported and set
+      if function_exported?(:erl_anno, :set_end_location, 1) do
+        end_location = :erl_anno.end_location(entity_anno)
+
+        # Should be at or after start
+        assert end_location >= base_line + 8
+        # Should be before end
+        assert end_location <= base_line + 14
+      end
+    end
+
+    test "fragments preserve original source location annotations" do
+      # Test with the existing TedDansenFragment which defines address options
+      dsl_state = TedDansen.spark_dsl_config()
+
+      # Check that the fragment's configuration is included
+      {:ok, street} = TedDansen.fetch_opt([:address], :street)
+      assert street == "foobar"
+
+      # Create a test with entities in fragments
+      defmodule TestFragment do
+        @moduledoc false
+        use Spark.Dsl.Fragment, of: Spark.Test.Contact
+
+        presets do
+          # Line 6 in this context
+          preset :fragment_preset do
+            default_message("from fragment")
+          end
+        end
+      end
+
+      defmodule TestWithFragment do
+        @moduledoc false
+        use Spark.Test.Contact, fragments: [TestFragment]
+
+        presets do
+          preset :main_preset do
+            default_message("from main")
+          end
+        end
+      end
+
+      dsl_state = TestWithFragment.spark_dsl_config()
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+      assert length(entities) == 2
+
+      fragment_entity = Enum.find(entities, &(&1.name == :fragment_preset))
+      main_entity = Enum.find(entities, &(&1.name == :main_preset))
+
+      fragment_anno = Spark.Dsl.Entity.anno(fragment_entity)
+      main_anno = Spark.Dsl.Entity.anno(main_entity)
+
+      assert String.to_charlist(__ENV__.file) == :erl_anno.file(fragment_anno)
+      assert String.to_charlist(__ENV__.file) == :erl_anno.file(main_anno)
+    end
+
+    test "introspection functions can extract annotations" do
+      base_line = __ENV__.line
+
+      defmodule IntrospectionTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        personal_details do
+          first_name("Alice")
+          last_name("Smith")
+        end
+
+        presets do
+          preset :test_preset do
+            default_message("Hello World")
+          end
+        end
+      end
+
+      dsl_state = IntrospectionTest.spark_dsl_config()
+
+      # Test get_section_anno function
+      personal_details_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:personal_details])
+      assert :erl_anno.location(personal_details_anno) == base_line + 6
+      assert :erl_anno.file(personal_details_anno) == String.to_charlist(__ENV__.file)
+
+      # Test get_opt_anno function
+      first_name_anno =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :first_name)
+
+      assert :erl_anno.location(first_name_anno) == base_line + 7
+
+      last_name_anno =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :last_name)
+
+      assert :erl_anno.location(last_name_anno) == base_line + 8
+
+      # Test get_entities returns entities with their annotations intact
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+      assert length(entities) == 1
+      [entity] = entities
+      entity_anno = Spark.Dsl.Entity.anno(entity)
+      assert :erl_anno.location(entity_anno) == base_line + 12
+
+      default_message_anno = Spark.Dsl.Entity.property_anno(entity, :default_message)
+      assert :erl_anno.location(default_message_anno) == base_line + 13
+    end
+
+    test "entity annotations can be accessed via introspection regardless of anno_field" do
+      base_line = __ENV__.line
+
+      defmodule EntityIntrospectionTest do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          # Line offset: +8
+          preset :first do
+            default_message("first")
+          end
+
+          # Line offset: +13
+          preset :second do
+            default_message("second")
+          end
+        end
+      end
+
+      dsl_state = EntityIntrospectionTest.spark_dsl_config()
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+      [first, second] = Enum.sort_by(entities, & &1.name)
+
+      first_anno = Spark.Dsl.Entity.anno(first)
+      second_anno = Spark.Dsl.Entity.anno(second)
+
+      assert first_anno != nil
+      assert second_anno != nil
+      assert :erl_anno.location(first_anno) == base_line + 8
+      assert :erl_anno.location(second_anno) == base_line + 13
     end
 
     test "entities with required arguments don't assume an argument is opts if its a keyword list" do
@@ -533,6 +866,100 @@ defmodule Spark.DslTest do
       end
 
       assert :default == Spark.Dsl.Extension.get_opt(NoOptionSet, [:example], :opt_with_default)
+    end
+  end
+
+  describe "error location tracking" do
+    test "duplicate entity errors include location information" do
+      import ExUnit.CaptureIO
+
+      error_output =
+        capture_io(:stderr, fn ->
+          try do
+            defmodule LocationTestDuplicate do
+              use Spark.Test.Contact
+
+              presets do
+                preset(:duplicate_test)
+                preset(:duplicate_test)
+              end
+            end
+          rescue
+            _ -> :ok
+          end
+        end)
+
+      # Should include the file and line information
+      assert error_output =~ "dsl_test.exs"
+      assert error_output =~ "Got duplicate"
+    end
+
+    test "schema validation errors include location information" do
+      try do
+        defmodule LocationTestSchema do
+          use Spark.Dsl.Fragment, of: Spark.Test.Contact
+
+          personal_details do
+            # This should trigger a schema validation error during compilation
+            # when the section is processed, because first_name is required
+          end
+        end
+
+        _ = LocationTestSchema.spark_dsl_config()
+      rescue
+        error ->
+          # The error should include location information
+          error_message = Exception.message(error)
+          assert error_message =~ "dsl_test.exs"
+      end
+    end
+  end
+
+  describe "missing spark metadata warnings" do
+    test "warns when entity does not have __spark_metadata__ field" do
+      # Create an entity struct without __spark_metadata__ field
+      defmodule WarningStruct do
+        defstruct [:name]
+      end
+
+      # Create a DSL extension with an entity that targets our struct without metadata
+      defmodule WarningExtension do
+        @entity_without_metadata %Spark.Dsl.Entity{
+          name: :entity_without_metadata,
+          args: [:name],
+          target: WarningStruct,
+          schema: [
+            name: [type: :atom]
+          ]
+        }
+
+        @section %Spark.Dsl.Section{
+          name: :test_section,
+          entities: [@entity_without_metadata]
+        }
+
+        use Spark.Dsl.Extension, sections: [@section]
+      end
+
+      defmodule WarningDsl do
+        @moduledoc false
+        use Spark.Dsl, default_extensions: [extensions: WarningExtension]
+      end
+
+      warning_output =
+        capture_io(:stderr, fn ->
+          defmodule WarningImpl do
+            use WarningDsl
+
+            test_section do
+              entity_without_metadata(:test)
+            end
+          end
+        end)
+
+      assert warning_output =~ "Entity without __spark_metadata__ field"
+      assert warning_output =~ "WarningStruct"
+      assert warning_output =~ "__spark_metadata__: nil"
     end
   end
 end

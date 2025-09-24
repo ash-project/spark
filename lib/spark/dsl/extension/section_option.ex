@@ -26,7 +26,7 @@ defmodule Spark.Dsl.Extension.SectionOption do
     Spark.CodeHelpers.lift_functions(value, field, caller)
   end
 
-  def set_section_option(module, extension, section_path, field, value) do
+  def set_section_option(module, extension, section_path, field, value, anno \\ nil) do
     current_sections = Process.get({module, :spark_sections}, [])
 
     unless {extension, section_path} in current_sections do
@@ -38,14 +38,22 @@ defmodule Spark.Dsl.Extension.SectionOption do
     current_config =
       Process.get(
         {module, :spark, section_path},
-        %{entities: [], opts: []}
+        Spark.Dsl.Extension.default_section_config()
       )
+
+    opts_anno =
+      if anno do
+        Keyword.put(current_config[:opts_anno] || [], field, anno)
+      else
+        current_config[:opts_anno] || []
+      end
 
     Process.put(
       {module, :spark, section_path},
       %{
         current_config
-        | opts: Keyword.put(current_config.opts, field, value)
+        | opts: Keyword.put(current_config.opts, field, value),
+          opts_anno: opts_anno
       }
     )
   end

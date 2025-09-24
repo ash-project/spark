@@ -176,6 +176,64 @@ defmodule Spark.Dsl.Extension do
       mod.module_info(:attributes)[attr]
   end
 
+  @doc """
+  Get the annotation for a section at the given path.
+  """
+  @spec get_section_anno(map | module, atom | list(atom)) :: :erl_anno.anno() | nil
+  def get_section_anno(dsl_state, path)
+
+  def get_section_anno(%struct{}, path) do
+    get_section_anno(struct, path)
+  end
+
+  def get_section_anno(map, path) when not is_list(path) do
+    get_section_anno(map, [path])
+  end
+
+  def get_section_anno(map, path) when is_map(map) do
+    Spark.Dsl.Transformer.get_section_anno(map, path)
+  end
+
+  def get_section_anno(resource, path) do
+    get_config_entry_with_fallback(
+      resource,
+      path,
+      fn -> resource.section_anno(path) end,
+      :section_anno,
+      & &1,
+      &Spark.Dsl.Transformer.get_section_anno(&1, path)
+    )
+  end
+
+  @doc """
+  Get the annotation for a specific option in a section.
+  """
+  @spec get_opt_anno(map | module, atom | list(atom), atom) :: :erl_anno.anno() | nil
+  def get_opt_anno(dsl_state, path, opt_name)
+
+  def get_opt_anno(%struct{}, path, opt_name) do
+    get_opt_anno(struct, path, opt_name)
+  end
+
+  def get_opt_anno(map, path, opt_name) when not is_list(path) do
+    get_opt_anno(map, [path], opt_name)
+  end
+
+  def get_opt_anno(map, path, opt_name) when is_map(map) do
+    Spark.Dsl.Transformer.get_opt_anno(map, path, opt_name)
+  end
+
+  def get_opt_anno(resource, path, opt_name) do
+    get_config_entry_with_fallback(
+      resource,
+      path,
+      fn -> resource.opt_anno(path, opt_name) end,
+      :opts_anno,
+      &Keyword.get(&1, opt_name),
+      &Spark.Dsl.Transformer.get_opt_anno(&1, path, opt_name)
+    )
+  end
+
   @doc "Get the entities configured for a given section"
   def get_entities(map, nil), do: get_entities(map, [])
 
@@ -190,31 +248,14 @@ defmodule Spark.Dsl.Extension do
   end
 
   def get_entities(resource, path) do
-    resource.entities(path)
-  rescue
-    _ in [UndefinedFunctionError, ArgumentError] ->
-      try do
-        case Process.get({resource, :spark, path}) do
-          %{entities: entities} ->
-            entities
-
-          _ ->
-            dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
-            Spark.Dsl.Transformer.get_entities(dsl, path) || []
-        end
-      rescue
-        ArgumentError ->
-          try do
-            resource.entities(path)
-          rescue
-            _ ->
-              reraise ArgumentError,
-                      """
-                      `#{inspect(resource)}` is not a Spark DSL module.
-                      """,
-                      __STACKTRACE__
-          end
-      end
+    get_config_entry_with_fallback(
+      resource,
+      path,
+      fn -> resource.entities(path) end,
+      :entities,
+      & &1,
+      &Spark.Dsl.Transformer.get_entities(&1, path)
+    )
   end
 
   @doc "Get a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
@@ -304,32 +345,14 @@ defmodule Spark.Dsl.Extension do
   end
 
   defp do_fetch_opt(resource, path, key) do
-    resource.fetch_opt(path, key)
-  rescue
-    _ in [UndefinedFunctionError, ArgumentError] ->
-      try do
-        case Process.get({resource, :spark, :lists.droplast(path)}) do
-          %{options: options} ->
-            Keyword.fetch(options, key)
-
-          _ ->
-            dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
-
-            Spark.Dsl.Transformer.fetch_option(dsl, path, key)
-        end
-      rescue
-        ArgumentError ->
-          try do
-            resource.fetch_opt(path, key)
-          rescue
-            _ ->
-              reraise ArgumentError,
-                      """
-                      `#{inspect(resource)}` is not a Spark DSL module.
-                      """,
-                      __STACKTRACE__
-          end
-      end
+    get_config_entry_with_fallback(
+      resource,
+      :lists.droplast(path),
+      fn -> resource.fetch_opt(path, key) end,
+      :options,
+      &Keyword.fetch(&1, key),
+      &Spark.Dsl.Transformer.fetch_option(&1, path, key)
+    )
   end
 
   defdelegate doc(sections, depth \\ 1), to: Spark.CheatSheet
@@ -606,7 +629,7 @@ defmodule Spark.Dsl.Extension do
           {section_path,
            Process.get(
              {__MODULE__, :spark, section_path},
-             %{entities: [], opts: []}
+             Spark.Dsl.Extension.default_section_config()
            )}
         end)
         |> Enum.into(%{})
@@ -691,7 +714,13 @@ defmodule Spark.Dsl.Extension do
         {:warn, new_dsl, warnings} ->
           warnings
           |> List.wrap()
-          |> Enum.each(&IO.warn(&1, Macro.Env.stacktrace(env)))
+          |> Enum.each(fn
+            {warning, location} ->
+              Spark.Warning.warn(warning, location, Macro.Env.stacktrace(env))
+
+            warning ->
+              Spark.Warning.warn(warning, nil, Macro.Env.stacktrace(env))
+          end)
 
           {:cont, new_dsl}
 
@@ -860,10 +889,10 @@ defmodule Spark.Dsl.Extension do
         schema = unquote(Macro.escape(Map.get(section, :schema, [])))
 
         dsl_config
-        |> Map.put_new(section_path, %{opts: [], entities: []})
+        |> Map.put_new(section_path, Spark.Dsl.Extension.default_section_config())
         |> Map.update!(section_path, fn config ->
-          Map.update!(config, :opts, fn opts ->
-            case Spark.Options.validate(Keyword.new(opts), schema) do
+          validated_opts =
+            case Spark.Options.validate(Keyword.new(config[:opts] || []), schema) do
               {:ok, opts} ->
                 opts
 
@@ -871,9 +900,12 @@ defmodule Spark.Dsl.Extension do
                 raise Spark.Error.DslError,
                   module: module,
                   message: error,
-                  path: section_path
+                  path: section_path,
+                  location: config[:section_anno]
             end
-          end)
+
+          # Preserve all existing fields, just update opts
+          %{config | opts: validated_opts}
         end)
       end
 
@@ -882,6 +914,8 @@ defmodule Spark.Dsl.Extension do
           opts_module = unquote(opts_module)
           section_path = unquote(path ++ [section.name])
           extension = unquote(extension)
+
+          section_anno = Spark.Dsl.Extension.macro_env_anno(__CALLER__, body[:do])
 
           entity_modules = unquote(entity_modules)
 
@@ -920,6 +954,18 @@ defmodule Spark.Dsl.Extension do
                       {unquote(extension), unquote(section_path)} | current_sections
                     ])
                   end
+
+                  # Store section annotation
+                  current_config =
+                    Process.get(
+                      {__MODULE__, :spark, unquote(section_path)},
+                      Spark.Dsl.Extension.default_section_config()
+                    )
+
+                  Process.put(
+                    {__MODULE__, :spark, unquote(section_path)},
+                    %{current_config | section_anno: unquote(Macro.escape(section_anno))}
+                  )
 
                   @validate_sections {unquote(section_path), unquote(__MODULE__),
                                       unquote(extension)}
@@ -1069,6 +1115,8 @@ defmodule Spark.Dsl.Extension do
               type = unquote(Macro.escape(config[:type]))
               deprecations = unquote(Macro.escape(section.deprecations))
 
+              opt_anno = Spark.Dsl.Extension.macro_env_anno(__CALLER__, nil)
+
               Spark.Dsl.Extension.maybe_deprecated(
                 field,
                 deprecations,
@@ -1094,7 +1142,8 @@ defmodule Spark.Dsl.Extension do
                   unquote(extension),
                   unquote(section_path),
                   unquote(field),
-                  unquote(value)
+                  unquote(value),
+                  unquote(Macro.escape(opt_anno))
                 )
               end
             end
@@ -1193,8 +1242,14 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
-          def __build__(module, opts, nested_entities) do
-            case Spark.Dsl.Entity.build(unquote(Macro.escape(entity)), opts, nested_entities) do
+          def __build__(module, opts, nested_entities, anno, opts_anno) do
+            case Spark.Dsl.Entity.build(
+                   unquote(Macro.escape(entity)),
+                   opts,
+                   nested_entities,
+                   anno,
+                   opts_anno
+                 ) do
               {:ok, built} ->
                 built
 
@@ -1221,7 +1276,8 @@ defmodule Spark.Dsl.Extension do
                 raise Spark.Error.DslError,
                   module: module,
                   message: message,
-                  path: unquote(section_path) ++ additional_path
+                  path: unquote(section_path) ++ additional_path,
+                  location: anno
             end
           end
 
@@ -1244,6 +1300,8 @@ defmodule Spark.Dsl.Extension do
             mod = unquote(mod)
 
             require Spark.Dsl.Extension
+
+            anno = Spark.Dsl.Extension.macro_env_anno(__CALLER__, opts[:do])
 
             Spark.Dsl.Extension.maybe_deprecated(
               entity.name,
@@ -1394,7 +1452,8 @@ defmodule Spark.Dsl.Extension do
                         unquote(entity.recursive_as),
                         unquote(nested_key),
                         unquote(Keyword.delete(opts, :do)),
-                        unquote(arg_values)
+                        unquote(arg_values),
+                        unquote(Macro.escape(anno))
                       )
 
                     unquote(opts[:do])
@@ -1476,7 +1535,8 @@ defmodule Spark.Dsl.Extension do
               Spark.Dsl.Extension.EntityOption.set_entity_option(
                 __MODULE__,
                 unquote(key),
-                unquote(value)
+                unquote(value),
+                unquote(Spark.Dsl.Extension.macro_env_anno(__CALLER__, nil))
               )
             end
           end
@@ -1515,8 +1575,10 @@ defmodule Spark.Dsl.Extension do
           path -> "#{path}."
         end
 
-      IO.warn(
-        "The #{prefix}#{field} key will be deprecated in an upcoming release!\n\n#{deprecations[field]}",
+      Spark.Warning.warn_deprecated(
+        "The #{prefix}#{field} key",
+        "will be deprecated in an upcoming release!\n\n#{deprecations[field]}",
+        nil,
         Macro.Env.stacktrace(env)
       )
     end
@@ -1894,7 +1956,7 @@ defmodule Spark.Dsl.Extension do
         if section.patchable? || Enum.any?(section.entities, &(&1.target == entity.target)) do
           entities ++ [entity_mod_name(extension.module_prefix(), [], section_path, entity)]
         else
-          IO.warn(
+          Spark.Warning.warn(
             "Attempt to add an entity with a patch to a non-patchable DSL section that has no compatible entities"
           )
 
@@ -1936,5 +1998,98 @@ defmodule Spark.Dsl.Extension do
     sections
     |> Enum.filter(&(&1.name == name))
     |> get_recursive_entities_for_path(rest)
+  end
+
+  @spec default_section_config() :: %{
+          section_anno: :erl_anno.anno() | nil,
+          entities: list(),
+          opts: Keyword.t(),
+          opts_anno: Keyword.t(:erl_anno.anno() | nil)
+        }
+  def default_section_config,
+    do: %{
+      section_anno: nil,
+      entities: [],
+      opts: [],
+      opts_anno: []
+    }
+
+  @spec get_config_entry_with_fallback(
+          module(),
+          list(atom()),
+          (-> result),
+          atom(),
+          (any() -> result),
+          (map() -> result)
+        ) :: result
+        when result: term()
+  defp get_config_entry_with_fallback(
+         resource,
+         path,
+         direct_fn,
+         process_key,
+         process_extractor,
+         transformer_fn
+       ) do
+    direct_fn.()
+  rescue
+    _ in [UndefinedFunctionError, ArgumentError] ->
+      try do
+        case Process.get({resource, :spark, path}) do
+          %{^process_key => value} ->
+            process_extractor.(value)
+
+          _ ->
+            dsl = Module.get_attribute(resource, :spark_dsl_config) || %{}
+            transformer_fn.(dsl)
+        end
+      rescue
+        ArgumentError ->
+          try do
+            direct_fn.()
+          rescue
+            _ ->
+              reraise ArgumentError,
+                      """
+                      `#{inspect(resource)}` is not a Spark DSL module.
+                      """,
+                      __STACKTRACE__
+          end
+      end
+  end
+
+  @spec macro_env_anno(env :: Macro.Env.t(), do_block :: Macro.t()) :: :erl_anno.anno()
+  def macro_env_anno(env, do_block) do
+    anno = :erl_anno.new(env.line)
+    anno = :erl_anno.set_file(String.to_charlist(env.file), anno)
+    maybe_set_end_location(anno, do_block)
+  end
+
+  @spec maybe_set_end_location(:erl_anno.anno(), Macro.t() | nil) :: :erl_anno.anno()
+  if function_exported?(:erl_anno, :set_end_location, 2) do
+    defp maybe_set_end_location(anno, do_block)
+    defp maybe_set_end_location(anno, nil), do: anno
+
+    defp maybe_set_end_location(anno, {_, meta, _}) when is_list(meta) do
+      end_of_expression_meta = Keyword.get(meta, :end_of_expression, [])
+
+      location = ast_meta_to_location(end_of_expression_meta) || ast_meta_to_location(meta)
+
+      if location do
+        :erl_anno.set_end_location(location, anno)
+      else
+        anno
+      end
+    end
+
+    defp ast_meta_to_location(meta) when is_list(meta) do
+      case {Keyword.fetch(meta, :line), Keyword.fetch(meta, :column)} do
+        {{:ok, line}, {:ok, col}} -> {line, col}
+        {{:ok, line}, :error} -> line
+        {:error, :error} -> nil
+      end
+    end
+  else
+    defp maybe_set_end_location(anno, _do_block), do: anno
   end
 end

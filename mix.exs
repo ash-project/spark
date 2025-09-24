@@ -10,6 +10,13 @@ defmodule Spark.MixProject do
       app: :spark,
       version: @version,
       elixir: "~> 1.15",
+      elixirc_options: [
+        warnings_as_errors: true,
+        parser_options: [
+          token_metadata: true,
+          parser_columns: true
+        ]
+      ],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -68,6 +75,7 @@ defmodule Spark.MixProject do
         "documentation/how_to/upgrade-to-2.0.md",
         "documentation/how_to/writing-extensions.md",
         "documentation/how_to/split-up-large-dsls.md",
+        "documentation/how_to/use-source-annotations.md",
         "documentation/tutorials/get-started-with-spark.md"
       ],
       groups_for_extras: [

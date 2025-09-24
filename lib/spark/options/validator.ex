@@ -124,8 +124,9 @@ defmodule Spark.Options.Validator do
 
         if define_deprecated_access? do
           def fetch(%__MODULE__{} = data, key) do
-            IO.warn(
-              "Accessing options from #{__MODULE__} is deprecated. Use `opts.#{key}` instead."
+            Spark.Warning.warn_deprecated(
+              "Accessing options from #{__MODULE__}",
+              "Use `opts.#{key}` instead."
             )
 
             Map.fetch(data, key)
@@ -299,7 +300,10 @@ defmodule Spark.Options.Validator do
 
         for {key, config} <- Keyword.new(schema), config[:deprecated] do
           defp warn_deprecated(unquote(key)) do
-            IO.warn("#{unquote(key)} is deprecated")
+            Spark.Warning.warn_deprecated(
+              "#{unquote(key)}",
+              "Use `opts.#{unquote(key)}` instead."
+            )
           end
         end
 

@@ -13,11 +13,14 @@ defmodule Spark.Dsl.Transformer do
   but keep in mind that no modifications to the dsl structure will be retained, so there is no
   real point in modifying the dsl that you return.
   """
+
+  @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
+
   @callback transform(map) ::
               :ok
               | {:ok, map}
               | {:error, term}
-              | {:warn, map, String.t() | list(String.t())}
+              | {:warn, map, warning() | list(warning())}
               | :halt
   @callback before?(module) :: boolean
   @callback after?(module) :: boolean
@@ -228,15 +231,30 @@ defmodule Spark.Dsl.Transformer do
 
   def fetch_option(dsl_state, path, option) do
     dsl_state
-    |> Map.get(path, %{opts: []})
+    |> Map.get(path, Spark.Dsl.Extension.default_section_config())
     |> Map.get(:opts)
     |> Kernel.||([])
     |> Keyword.fetch(option)
   end
 
+  @spec get_section_anno(map, list(atom)) :: :erl_anno.anno() | nil
+  def get_section_anno(dsl_state, path) do
+    dsl_state
+    |> Map.get(path, %{})
+    |> Map.get(:section_anno)
+  end
+
+  @spec get_opt_anno(map, list(atom), atom) :: :erl_anno.anno() | nil
+  def get_opt_anno(dsl_state, path, option) do
+    dsl_state
+    |> Map.get(path, Spark.Dsl.Extension.default_section_config())
+    |> Map.get(:opts_anno, [])
+    |> Keyword.get(option)
+  end
+
   def get_option(dsl_state, path, option, default \\ nil) do
     dsl_state
-    |> Map.get(path, %{opts: []})
+    |> Map.get(path, Spark.Dsl.Extension.default_section_config())
     |> Map.get(:opts)
     |> Kernel.||([])
     |> Keyword.get(option, default)
@@ -244,10 +262,11 @@ defmodule Spark.Dsl.Transformer do
 
   def set_option(dsl_state, path, option, value) do
     dsl_state
-    |> Map.put_new(path, %{opts: []})
+    |> Map.put_new(path, Spark.Dsl.Extension.default_section_config())
     |> Map.update!(path, fn existing_opts ->
       existing_opts
       |> Map.put_new(:opts, [])
+      |> Map.put_new(:opts_anno, [])
       |> Map.update!(:opts, fn opts ->
         Keyword.put(opts, option, value)
       end)
