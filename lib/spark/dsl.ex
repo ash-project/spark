@@ -606,18 +606,6 @@ defmodule Spark.Dsl do
         def entities(_), do: []
 
         @doc false
-        @spec entities_anno(list(atom)) :: list(:erl_anno.anno() | nil)
-        for {path, %{entities_anno: entities_anno}} <- @spark_dsl_config,
-            is_list(path),
-            is_list(entities_anno) do
-          def entities_anno(unquote(path)) do
-            unquote(Macro.escape(entities_anno))
-          end
-        end
-
-        def entities_anno(_), do: []
-
-        @doc false
         for {path, %{opts: opts}} <- @spark_dsl_config, is_list(path) do
           for {key, value} <- opts do
             def fetch_opt(unquote(path), unquote(key)) do
@@ -702,7 +690,6 @@ defmodule Spark.Dsl do
                %{
                  section_anno: section_anno(unquote(path)),
                  entities: entities(unquote(path)),
-                 entities_anno: entities_anno(unquote(path)),
                  opts: section_opts(unquote(path)),
                  opts_anno: opts_anno(unquote(path))
                }
@@ -768,9 +755,7 @@ defmodule Spark.Dsl do
               ),
             opts_anno:
               Keyword.merge(left_config[:opts_anno] || [], right_config[:opts_anno] || []),
-            section_anno: right_config[:section_anno] || left_config[:section_anno],
-            entities_anno:
-              (left_config[:entities_anno] || []) ++ (right_config[:entities_anno] || [])
+            section_anno: right_config[:section_anno] || left_config[:section_anno]
           }
       end)
     end)

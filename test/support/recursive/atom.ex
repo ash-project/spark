@@ -1,4 +1,4 @@
 defmodule Spark.Test.Atom do
   @moduledoc false
-  defstruct [:name]
+  defstruct [:name, :__spark_metadata__]
 end

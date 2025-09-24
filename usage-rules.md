@@ -111,11 +111,11 @@ end
 
 # Entity Targets
 defmodule MyLibrary.MyEntity do
-  defstruct [:name, :option, :entities]
+  defstruct [:name, :option, :entities, :__spark_metadata__]
 end
 
 defmodule MyLibrary.MyNestedEntity do
-  defstruct [:name, :option]
+  defstruct [:name, :option, :__spark_metadata__]
 end
 
 # Step 2: Create the DSL module
@@ -182,7 +182,6 @@ defmodule MyLibrary.Verifiers.UniqueNames do
 
   def verify(dsl_state) do
     entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
-    entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:my_section])
     names = Enum.map(entities, & &1.name)
 
     if length(names) == length(Enum.uniq(names)) do
@@ -194,8 +193,8 @@ defmodule MyLibrary.Verifiers.UniqueNames do
         |> Enum.frequencies()
         |> Enum.find_value(fn {name, count} -> if count > 1, do: name end)
 
-      duplicate_index = Enum.find_index(entities, &(&1.name == duplicate_name))
-      location = if duplicate_index, do: Enum.at(entities_anno, duplicate_index)
+      duplicate_entity = Enum.find(entities, &(&1.name == duplicate_name))
+      location = Spark.Dsl.Entity.anno(duplicate_entity)
 
       {:error,
        Spark.Error.DslError.exception(
@@ -264,8 +263,7 @@ module = Spark.Dsl.Verifier.get_persisted(dsl_state, :module)
 # Get annotation information for error reporting
 section_anno = Spark.Dsl.Transformer.get_section_anno(dsl_state, [:section_path])
 option_anno = Spark.Dsl.Transformer.get_opt_anno(dsl_state, [:section_path], :option_name)
-entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:section_path])
-entity_anno = Spark.Dsl.Transformer.get_entity_anno(dsl_state, [:section_path], entity_index)
+entity_anno = Spark.Dsl.Entity.anno(entity)
 ```
 
 ### Schema Definition with Spark.Options
@@ -317,8 +315,7 @@ When creating DslErrors, include location information whenever possible to help 
 
 ```elixir
 # For entity-related errors, get entity annotations
-entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:section_path])
-entity_location = Enum.at(entities_anno, entity_index)
+entity_location = Spark.Dsl.Entity.anno(entity)
 
 # For section-related errors, get section annotations
 section_location = Spark.Dsl.Transformer.get_section_anno(dsl_state, [:section_path])

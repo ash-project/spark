@@ -71,18 +71,17 @@ if option_anno do
   IO.puts("Option defined at #{file}:#{line}")
 end
 
-# Entity annotations (all entities)
-entities_anno = Spark.Dsl.Extension.get_entities_anno(dsl_state, [:my_section])
-Enum.each(entities_anno, fn anno ->
-  if anno do
-    line = :erl_anno.location(anno)
-    file = :erl_anno.file(anno) |> to_string()
-    IO.puts("Entity defined at #{file}:#{line}")
+# Entity annotations
+entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
+Enum.each(entities, fn entity ->
+  case Spark.Dsl.Entity.anno(entity) do
+    nil -> :ok
+    anno ->
+      line = :erl_anno.location(anno)
+      file = :erl_anno.file(anno) |> to_string()
+      IO.puts("Entity defined at #{file}:#{line}")
   end
 end)
-
-# Entity annotation (specific entity by index)
-first_entity_anno = Spark.Dsl.Extension.get_entity_anno(dsl_state, [:my_section], 0)
 ```
 
 ### Entity Annotations
@@ -172,12 +171,11 @@ defmodule MyLibrary.Verifiers.UniqueNames do
 
   def verify(dsl_state) do
     entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
-    entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:my_section])
 
     case find_duplicate(entities) do
       nil -> :ok
-      {duplicate_name, index} ->
-        location = Enum.at(entities_anno, index)
+      {duplicate_name, duplicate_entity} ->
+        location = Spark.Dsl.Entity.anno(duplicate_entity)
 
         {:error,
          Spark.Error.DslError.exception(
@@ -199,13 +197,11 @@ defmodule MyLibrary.Transformers.ValidateEntity do
 
   def transform(dsl_state) do
     entities = Spark.Dsl.Extension.get_entities(dsl_state, [:my_section])
-    entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, [:my_section])
 
     entities
-    |> Enum.with_index()
-    |> Enum.each(fn {entity, index} ->
+    |> Enum.each(fn entity ->
       if invalid?(entity) do
-        location = Enum.at(entities_anno, index)
+        location = Spark.Dsl.Entity.anno(entity)
 
         raise Spark.Error.DslError,
           message: "Invalid configuration for #{entity.name}",
@@ -264,18 +260,14 @@ defmodule MyLibrary.Debug do
       end
 
       # Show options
-      config.opts_anno
-      |> Enum.each(fn {opt_name, anno} ->
+      Enum.each(config.opts_anno, fn {opt_name, anno} ->
         print_location("  Option #{opt_name}", anno)
       end)
 
       # Show entities
-      config.entities_anno
-      |> Enum.with_index()
-      |> Enum.each(fn {anno, index} ->
-        entity = Enum.at(config.entities, index)
-        entity_name = if entity, do: entity.name || index, else: index
-        print_location("  Entity #{entity_name}", anno)
+      Enum.each(config.entities, fn entity ->
+        anno = Spark.Dsl.Entity.anno(entity)
+        print_location("  Entity #{entity.name}", anno)
       end)
     end)
   end
@@ -304,7 +296,8 @@ location = case error_type do
   :option_error ->
     Spark.Dsl.Transformer.get_opt_anno(dsl_state, path, option_name)
   :entity_error ->
-    Spark.Dsl.Transformer.get_entity_anno(dsl_state, path, entity_index)
+    entity = Enum.at(entities, entity_index)
+    Spark.Dsl.Entity.anno(entity)
 end
 
 {:error,

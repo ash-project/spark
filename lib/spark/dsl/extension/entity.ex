@@ -97,11 +97,7 @@ defmodule Spark.Dsl.Extension.Entity do
 
     built = entity_builder.__build__(module, opts, nested_entities, anno, opts_anno)
 
-    new_config = %{
-      current_config
-      | entities: current_config.entities ++ [built],
-        entities_anno: (current_config.entities_anno || []) ++ [anno]
-    }
+    new_config = %{current_config | entities: current_config.entities ++ [built]}
 
     unless {extension, section_path} in current_sections do
       Process.put({module, :spark_sections}, [

@@ -258,69 +258,6 @@ defmodule Spark.Dsl.Extension do
     )
   end
 
-  @doc """
-  Get the annotation for an entity at the specified path and index.
-
-  Entities are stored in order, so the index corresponds to the position
-  in the entities list (0-based indexing).
-  """
-  @spec get_entity_anno(map | module, atom | list(atom), integer) :: :erl_anno.anno() | nil
-  def get_entity_anno(dsl_state, path, index)
-
-  def get_entity_anno(%struct{}, path, index) do
-    get_entity_anno(struct, path, index)
-  end
-
-  def get_entity_anno(map, path, index) when not is_list(path) do
-    get_entity_anno(map, [path], index)
-  end
-
-  def get_entity_anno(map, path, index) when is_map(map) do
-    Spark.Dsl.Transformer.get_entity_anno(map, path, index)
-  end
-
-  def get_entity_anno(resource, path, index) do
-    get_config_entry_with_fallback(
-      resource,
-      path,
-      fn -> resource.entity_anno(path, index) end,
-      :entities_anno,
-      &Enum.at(&1, index),
-      &Spark.Dsl.Transformer.get_entity_anno(&1, path, index)
-    )
-  end
-
-  @doc """
-  Get all entity annotations for the specified path.
-
-  Returns a list of annotations in the same order as the entities.
-  """
-  @spec get_entities_anno(map | module, atom | list(atom)) :: list(:erl_anno.anno() | nil)
-  def get_entities_anno(dsl_state, path)
-
-  def get_entities_anno(%struct{}, path) do
-    get_entities_anno(struct, path)
-  end
-
-  def get_entities_anno(map, path) when not is_list(path) do
-    get_entities_anno(map, [path])
-  end
-
-  def get_entities_anno(map, path) when is_map(map) do
-    Spark.Dsl.Transformer.get_entities_anno(map, path)
-  end
-
-  def get_entities_anno(resource, path) do
-    get_config_entry_with_fallback(
-      resource,
-      path,
-      fn -> resource.entities_anno(path) end,
-      :entities_anno,
-      & &1,
-      &Spark.Dsl.Transformer.get_entities_anno(&1, path)
-    )
-  end
-
   @doc "Get a value that was persisted while transforming or compiling the resource, e.g `:primary_key`"
   def get_persisted(resource, key, default \\ nil)
 
@@ -2066,7 +2003,6 @@ defmodule Spark.Dsl.Extension do
   @spec default_section_config() :: %{
           section_anno: :erl_anno.anno() | nil,
           entities: list(),
-          entities_anno: list(:erl_anno.anno() | nil),
           opts: Keyword.t(),
           opts_anno: Keyword.t(:erl_anno.anno() | nil)
         }
@@ -2074,7 +2010,6 @@ defmodule Spark.Dsl.Extension do
     do: %{
       section_anno: nil,
       entities: [],
-      entities_anno: [],
       opts: [],
       opts_anno: []
     }

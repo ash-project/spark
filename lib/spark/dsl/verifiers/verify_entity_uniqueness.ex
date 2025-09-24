@@ -94,57 +94,32 @@ defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
   end
 
   defp do_verify_entity_uniqueness(module, entity, section_path, dsl_state) do
-    entities =
-      dsl_state
-      |> Verifier.get_entities(section_path)
-      |> Enum.filter(&(&1.__struct__ == entity.target))
-
-    entities_anno = Spark.Dsl.Transformer.get_entities_anno(dsl_state, section_path)
-
-    unique_entities_or_error(entities, entity.identifier, module, section_path, entities_anno)
+    dsl_state
+    |> Verifier.get_entities(section_path)
+    |> Enum.filter(&(&1.__struct__ == entity.target))
+    |> unique_entities_or_error(entity.identifier, module, section_path)
   end
 
-  defp unique_entities_or_error(entities_to_check, identifier, module, path, entities_anno \\ [])
-  defp unique_entities_or_error(_, nil, _, _, _), do: :ok
+  defp unique_entities_or_error(_, nil, _, _), do: :ok
 
-  defp unique_entities_or_error(entities_to_check, identifier, module, path, entities_anno) do
-    # Build a map of entity to its index to track annotations
-    entity_index_map =
-      entities_to_check
-      |> Enum.with_index()
-      |> Map.new(fn {entity, index} -> {entity, index} end)
-
-    duplicate_result =
-      entities_to_check
-      |> Enum.frequencies_by(&{get_identifier(&1, identifier), &1.__struct__})
-      |> Enum.find_value(fn {key, value} ->
-        if value > 1 do
-          # Find the first duplicate entity to get its location
-          duplicate_entity =
-            Enum.find(entities_to_check, fn entity ->
-              {get_identifier(entity, identifier), entity.__struct__} == key
-            end)
-
-          {key, duplicate_entity}
-        end
-      end)
-
-    case duplicate_result do
+  defp unique_entities_or_error(entities_to_check, identifier, module, path) do
+    entities_to_check
+    |> Enum.group_by(&{get_identifier(&1, identifier), &1.__struct__})
+    |> Enum.find(&match?({_, [_first, _second | _]}, &1))
+    |> case do
       nil ->
         :ok
 
-      {{identifier, target}, duplicate_entity} ->
-        # Get the annotation for the duplicate entity
-        entity_index = Map.get(entity_index_map, duplicate_entity)
-        location = if entity_index, do: Enum.at(entities_anno, entity_index)
+      {{identifier, target}, [duplicate_entity | _rest]} ->
+        location = Spark.Dsl.Entity.anno(duplicate_entity)
 
         raise Spark.Error.DslError,
           module: module,
           path: path ++ [identifier],
-          location: location,
           message: """
           Got duplicate #{inspect(target)}: #{identifier}
-          """
+          """,
+          location: location
     end
   end
 

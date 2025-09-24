@@ -204,61 +204,23 @@ defmodule Spark.Dsl.Transformer do
   end
 
   def add_entity(dsl_state, path, entity, opts \\ []) do
-    Map.update(
-      dsl_state,
-      path,
-      %{Spark.Dsl.Extension.default_section_config() | entities_anno: [opts[:anno]]},
-      fn config ->
-        config
-        |> Map.update(:entities, [entity], fn entities ->
-          if (opts[:type] || :prepend) == :prepend do
-            [entity | entities]
-          else
-            entities ++ [entity]
-          end
-        end)
-        |> Map.update(:entities_anno, [opts[:anno]], fn entities_anno ->
-          if (opts[:type] || :prepend) == :prepend do
-            [opts[:anno] | entities_anno]
-          else
-            entities_anno ++ [opts[:anno]]
-          end
-        end)
-      end
-    )
+    Map.update(dsl_state, path, %{entities: [entity], opts: []}, fn config ->
+      Map.update(config, :entities, [entity], fn entities ->
+        if (opts[:type] || :prepend) == :prepend do
+          [entity | entities]
+        else
+          entities ++ [entity]
+        end
+      end)
+    end)
   end
 
   def remove_entity(dsl_state, path, func) do
-    Map.update(
-      dsl_state,
-      path,
-      Spark.Dsl.Extension.default_section_config(),
-      fn config ->
-        entities = Map.get(config, :entities, [])
-        entities_anno = Map.get(config, :entities_anno, [])
-
-        # Find indices of entities to remove
-        indices_to_remove =
-          entities
-          |> Enum.with_index()
-          |> Enum.filter(fn {entity, _index} -> func.(entity) end)
-          |> Enum.map(fn {_entity, index} -> index end)
-          # Reverse to remove from end first
-          |> Enum.reverse()
-
-        # Remove entities and their corresponding annotations
-        updated_entities = Enum.reject(entities, func)
-
-        updated_entities_anno =
-          Enum.reduce(indices_to_remove, entities_anno, fn index, acc ->
-            List.delete_at(acc, index)
-          end)
-
-        config
-        |> Map.put(:entities, updated_entities)
-        |> Map.put(:entities_anno, updated_entities_anno)
-      end
-    )
+    Map.update(dsl_state, path, %{entities: [], opts: []}, fn config ->
+      Map.update(config, :entities, [], fn entities ->
+        Enum.reject(entities, func)
+      end)
+    end)
   end
 
   def get_entities(dsl_state, path) do
@@ -288,32 +250,6 @@ defmodule Spark.Dsl.Transformer do
     |> Map.get(path, Spark.Dsl.Extension.default_section_config())
     |> Map.get(:opts_anno, [])
     |> Keyword.get(option)
-  end
-
-  @doc """
-  Gets the annotation for an entity at the specified path and index.
-
-  Entities are stored in order, so the index corresponds to the position
-  in the entities list (0-based indexing).
-  """
-  @spec get_entity_anno(map, list(atom), integer) :: :erl_anno.anno() | nil
-  def get_entity_anno(dsl_state, path, index) do
-    dsl_state
-    |> Map.get(path, Spark.Dsl.Extension.default_section_config())
-    |> Map.get(:entities_anno, [])
-    |> Enum.at(index)
-  end
-
-  @doc """
-  Gets all entity annotations for the specified path.
-
-  Returns a list of annotations in the same order as the entities.
-  """
-  @spec get_entities_anno(map, list(atom)) :: list(:erl_anno.anno() | nil)
-  def get_entities_anno(dsl_state, path) do
-    dsl_state
-    |> Map.get(path, Spark.Dsl.Extension.default_section_config())
-    |> Map.get(:entities_anno, [])
   end
 
   def get_option(dsl_state, path, option, default \\ nil) do

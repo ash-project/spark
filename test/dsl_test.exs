@@ -1,6 +1,7 @@
 defmodule Spark.DslTest do
   use ExUnit.Case
 
+  import ExUnit.CaptureIO
   import Spark.CodeHelpers
 
   test "defining an instance of the DSL works" do
@@ -665,28 +666,17 @@ defmodule Spark.DslTest do
       end
 
       dsl_state = EntityIntrospectionTest.spark_dsl_config()
+      entities = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
 
-      # Test get_entities_anno function - gets all annotations
-      entities_anno = Spark.Dsl.Extension.get_entities_anno(dsl_state, [:presets])
-      assert length(entities_anno) == 2
+      [first, second] = Enum.sort_by(entities, & &1.name)
 
-      [first_anno, second_anno] = entities_anno
+      first_anno = Spark.Dsl.Entity.anno(first)
+      second_anno = Spark.Dsl.Entity.anno(second)
+
       assert first_anno != nil
       assert second_anno != nil
       assert :erl_anno.location(first_anno) == base_line + 8
       assert :erl_anno.location(second_anno) == base_line + 13
-
-      # Test get_entity_anno function - gets specific annotation by index
-      first_entity_anno = Spark.Dsl.Extension.get_entity_anno(dsl_state, [:presets], 0)
-      second_entity_anno = Spark.Dsl.Extension.get_entity_anno(dsl_state, [:presets], 1)
-
-      assert :erl_anno.location(first_entity_anno) == base_line + 8
-      assert :erl_anno.location(second_entity_anno) == base_line + 13
-
-      # Test that annotations are available even for entities without anno_field
-      # (since not all entity types define an anno_field)
-      assert first_entity_anno != nil
-      assert second_entity_anno != nil
     end
 
     test "entities with required arguments don't assume an argument is opts if its a keyword list" do
@@ -922,6 +912,54 @@ defmodule Spark.DslTest do
           error_message = Exception.message(error)
           assert error_message =~ "dsl_test.exs"
       end
+    end
+  end
+
+  describe "missing spark metadata warnings" do
+    test "warns when entity does not have __spark_metadata__ field" do
+      # Create an entity struct without __spark_metadata__ field
+      defmodule WarningStruct do
+        defstruct [:name]
+      end
+
+      # Create a DSL extension with an entity that targets our struct without metadata
+      defmodule WarningExtension do
+        @entity_without_metadata %Spark.Dsl.Entity{
+          name: :entity_without_metadata,
+          args: [:name],
+          target: WarningStruct,
+          schema: [
+            name: [type: :atom]
+          ]
+        }
+
+        @section %Spark.Dsl.Section{
+          name: :test_section,
+          entities: [@entity_without_metadata]
+        }
+
+        use Spark.Dsl.Extension, sections: [@section]
+      end
+
+      defmodule WarningDsl do
+        @moduledoc false
+        use Spark.Dsl, default_extensions: [extensions: WarningExtension]
+      end
+
+      warning_output =
+        capture_io(:stderr, fn ->
+          defmodule WarningImpl do
+            use WarningDsl
+
+            test_section do
+              entity_without_metadata(:test)
+            end
+          end
+        end)
+
+      assert warning_output =~ "Entity without __spark_metadata__ field"
+      assert warning_output =~ "WarningStruct"
+      assert warning_output =~ "__spark_metadata__: nil"
     end
   end
 end

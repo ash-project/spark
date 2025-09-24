@@ -60,7 +60,9 @@ uses under the hood to allow users to write in the DSL syntax described above.
 ```elixir
 defmodule MyLibrary.Validator.Dsl do
   defmodule Field do
-    defstruct [:name, :type, :transform, :check]
+    # The __spark_metadata__ field is required for Spark entities
+    # It stores source location information for better error messages and tooling
+    defstruct [:name, :type, :transform, :check, :__spark_metadata__]
   end
 
   @field %Spark.Dsl.Entity{
