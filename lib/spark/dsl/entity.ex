@@ -249,22 +249,20 @@ defmodule Spark.Dsl.Entity do
 
   @doc false
   def build(
-        entity,
+        %{
+          target: target,
+          schema: schema,
+          auto_set_fields: auto_set_fields,
+          transform: transform,
+          identifier: identifier,
+          singleton_entity_keys: singleton_entity_keys,
+          entities: nested_entity_definitions
+        },
         opts,
         nested_entities,
         anno,
         opts_anno
       ) do
-    %{
-      target: target,
-      schema: schema,
-      auto_set_fields: auto_set_fields,
-      transform: transform,
-      identifier: identifier,
-      singleton_entity_keys: singleton_entity_keys,
-      entities: nested_entity_definitions
-    } = validate_and_transform(entity, [], nil)
-
     with {:ok, opts, more_nested_entities} <-
            fetch_single_argument_entities_from_opts(
              opts,
@@ -457,57 +455,5 @@ defmodule Spark.Dsl.Entity do
     )
 
     nil
-  end
-
-  @doc """
-  Validates and transforms an entity structure, ensuring nested entities are properly formatted.
-
-  This function recursively processes a DSL entity and its nested entities, converting
-  single entity values to lists where needed and validating the structure.
-
-  ## Parameters
-
-  - `entity` - The entity to validate and transform
-  - `path` - The current path in the DSL structure (for error reporting)
-  - `module` - The module context (for error reporting)
-
-  ## Returns
-
-  Returns the transformed entity with normalized nested entity structures.
-  """
-  def validate_and_transform(entity, path \\ [], module \\ nil)
-
-  def validate_and_transform(%Spark.Dsl.Entity{} = entity, path, module) do
-    # Include the entity's name in the path when processing nested entities
-    nested_path = if entity.name, do: path ++ [entity.name], else: path
-
-    entities =
-      entity.entities
-      |> List.wrap()
-      |> Enum.map(fn
-        {key, %Spark.Dsl.Entity{} = value} ->
-          {key, [validate_and_transform(value, nested_path ++ [key], module)]}
-
-        {key, values} when is_list(values) ->
-          # Already a list, keep as is
-          {key, Enum.map(values, &validate_and_transform(&1, nested_path ++ [key], module))}
-
-        {key, value} ->
-          # Non-entity, non-list value - this is invalid
-          raise Spark.Error.DslError,
-            module: module,
-            path: nested_path ++ [key],
-            message:
-              "nested entity '#{key}' must be an entity or list of entities, got: #{inspect(value)}"
-      end)
-
-    %{entity | entities: entities}
-  end
-
-  def validate_and_transform(_, path, module) do
-    raise Spark.Error.DslError,
-      module: module,
-      path: path,
-      message: "Invalid entity structure"
   end
 end
