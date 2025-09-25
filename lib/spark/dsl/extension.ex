@@ -603,7 +603,6 @@ defmodule Spark.Dsl.Extension do
   @doc false
   defmacro set_state(additional_persisted_data, fragments, transform? \\ true) do
     quote generated: true,
-          location: :keep,
           bind_quoted: [
             additional_persisted_data: additional_persisted_data,
             transform?: transform?,
@@ -672,13 +671,28 @@ defmodule Spark.Dsl.Extension do
           []
         end
 
-      @spark_dsl_config __MODULE__
-                        |> Spark.Dsl.Extension.run_transformers(
-                          transformers_to_run,
-                          spark_dsl_config,
-                          __ENV__
-                        )
-                        |> Spark.Dsl.Extension.await_tasks()
+      spark_dsl_config =
+        try do
+          __MODULE__
+          |> Spark.Dsl.Extension.run_transformers(
+            transformers_to_run,
+            spark_dsl_config,
+            __ENV__
+          )
+          |> Spark.Dsl.Extension.await_tasks()
+        rescue
+          e in Spark.Error.DslError ->
+            if e.location do
+              Spark.Warning.warn(e.message, e.location)
+
+              reraise %{e | module: __MODULE__}, []
+            else
+              reraise %{e | module: __MODULE__},
+                      (e.stacktrace && e.stacktrace.stacktrace) || __STACKTRACE__
+            end
+        end
+
+      @spark_dsl_config spark_dsl_config
     end
   end
 
@@ -697,7 +711,8 @@ defmodule Spark.Dsl.Extension do
           transformer.transform(dsl)
         rescue
           e in Spark.Error.DslError ->
-            reraise %{e | module: mod}, __STACKTRACE__
+            reraise %{e | module: mod},
+                    (e.stacktrace && e.stacktrace.stacktrace) || __STACKTRACE__
 
           e ->
             reraise "Exception in transformer #{inspect(transformer)} on #{inspect(mod)}: \n\n#{Exception.message(e)}",

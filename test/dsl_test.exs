@@ -301,7 +301,6 @@ defmodule Spark.DslTest do
         end)
 
       assert message =~ "Cannot be gandalf"
-      assert message =~ "(defined in test/dsl_test.exs:#{base_line + 10}:)"
       assert message =~ "~~~"
     end
 

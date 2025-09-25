@@ -30,8 +30,6 @@ defmodule Spark.Warning do
   def warn(message, location \\ nil, stacktrace \\ nil)
 
   def warn(message, location, stacktrace) when is_binary(message) do
-    formatted_message = format_warning_message(message, location)
-
     warn_context =
       if is_nil(location) do
         stacktrace || get_filtered_stacktrace()
@@ -48,7 +46,7 @@ defmodule Spark.Warning do
         end
       end
 
-    IO.warn(formatted_message, warn_context)
+    IO.warn(message, warn_context)
   end
 
   def warn(message, location, stacktrace) do
@@ -82,28 +80,6 @@ defmodule Spark.Warning do
       end
 
     warn(full_message, location, stacktrace)
-  end
-
-  @spec format_warning_message(String.t(), location() | nil) :: String.t()
-  defp format_warning_message(message, nil), do: message
-
-  defp format_warning_message(message, location) do
-    location_info = get_location_info(location)
-    "#{message}#{location_info}"
-  end
-
-  @spec get_location_info(location()) :: String.t()
-  defp get_location_info(location) do
-    file =
-      case :erl_anno.file(location) do
-        :undefined -> "unknown_file"
-        file -> Path.relative_to_cwd(to_string(file))
-      end
-
-    case :erl_anno.location(location) do
-      {line, column} -> " (defined in #{Exception.format_file_line_column(file, line, column)})"
-      line -> " (defined in #{Exception.format_file_line(file, line)})"
-    end
   end
 
   @spec get_filtered_stacktrace() :: [term()]
