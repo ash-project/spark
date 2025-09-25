@@ -406,6 +406,7 @@ defmodule Spark.Dsl.Extension do
       @_dsl_patches dsl_patches
       @_imports imports
       @_add_extensions add_extensions
+      @after_verify Spark.Dsl.Extension
 
       @doc false
       def sections, do: set_docs(@_sections)
@@ -855,22 +856,23 @@ defmodule Spark.Dsl.Extension do
         end)
       end)
 
-      Enum.each(dsl_patches, fn %Spark.Dsl.Patch.AddEntity{
-                                  section_path: section_path,
-                                  entity: entity
-                                } ->
-        Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
-          Extension.build_entity(
-            agent_and_pid,
-            module_prefix,
-            extension,
-            section_path,
-            entity,
-            [],
-            [],
-            []
-          )
-        end)
+      Enum.each(dsl_patches, fn
+        %Spark.Dsl.Patch.AddEntity{
+          section_path: section_path,
+          entity: entity
+        } ->
+          Spark.Dsl.Extension.async_compile(agent_and_pid, fn ->
+            Extension.build_entity(
+              agent_and_pid,
+              module_prefix,
+              extension,
+              section_path,
+              entity,
+              [],
+              [],
+              []
+            )
+          end)
       end)
 
       Spark.Dsl.Extension.await_all_tasks(agent)
@@ -1269,15 +1271,6 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
-          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) do
-            Spark.Warning.warn_deprecated(
-              "Entity without __spark_metadata__ field",
-              "Entity #{inspect(entity.target)} does not define a `__spark_metadata__` field. " <>
-                "This field is required to access source annotations. " <>
-                "Add `__spark_metadata__: nil` to the defstruct for #{inspect(entity.target)}."
-            )
-          end
-
           def __build__(module, opts, nested_entities, anno, opts_anno) do
             case Spark.Dsl.Entity.build(
                    unquote(Macro.escape(entity)),
@@ -2127,5 +2120,34 @@ defmodule Spark.Dsl.Extension do
     end
   else
     defp maybe_set_end_location(anno, _do_block), do: anno
+  end
+
+  def __after_verify__(module) do
+    dsl_patch_structs =
+      for %Spark.Dsl.Patch.AddEntity{entity: entity} <- module.dsl_patches(), do: entity.target
+
+    section_structs =
+      for section <- module.sections(), entity <- section_entities(section), do: entity.target
+
+    (dsl_patch_structs ++ section_structs)
+    |> Enum.uniq()
+    |> Enum.reject(&Map.has_key?(&1.__struct__(), :__spark_metadata__))
+    |> Enum.each(
+      &Spark.Warning.warn_deprecated(
+        "Entity without __spark_metadata__ field",
+        "Entity #{inspect(&1)} does not define a `__spark_metadata__` field. " <>
+          "This field is required to access source annotations. " <>
+          "Add `__spark_metadata__: nil` to the defstruct for #{inspect(&1)}."
+      )
+    )
+
+    :ok
+  end
+
+  defp section_entities(%Spark.Dsl.Section{
+         entities: entities,
+         sections: sections
+       }) do
+    entities ++ Enum.flat_map(sections, &section_entities/1)
   end
 end
