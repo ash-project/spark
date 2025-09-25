@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.0](https://github.com/ash-project/spark/compare/v2.2.69...v2.3.0) (2025-09-25)
+
+
+
+
+### Features:
+
+* Record Source Annotations (#216) by Jonatan Männchen
+
+### Bug Fixes:
+
+* fix autocompletion of `use` options by Zach Daniel
+
 ## [v2.2.69](https://github.com/ash-project/spark/compare/v2.2.68...v2.2.69) (2025-09-22)
 
 
