@@ -3,7 +3,7 @@ defmodule TransfomerTest do
 
   test "build_entity respects auto_set_fields" do
     defmodule Entity do
-      defstruct [:set_automatically, :set_manually, :__identifier__]
+      defstruct [:set_automatically, :set_manually, :__identifier__, :__spark_metadata__]
     end
 
     defmodule Dsl do

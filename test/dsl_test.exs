@@ -922,38 +922,24 @@ defmodule Spark.DslTest do
         defstruct [:name]
       end
 
-      # Create a DSL extension with an entity that targets our struct without metadata
-      defmodule WarningExtension do
-        @entity_without_metadata %Spark.Dsl.Entity{
-          name: :entity_without_metadata,
-          args: [:name],
-          target: WarningStruct,
-          schema: [
-            name: [type: :atom]
-          ]
-        }
-
-        @section %Spark.Dsl.Section{
-          name: :test_section,
-          entities: [@entity_without_metadata]
-        }
-
-        use Spark.Dsl.Extension, sections: [@section]
-      end
-
-      defmodule WarningDsl do
-        @moduledoc false
-        use Spark.Dsl, default_extensions: [extensions: WarningExtension]
-      end
-
       warning_output =
         capture_io(:stderr, fn ->
-          defmodule WarningImpl do
-            use WarningDsl
+          defmodule WarningExtension do
+            @entity_without_metadata %Spark.Dsl.Entity{
+              name: :entity_without_metadata,
+              args: [:name],
+              target: WarningStruct,
+              schema: [
+                name: [type: :atom]
+              ]
+            }
 
-            test_section do
-              entity_without_metadata(:test)
-            end
+            @section %Spark.Dsl.Section{
+              name: :test_section,
+              entities: [@entity_without_metadata]
+            }
+
+            use Spark.Dsl.Extension, sections: [@section]
           end
         end)
 
