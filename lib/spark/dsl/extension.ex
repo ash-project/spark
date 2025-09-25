@@ -381,6 +381,26 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
+  def set_docs(items) when is_list(items) do
+    Enum.map(items, &set_docs/1)
+  end
+
+  def set_docs(%Spark.Dsl.Entity{} = entity) do
+    entity
+    |> Map.put(:docs, Spark.Dsl.Extension.doc_entity(entity))
+    |> Map.put(
+      :entities,
+      Enum.map(entity.entities || [], fn {key, value} -> {key, set_docs(value)} end)
+    )
+  end
+
+  def set_docs(%Spark.Dsl.Section{} = section) do
+    section
+    |> Map.put(:entities, set_docs(section.entities))
+    |> Map.put(:sections, set_docs(section.sections))
+    |> Map.put(:docs, Spark.Dsl.Extension.doc_section(section))
+  end
+
   @doc false
   defmacro __using__(opts) do
     quote bind_quoted: [
@@ -397,19 +417,23 @@ defmodule Spark.Dsl.Extension do
       alias Spark.Dsl.Extension
       module_prefix = module_prefix || __MODULE__
 
-      @behaviour Extension
-      Extension.build(__MODULE__, module_prefix, sections, dsl_patches)
       @_sections sections
+                 |> Enum.map(&Extension.validate_and_transform_section(&1, __MODULE__))
+                 |> Extension.set_docs()
+      @_dsl_patches Extension.validate_and_transform_dsl_patches(dsl_patches, __MODULE__)
       @_transformers transformers
       @_verifiers verifiers
       @_persisters persisters
-      @_dsl_patches dsl_patches
       @_imports imports
       @_add_extensions add_extensions
+
+      @behaviour Extension
+      Extension.build(__MODULE__, module_prefix, @_sections, @_dsl_patches)
+
       @after_verify Spark.Dsl.Extension
 
       @doc false
-      def sections, do: set_docs(@_sections)
+      def sections, do: @_sections
       @doc false
       def verifiers, do: [Spark.Dsl.Verifiers.VerifyEntityUniqueness | @_verifiers]
       @doc false
@@ -424,26 +448,6 @@ defmodule Spark.Dsl.Extension do
       def dsl_patches, do: @_dsl_patches
       @doc false
       def add_extensions, do: @_add_extensions
-
-      defp set_docs(items) when is_list(items) do
-        Enum.map(items, &set_docs/1)
-      end
-
-      defp set_docs(%Spark.Dsl.Entity{} = entity) do
-        entity
-        |> Map.put(:docs, Spark.Dsl.Extension.doc_entity(entity))
-        |> Map.put(
-          :entities,
-          Enum.map(entity.entities || [], fn {key, value} -> {key, set_docs(value)} end)
-        )
-      end
-
-      defp set_docs(%Spark.Dsl.Section{} = section) do
-        section
-        |> Map.put(:entities, set_docs(section.entities))
-        |> Map.put(:sections, set_docs(section.sections))
-        |> Map.put(:docs, Spark.Dsl.Extension.doc_section(section))
-      end
     end
   end
 
@@ -834,7 +838,7 @@ defmodule Spark.Dsl.Extension do
          %Spark.Dsl.Patch.AddEntity{entity: entity} = dsl_patch,
          module
        ) do
-    entity = Spark.Dsl.Entity.validate_and_transform(entity, [], module)
+    entity = validate_and_transform_entity(entity, [], module)
     %{dsl_patch | entity: entity}
   end
 
@@ -854,8 +858,6 @@ defmodule Spark.Dsl.Extension do
             module_prefix: module_prefix
           ] do
       alias Spark.Dsl.Extension
-
-      dsl_patches = Extension.validate_and_transform_dsl_patches(dsl_patches, __MODULE__)
 
       {:ok, agent} = Agent.start_link(fn -> [] end)
       agent_and_pid = {agent, self()}
@@ -904,9 +906,61 @@ defmodule Spark.Dsl.Extension do
       ) do
     %{
       section
-      | entities:
-          Enum.map(entities, &Spark.Dsl.Entity.validate_and_transform(&1, [section.name], module))
+      | entities: Enum.map(entities, &validate_and_transform_entity(&1, [section.name], module))
     }
+  end
+
+  @doc """
+  Validates and transforms an entity structure, ensuring nested entities are properly formatted.
+
+  This function recursively processes a DSL entity and its nested entities, converting
+  single entity values to lists where needed and validating the structure.
+
+  ## Parameters
+
+  - `entity` - The entity to validate and transform
+  - `path` - The current path in the DSL structure (for error reporting)
+  - `module` - The module context (for error reporting)
+
+  ## Returns
+
+  Returns the transformed entity with normalized nested entity structures.
+  """
+  def validate_and_transform_entity(entity, path \\ [], module \\ nil)
+
+  def validate_and_transform_entity(%Spark.Dsl.Entity{} = entity, path, module) do
+    # Include the entity's name in the path when processing nested entities
+    nested_path = if entity.name, do: path ++ [entity.name], else: path
+
+    entities =
+      entity.entities
+      |> List.wrap()
+      |> Enum.map(fn
+        {key, %Spark.Dsl.Entity{} = value} ->
+          {key, [validate_and_transform_entity(value, nested_path ++ [key], module)]}
+
+        {key, values} when is_list(values) ->
+          # Already a list, keep as is
+          {key,
+           Enum.map(values, &validate_and_transform_entity(&1, nested_path ++ [key], module))}
+
+        {key, value} ->
+          # Non-entity, non-list value - this is invalid
+          raise Spark.Error.DslError,
+            module: module,
+            path: nested_path ++ [key],
+            message:
+              "nested entity '#{key}' must be an entity or list of entities, got: #{inspect(value)}"
+      end)
+
+    %{entity | entities: entities}
+  end
+
+  def validate_and_transform_entity(_, path, module) do
+    raise Spark.Error.DslError,
+      module: module,
+      path: path,
+      message: "Invalid entity structure"
   end
 
   @doc false
@@ -926,8 +980,6 @@ defmodule Spark.Dsl.Extension do
           ],
           generated: true do
       alias Spark.Dsl
-
-      section = Dsl.Extension.validate_and_transform_section(section, __MODULE__)
 
       {section_modules, entity_modules, opts_module} =
         Dsl.Extension.do_build_section(
