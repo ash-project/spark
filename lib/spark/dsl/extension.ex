@@ -1269,8 +1269,7 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
-          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) &&
-               !Application.compile_env(:spark, :skip_diagnostic_warnings, false) do
+          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) do
             Spark.Warning.warn_deprecated(
               "Entity without __spark_metadata__ field",
               "Entity #{inspect(entity.target)} does not define a `__spark_metadata__` field. " <>
