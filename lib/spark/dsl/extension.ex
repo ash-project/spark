@@ -1242,6 +1242,15 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
+          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) do
+            Spark.Warning.warn_deprecated(
+              "Entity without __spark_metadata__ field",
+              "Entity #{inspect(entity.target)} does not define a `__spark_metadata__` field. " <>
+                "This field is required to access source annotations. " <>
+                "Add `__spark_metadata__: nil` to the defstruct for #{inspect(entity.target)}."
+            )
+          end
+
           def __build__(module, opts, nested_entities, anno, opts_anno) do
             case Spark.Dsl.Entity.build(
                    unquote(Macro.escape(entity)),

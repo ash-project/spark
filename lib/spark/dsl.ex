@@ -533,16 +533,20 @@ defmodule Spark.Dsl do
             __ENV__
           )
         catch
+          kind, %Spark.Error.DslError{location: location} = reason ->
+            Spark.Warning.warn(
+              Exception.format(kind, reason, __STACKTRACE__),
+              location,
+              __STACKTRACE__
+            )
+
           kind, reason ->
             Spark.Warning.warn(
               """
               Exception while verifying `#{inspect(__MODULE__)}:`
               #{Exception.format(kind, reason, __STACKTRACE__)}
               """,
-              case reason do
-                %Spark.Error.DslError{location: location} -> location
-                _ -> nil
-              end,
+              nil,
               __STACKTRACE__
             )
         end

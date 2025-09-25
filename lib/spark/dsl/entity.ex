@@ -300,14 +300,6 @@ defmodule Spark.Dsl.Entity do
       metadata = %Spark.Dsl.Entity.Meta{anno: anno, properties_anno: opts_anno}
       %{built | __spark_metadata__: metadata}
     else
-      Spark.Warning.warn_deprecated(
-        "Entity without __spark_metadata__ field",
-        "Entity #{inspect(built.__struct__)} does not define a `__spark_metadata__` field. " <>
-          "This field is required to access source annotations. " <>
-          "Add `__spark_metadata__: nil` to the defstruct for #{inspect(built.__struct__)}.",
-        anno
-      )
-
       built
     end
   end
