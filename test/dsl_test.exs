@@ -917,7 +917,11 @@ defmodule Spark.DslTest do
   describe "missing spark metadata warnings" do
     test "warns when entity does not have __spark_metadata__ field" do
       # Create an entity struct without __spark_metadata__ field
-      defmodule WarningStruct do
+      defmodule WarningStructOuter do
+        defstruct [:name]
+      end
+
+      defmodule WarningStructNested do
         defstruct [:name]
       end
 
@@ -927,9 +931,21 @@ defmodule Spark.DslTest do
             @entity_without_metadata %Spark.Dsl.Entity{
               name: :entity_without_metadata,
               args: [:name],
-              target: WarningStruct,
+              target: WarningStructOuter,
               schema: [
                 name: [type: :atom]
+              ],
+              entities: [
+                nested: [
+                  %Spark.Dsl.Entity{
+                    name: :entity_without_metadata,
+                    args: [:name],
+                    target: WarningStructNested,
+                    schema: [
+                      name: [type: :atom]
+                    ]
+                  }
+                ]
               ]
             }
 
@@ -943,7 +959,8 @@ defmodule Spark.DslTest do
         end)
 
       assert warning_output =~ "Entity without __spark_metadata__ field"
-      assert warning_output =~ "WarningStruct"
+      assert warning_output =~ "WarningStructOuter"
+      assert warning_output =~ "WarningStructNested"
       assert warning_output =~ "__spark_metadata__: nil"
     end
   end

@@ -2205,7 +2205,7 @@ defmodule Spark.Dsl.Extension do
 
   def __after_verify__(module) do
     dsl_patch_structs =
-      for %Spark.Dsl.Patch.AddEntity{entity: entity} <- module.dsl_patches(), do: entity.target
+      for patch <- module.dsl_patches(), entity <- patch_entities(patch), do: entity.target
 
     section_structs =
       for section <- module.sections(), entity <- section_entities(section), do: entity.target
@@ -2225,10 +2225,29 @@ defmodule Spark.Dsl.Extension do
     :ok
   end
 
+  defp patch_entities(%Spark.Dsl.Patch.AddEntity{entity: entity}) do
+    nested_entities(entity)
+  end
+
   defp section_entities(%Spark.Dsl.Section{
          entities: entities,
          sections: sections
        }) do
-    entities ++ Enum.flat_map(sections, &section_entities/1)
+    [
+      entities,
+      Enum.flat_map(sections, &section_entities/1)
+    ]
+    |> Enum.concat()
+    |> Enum.flat_map(&nested_entities/1)
+  end
+
+  defp nested_entities(%Spark.Dsl.Entity{entities: entities} = entity) do
+    [
+      entity
+      | Enum.flat_map(entities, fn
+          {_key, nested_entities} -> List.wrap(nested_entities)
+          other -> List.wrap(other)
+        end)
+    ]
   end
 end
