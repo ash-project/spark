@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.4](https://github.com/ash-project/spark/compare/v2.3.3...v2.3.4) (2025-09-25)
+
+
+
+
+### Bug Fixes:
+
+* Verify Metadata Struct Fields after Compilation (#217) by Jonatan Männchen
+
 ## [v2.3.3](https://github.com/ash-project/spark/compare/v2.3.2...v2.3.3) (2025-09-25)
 
 
