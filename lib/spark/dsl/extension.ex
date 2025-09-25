@@ -830,6 +830,20 @@ defmodule Spark.Dsl.Extension do
     |> Enum.uniq()
   end
 
+  defp validate_and_transform_dsl_patch(
+         %Spark.Dsl.Patch.AddEntity{entity: entity} = dsl_patch,
+         module
+       ) do
+    entity = Spark.Dsl.Entity.validate_and_transform(entity, [], module)
+    %{dsl_patch | entity: entity}
+  end
+
+  defp validate_and_transform_dsl_patch(dsl_patch, _module), do: dsl_patch
+
+  def validate_and_transform_dsl_patches(dsl_patches, module \\ nil) do
+    Enum.map(dsl_patches, &validate_and_transform_dsl_patch(&1, module))
+  end
+
   @doc false
   defmacro build(extension, module_prefix, sections, dsl_patches) do
     quote generated: true,
@@ -840,6 +854,8 @@ defmodule Spark.Dsl.Extension do
             module_prefix: module_prefix
           ] do
       alias Spark.Dsl.Extension
+
+      dsl_patches = Extension.validate_and_transform_dsl_patches(dsl_patches, __MODULE__)
 
       {:ok, agent} = Agent.start_link(fn -> [] end)
       agent_and_pid = {agent, self()}
@@ -882,6 +898,18 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
+  def validate_and_transform_section(
+        %Spark.Dsl.Section{entities: entities} = section,
+        module \\ nil
+      ) do
+    %{
+      section
+      | entities:
+          Enum.map(entities, &Spark.Dsl.Entity.validate_and_transform(&1, [section.name], module))
+    }
+  end
+
+  @doc false
   defmacro build_section(
              agent,
              extension,
@@ -898,6 +926,8 @@ defmodule Spark.Dsl.Extension do
           ],
           generated: true do
       alias Spark.Dsl
+
+      section = Dsl.Extension.validate_and_transform_section(section, __MODULE__)
 
       {section_modules, entity_modules, opts_module} =
         Dsl.Extension.do_build_section(
@@ -1205,7 +1235,6 @@ defmodule Spark.Dsl.Extension do
       Enum.reduce(entity.entities, [], fn
         {key, entities}, nested_entity_mods ->
           entities
-          |> List.wrap()
           |> Enum.reduce(
             nested_entity_mods,
             fn nested_entity, nested_entity_mods ->
