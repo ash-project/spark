@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.2](https://github.com/ash-project/spark/compare/v2.3.1...v2.3.2) (2025-09-25)
+
+
+
+
+### Improvements:
+
+* warn *and* error on transformer errors by Zach Daniel
+
 ## [v2.3.1](https://github.com/ash-project/spark/compare/v2.3.0...v2.3.1) (2025-09-25)
 
 
