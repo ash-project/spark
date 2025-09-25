@@ -33,7 +33,9 @@ defmodule Spark.Warning do
     formatted_message = format_warning_message(message, location)
 
     warn_context =
-      if location do
+      if is_nil(location) do
+        stacktrace || get_filtered_stacktrace()
+      else
         warn_context =
           case :erl_anno.file(location) do
             :undefined -> [file: "unknown_file"]
@@ -44,8 +46,6 @@ defmodule Spark.Warning do
           {line, column} -> Keyword.merge(warn_context, line: line, column: column)
           line -> Keyword.merge(warn_context, line: line)
         end
-      else
-        stacktrace || get_filtered_stacktrace()
       end
 
     IO.warn(formatted_message, warn_context)
