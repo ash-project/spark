@@ -683,7 +683,7 @@ defmodule Spark.Dsl.Extension do
         rescue
           e in Spark.Error.DslError ->
             if e.location do
-              Spark.Warning.warn(e.message, e.location)
+              Spark.Dsl.Extension.diagnostic_warning(e)
 
               reraise %{e | module: __MODULE__}, []
             else
@@ -693,6 +693,18 @@ defmodule Spark.Dsl.Extension do
         end
 
       @spark_dsl_config spark_dsl_config
+    end
+  end
+
+  if Application.compile_env(:spark, :skip_diagnostic_warnings, false) do
+    @doc false
+    def diagnostic_warning(_e) do
+      :ok
+    end
+  else
+    @doc false
+    def diagnostic_warning(e) do
+      Spark.Warning.warn(e.message, e.location)
     end
   end
 
@@ -1257,7 +1269,8 @@ defmodule Spark.Dsl.Extension do
                 nested_key: nested_key,
                 mod: mod
               ] do
-          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) do
+          if !Map.has_key?(entity.target.__struct__(), :__spark_metadata__) &&
+               !Application.compile_env(:spark, :skip_diagnostic_warnings, false) do
             Spark.Warning.warn_deprecated(
               "Entity without __spark_metadata__ field",
               "Entity #{inspect(entity.target)} does not define a `__spark_metadata__` field. " <>
