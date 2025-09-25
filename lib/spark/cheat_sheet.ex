@@ -430,10 +430,10 @@ defmodule Spark.CheatSheet do
     entities =
       Enum.flat_map(entity.entities, fn
         {_, entities} ->
-          entities
+          List.wrap(entities)
 
         other ->
-          [other]
+          List.wrap(other)
       end)
 
     entities_doc =
@@ -485,11 +485,11 @@ defmodule Spark.CheatSheet do
   def doc_index(sections, depth \\ 0, prefix \\ "module") do
     sections
     |> Enum.flat_map(fn
-      {_, entities} ->
-        entities
+      {_name, entities} ->
+        List.wrap(entities)
 
       other ->
-        [other]
+        List.wrap(other)
     end)
     |> Enum.map_join("\n", fn
       section ->

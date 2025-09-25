@@ -98,7 +98,7 @@ defmodule Spark.Dsl.Entity do
   @typedoc """
   A keyword list of nested entities.
   """
-  @type entities :: keyword(t)
+  @type entities :: keyword(t | [t])
 
   @typedoc """
   Specifies a function that will run on the target struct after building.
