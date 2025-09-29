@@ -5,9 +5,9 @@ defmodule Spark.DslTest do
   import Spark.CodeHelpers
 
   setup do
-    compiler_options = Code.compiler_options()
-    Code.compiler_options(debug_info: true)
-    on_exit(fn -> Code.compiler_options(compiler_options) end)
+    debug_info? = Code.get_compiler_option(:debug_info)
+    Code.put_compiler_option(:debug_info, true)
+    on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
     :ok
   end
 
