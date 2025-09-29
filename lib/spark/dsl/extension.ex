@@ -2170,7 +2170,7 @@ defmodule Spark.Dsl.Extension do
 
   @spec macro_env_anno(env :: Macro.Env.t(), do_block :: Macro.t()) :: :erl_anno.anno()
   def macro_env_anno(env, do_block) do
-    if Code.compiler_options()[:debug_info] do
+    if Code.get_compiler_option(:debug_info) do
       anno = :erl_anno.new(env.line)
       anno = :erl_anno.set_file(String.to_charlist(env.file), anno)
       maybe_set_end_location(anno, do_block)

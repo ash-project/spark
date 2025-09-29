@@ -5,6 +5,26 @@ using Erlang's `:erl_anno` module. This provides comprehensive location tracking
 for sections, options, and entities, enabling better error messages, IDE
 integration, and debugging capabilities.
 
+Source annotations are only enabled when the Elixir compile option `debug_info`
+is enabled (`Code.get_compiler_option(:debug_info)` returns true). By default,
+debug info is disabled in production and in `.exs` script files, which means
+source annotations won't be available in those contexts.
+
+> #### ExUnit Test Cases {: .warning}
+>
+> If you're defining modules inside ExUnit test cases (which use `.exs` files),
+> source annotations won't be available unless you explicitly enable
+> `debug_info` in your tests.
+>
+> ```elixir
+> setup do
+>   debug_info? = Code.get_compiler_option(:debug_info)
+>   Code.put_compiler_option(:debug_info, true)
+>   on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
+>   :ok
+> end
+> ```
+
 ## What are Source Annotations?
 
 Source annotations capture metadata about where DSL elements are defined in your
