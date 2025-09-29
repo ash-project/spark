@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.5](https://github.com/ash-project/spark/compare/v2.3.4...v2.3.5) (2025-09-29)
+
+
+
+
+### Bug Fixes:
+
+* hoist validation and transformation to top of call chain. before, set_docs would be called on the un-transformed sections (#221) by marot
+
+### Improvements:
+
+* only store source location if :debug_info enabled (#222) by Jonatan Männchen
+
+  * Note: you will potentially need to update your DSL tests. See the anno guide for more.
+
+* check __spark_metadata__ presence in nested entities (#220) by Jonatan Männchen
+
+* Add DSL entity validation and transformation (#218) by marot
+
 ## [v2.3.4](https://github.com/ash-project/spark/compare/v2.3.3...v2.3.4) (2025-09-25)
 
 
