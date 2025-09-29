@@ -4,6 +4,13 @@ defmodule Spark.DslTest do
   import ExUnit.CaptureIO
   import Spark.CodeHelpers
 
+  setup do
+    compiler_options = Code.compiler_options()
+    Code.compiler_options(debug_info: true)
+    on_exit(fn -> Code.compiler_options(compiler_options) end)
+    :ok
+  end
+
   test "defining an instance of the DSL works" do
     defmodule HanSolo do
       @moduledoc false
@@ -546,6 +553,45 @@ defmodule Spark.DslTest do
         assert end_location >= base_line + 8
         # Should be before end
         assert end_location <= base_line + 14
+      end
+    end
+
+    test "annotations are not stored if debug_info is disabled" do
+      compiler_options = Code.compiler_options()
+
+      try do
+        Code.compiler_options(debug_info: false)
+
+        defmodule NoDebugInfoTest do
+          @moduledoc false
+
+          use Spark.Test.Contact
+
+          personal_details do
+            first_name("Alice")
+            last_name("Smith")
+          end
+
+          presets do
+            preset :test_preset do
+              default_message("Hello World")
+            end
+          end
+        end
+
+        dsl_state = NoDebugInfoTest.spark_dsl_config()
+        assert [entity] = Spark.Dsl.Extension.get_entities(dsl_state, [:presets])
+
+        assert nil == Spark.Dsl.Entity.anno(entity)
+
+        assert nil == Spark.Dsl.Entity.property_anno(entity, :default_message)
+
+        assert nil == Spark.Dsl.Extension.get_section_anno(dsl_state, [:personal_details])
+
+        assert nil ==
+                 Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :first_name)
+      after
+        Code.compiler_options(compiler_options)
       end
     end
 
