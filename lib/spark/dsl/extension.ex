@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Extension do
   @moduledoc """
   An extension to the Spark DSL.

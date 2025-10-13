@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Builder do
   @moduledoc """
   Utilities for building DSL objects programatically, generally used in transformers.

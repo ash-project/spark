@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Options.ValidationError do
   @moduledoc """
   An error that is returned (or raised) when options are invalid.

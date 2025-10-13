@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Extension.Imports do
   @moduledoc false
   def import_solving_conflicts(mods, caller) do

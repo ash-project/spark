@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Fragment do
   @moduledoc """
   Allows splitting up a DSL into multiple modules, potentially organizing large DSLs

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Test.ContactPatcher do
   @moduledoc false
   @special_preset %Spark.Dsl.Entity{

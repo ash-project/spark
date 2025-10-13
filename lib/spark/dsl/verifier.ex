@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Verifier do
   @moduledoc """
   A verifier gets the dsl state and can return `:ok` or `:error`.

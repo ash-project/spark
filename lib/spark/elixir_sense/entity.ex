@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.ElixirSense.Entity do
   @moduledoc false
   alias ElixirSense.Core.Introspection

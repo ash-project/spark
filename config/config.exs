@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 import Config
 
 config :spark, :enforce_spark_elixir_sense_behaviours?, true

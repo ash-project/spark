@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Verifiers.VerifyEntityUniqueness do
   @moduledoc """
   Verifies that each entity that has an identifier is unique at each path.

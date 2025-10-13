@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.CheatSheet do
   @moduledoc "Tools to generate cheat sheets for spark DSLs"
 

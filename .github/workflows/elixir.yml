@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 name: Spark CI
 
 on:
@@ -14,3 +18,4 @@ jobs:
       HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
     with:
       spark-formatter: false
+      reuse: true
