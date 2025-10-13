@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 if Code.ensure_loaded?(Sourceror) do
   defmodule Mix.Tasks.Spark.Formatter do
     @shortdoc "Manages a variable called `spark_locals_without_parens` in the .formatter.exs from a list of DSL extensions."

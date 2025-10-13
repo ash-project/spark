@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 Zach Daniel
+
+SPDX-License-Identifier: MIT
+-->
+
 # Splitting Up Large DSLs
 
 When building large DSLs, we face similar problems as things like large configuration files. It can be hard to find what we're looking for, and we can end up scrolling through a lot of DSL code to find what we're interested in. We generally suggest avoiding splitting up your DSLs by default, but it is important to know how to do so when the need arises.

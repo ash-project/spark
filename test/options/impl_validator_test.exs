@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Options.ImplValidatorTest do
   use ExUnit.Case
   require Spark.Options.Validator

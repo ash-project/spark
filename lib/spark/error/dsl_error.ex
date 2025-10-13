@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Error.DslError do
   @moduledoc "Used when a DSL is incorrectly configured."
   @attrs [:module, :message, :path, :stacktrace, :location]

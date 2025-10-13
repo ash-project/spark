@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Test.Contact.Verifiers.VerifyNotGandalf do
   @moduledoc false
   use Spark.Dsl.Verifier

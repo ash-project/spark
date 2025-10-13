@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.CodeHelpers do
   @moduledoc """
   Helpers for meta programming around code and code snippets

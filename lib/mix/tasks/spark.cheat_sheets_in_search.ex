@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 if Code.ensure_loaded?(Jason) do
   defmodule Mix.Tasks.Spark.CheatSheetsInSearch do
     @shortdoc "Includes generated cheat sheets in the search bar"

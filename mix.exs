@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.MixProject do
   use Mix.Project
 
@@ -93,12 +97,19 @@ defmodule Spark.MixProject do
 
   defp package do
     [
-      name: :spark,
+      maintainers: [
+        "Zach Daniel <zach@zachdaniel.dev>"
+      ],
       licenses: ["MIT"],
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*
                 CHANGELOG* documentation usage-rules.md),
       links: %{
-        GitHub: "https://github.com/ash-project/spark"
+        "GitHub" => "https://github.com/ash-project/spark",
+        "Changelog" => "https://github.com/ash-project/spark/blob/main/CHANGELOG.md",
+        "Discord" => "https://discord.gg/HTHRaaVPUc",
+        "Website" => "https://ash-hq.org",
+        "Forum" => "https://elixirforum.com/c/elixir-framework-forums/ash-framework-forum",
+        "REUSE Compliance" => "https://api.reuse.software/info/github.com/ash-project/spark"
       }
     ]
   end

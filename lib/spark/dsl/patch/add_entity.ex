@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Patch.AddEntity do
   @moduledoc """
   Supply this when defining an extension to add entity builders to another extension's section.

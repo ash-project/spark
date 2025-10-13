@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.InfoGenerator do
   @moduledoc """
   Used to dynamically generate configuration functions for Spark extensions

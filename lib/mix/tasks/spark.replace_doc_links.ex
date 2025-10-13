@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Mix.Tasks.Spark.ReplaceDocLinks do
   @moduledoc """
   Replaces any documentation links with text appropriate for hex docs.

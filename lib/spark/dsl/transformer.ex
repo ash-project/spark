@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Zach Daniel
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Spark.Dsl.Transformer do
   @moduledoc """
   A transformer manipulates and/or validates the entire DSL state of a resource.
