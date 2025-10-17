@@ -58,6 +58,8 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     def format(contents, opts) do
+      Mix.Task.run("compile")
+
       config =
         :spark
         |> Application.get_env(:formatter, [])
