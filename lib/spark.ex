@@ -46,7 +46,7 @@ defmodule Spark do
 
       # never seen a module with three behaviours in real life, let alone four.
       {:behaviour, behaviours} when is_list(behaviours) ->
-        module in behaviours
+        behaviour in behaviours
 
       _ ->
         false
