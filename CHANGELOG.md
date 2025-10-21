@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.6](https://github.com/ash-project/spark/compare/v2.3.5...v2.3.6) (2025-10-21)
+
+
+
+
+### Bug Fixes:
+
+* implements_behaviour? do not return true for any module (#229) by Jonatan Männchen
+
+* run compile task before formatting by Zach Daniel
+
 ## [v2.3.5](https://github.com/ash-project/spark/compare/v2.3.4...v2.3.5) (2025-09-29)
 
 
