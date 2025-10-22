@@ -428,7 +428,7 @@ defmodule Spark.Dsl do
           mod = Macro.expand(value, env)
 
           extensions =
-            if Spark.implements_behaviour?(mod, Spark.Dsl.Extension) do
+            if Code.ensure_loaded?(mod) && Spark.implements_behaviour?(mod, Spark.Dsl.Extension) do
               [mod | extensions]
             else
               extensions
