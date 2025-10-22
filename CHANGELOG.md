@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.7](https://github.com/ash-project/spark/compare/v2.3.6...v2.3.7) (2025-10-22)
+
+
+
+
+### Bug Fixes:
+
+* use `Code.ensure_loaded?/1` before checking behaviour implementation of extension by Zach Daniel
+
 ## [v2.3.6](https://github.com/ash-project/spark/compare/v2.3.5...v2.3.6) (2025-10-21)
 
 
