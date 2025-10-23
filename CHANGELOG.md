@@ -12,6 +12,14 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.10](https://github.com/ash-project/spark/compare/v2.3.9...v2.3.10) (2025-10-23)
+
+
+### Bug Fixes:
+
+* ensure compile task is reenabled in format
+
+
 ## [v2.3.9](https://github.com/ash-project/spark/compare/v2.3.8...v2.3.9) (2025-10-23)
 
 

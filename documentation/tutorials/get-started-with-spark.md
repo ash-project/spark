@@ -21,7 +21,7 @@ but PRs are very welcome for more documentation and examples.
 
 ## Dependency
 
-`{:spark, "~> 2.3.9"}`
+`{:spark, "~> 2.3.10"}`
 
 ## Your First DSL
 
