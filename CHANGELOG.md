@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.9](https://github.com/ash-project/spark/compare/v2.3.8...v2.3.9) (2025-10-23)
+
+
+
+
+### Bug Fixes:
+
+* handle erorrs in `add_extensions/0` calls by Zach Daniel
+
 ## [v2.3.8](https://github.com/ash-project/spark/compare/v2.3.7...v2.3.8) (2025-10-23)
 
 
