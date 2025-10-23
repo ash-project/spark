@@ -59,7 +59,9 @@ if Code.ensure_loaded?(Sourceror) do
 
     def format(contents, opts) do
       Mix.Task.reenable("compile")
+      Mix.Task.reenable("loadpaths")
       Mix.Task.run("compile")
+      Mix.Task.run("loadpaths")
 
       config =
         :spark
