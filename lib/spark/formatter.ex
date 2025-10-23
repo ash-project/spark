@@ -304,6 +304,7 @@ if Code.ensure_loaded?(Sourceror) do
       |> Enum.concat(config[:extensions] || [])
       |> Enum.concat(type.default_extensions() || [])
       |> Enum.flat_map(fn extension ->
+        Code.ensure_compiled!(extension)
         [extension | extension.add_extensions()]
       end)
     end
