@@ -58,8 +58,7 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     def format(contents, opts) do
-      Mix.Task.reenable("compile")
-      Mix.Task.run("compile")
+      safe_compile()
 
       config =
         :spark
@@ -95,6 +94,16 @@ if Code.ensure_loaded?(Sourceror) do
 
         :error ->
           contents
+      end
+    end
+
+    # Compiles the project if safe to do so.
+    # Skips compilation when running at umbrella root to avoid Mix.ProjectStack violations.
+    # See: https://github.com/elixir-lang/elixir/issues/11759
+    defp safe_compile do
+      unless Mix.Project.umbrella?() do
+        Mix.Task.reenable("compile")
+        Mix.Task.run("compile")
       end
     end
 
@@ -303,7 +312,7 @@ if Code.ensure_loaded?(Sourceror) do
         end)
       end)
       |> Enum.concat(config[:extensions] || [])
-      |> Enum.concat(type.default_extensions() || [])
+      |> Enum.concat(safe_get_default_extensions(type))
       |> Enum.flat_map(fn extension ->
         try do
           [extension | extension.add_extensions()]
@@ -311,6 +320,23 @@ if Code.ensure_loaded?(Sourceror) do
           _ -> [extension]
         end
       end)
+    end
+
+    defp safe_get_default_extensions(type) do
+      try do
+        type.default_extensions() || []
+      rescue
+        error ->
+          Logger.warning("""
+          Spark.Formatter: Could not load default_extensions for #{inspect(type)}.
+          This can happen in umbrella projects when running format from the root.
+          Try running format from within the sub-app, or compile first with: mix compile
+
+          Error: #{inspect(error)}
+          """)
+
+          []
+      end
     end
 
     defp opts_without_plugin(opts) do
