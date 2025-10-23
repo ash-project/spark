@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.8](https://github.com/ash-project/spark/compare/v2.3.7...v2.3.8) (2025-10-23)
+
+
+
+
+### Bug Fixes:
+
+* use `Code.ensure_compiled!/1` to ensure extensions are compiled by Zach Daniel
+
 ## [v2.3.7](https://github.com/ash-project/spark/compare/v2.3.6...v2.3.7) (2025-10-22)
 
 
