@@ -58,6 +58,7 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     def format(contents, opts) do
+      Mix.Task.reenable("compile")
       Mix.Task.run("compile")
 
       config =
