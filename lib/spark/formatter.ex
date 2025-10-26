@@ -103,7 +103,9 @@ if Code.ensure_loaded?(Sourceror) do
     defp safe_compile do
       unless Mix.Project.umbrella?() do
         Mix.Task.reenable("compile")
+        Mix.Task.reenable("loadpaths")
         Mix.Task.run("compile")
+        Mix.Task.run("loadpaths")
       end
     end
 

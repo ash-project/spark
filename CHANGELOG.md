@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.11](https://github.com/ash-project/spark/compare/v2.3.10...v2.3.11) (2025-10-23)
+
+
+
+
+### Bug Fixes:
+
+* run loadpaths on format by Zach Daniel
+
 ## [v2.3.10](https://github.com/ash-project/spark/compare/v2.3.9...v2.3.10) (2025-10-23)
 
 
