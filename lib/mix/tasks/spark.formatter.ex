@@ -11,7 +11,7 @@ if Code.ensure_loaded?(Sourceror) do
     @spec run(term) :: no_return
     def run(opts) do
       # Compile if safe to do so (not at umbrella root)
-      unless Mix.Project.umbrella?() do
+      if not Mix.Project.umbrella?() do
         Mix.Task.run("compile")
       end
 
