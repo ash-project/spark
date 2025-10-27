@@ -101,7 +101,7 @@ if Code.ensure_loaded?(Sourceror) do
     # Skips compilation when running at umbrella root to avoid Mix.ProjectStack violations.
     # See: https://github.com/elixir-lang/elixir/issues/11759
     defp safe_compile do
-      unless Mix.Project.umbrella?() do
+      if not Mix.Project.umbrella?() do
         Mix.Task.reenable("compile")
         Mix.Task.reenable("loadpaths")
         Mix.Task.run("compile")
@@ -325,20 +325,18 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     defp safe_get_default_extensions(type) do
-      try do
-        type.default_extensions() || []
-      rescue
-        error ->
-          Logger.warning("""
-          Spark.Formatter: Could not load default_extensions for #{inspect(type)}.
-          This can happen in umbrella projects when running format from the root.
-          Try running format from within the sub-app, or compile first with: mix compile
+      type.default_extensions() || []
+    rescue
+      error ->
+        Logger.warning("""
+        Spark.Formatter: Could not load default_extensions for #{inspect(type)}.
+        This can happen in umbrella projects when running format from the root.
+        Try running format from within the sub-app, or compile first with: mix compile
 
-          Error: #{inspect(error)}
-          """)
+        Error: #{inspect(error)}
+        """)
 
-          []
-      end
+        []
     end
 
     defp opts_without_plugin(opts) do
