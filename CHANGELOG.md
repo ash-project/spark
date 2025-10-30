@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.12](https://github.com/ash-project/spark/compare/v2.3.11...v2.3.12) (2025-10-30)
+
+
+
+
+### Bug Fixes:
+
+* don't use Code.ensure_loaded? when checking for Spark.Dsl.Extension behaviour by Zach Daniel
+
 ## [v2.3.11](https://github.com/ash-project/spark/compare/v2.3.10...v2.3.11) (2025-10-23)
 
 
