@@ -2,10 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+readme_path = Path.join(__DIR__, "../README.md")
+
+readme_content =
+  readme_path
+  |> File.read!()
+  |> String.replace(~r/<!-- ex_doc_ignore_start -->.*?<!-- ex_doc_ignore_end -->/s, "")
+
 defmodule Spark do
   @moduledoc """
-  Documentation for `Spark`.
+  #{readme_content}
   """
+
+  @external_resource readme_path
 
   @doc """
   Returns all modules that implement the specified behaviour for a given otp_app.

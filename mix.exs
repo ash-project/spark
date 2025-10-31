@@ -50,7 +50,7 @@ defmodule Spark.MixProject do
   defp docs do
     # The main page in the docs
     [
-      main: "get-started-with-spark",
+      main: "Spark",
       source_ref: "v#{@version}",
       extra_section: "GUIDES",
       before_closing_head_tag: fn type ->
@@ -68,6 +68,8 @@ defmodule Spark.MixProject do
           """
         end
       end,
+      logo: "logos/logo.svg",
+      assets: %{"logos" => "logos"},
       spark: [
         mix_tasks: [
           Formatting: [
@@ -80,6 +82,7 @@ defmodule Spark.MixProject do
         "documentation/how_to/writing-extensions.md",
         "documentation/how_to/split-up-large-dsls.md",
         "documentation/how_to/use-source-annotations.md",
+        "documentation/how_to/setup-autocomplete.md",
         "documentation/tutorials/get-started-with-spark.md"
       ],
       groups_for_extras: [
