@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.13](https://github.com/ash-project/spark/compare/v2.3.12...v2.3.13) (2025-11-05)
+
+
+
+
+### Bug Fixes:
+
+* mix format crashes in umbrella projects (#230) by Matthew Sinclair
+
+* replace explicit try with implicit try and remove deprecated unless by Matthew Sinclair
+
 ## [v2.3.12](https://github.com/ash-project/spark/compare/v2.3.11...v2.3.12) (2025-10-30)
 
 
