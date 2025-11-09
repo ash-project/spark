@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.3.14](https://github.com/ash-project/spark/compare/v2.3.13...v2.3.14) (2025-11-09)
+
+
+
+
+### Improvements:
+
+* add :regex builtin type by Zach Daniel
+
+* only compile on uncompiled extension in formatter by Zach Daniel
+
 ## [v2.3.13](https://github.com/ash-project/spark/compare/v2.3.12...v2.3.13) (2025-11-05)
 
 
