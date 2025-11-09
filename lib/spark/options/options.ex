@@ -189,6 +189,8 @@ defmodule Spark.Options do
       Usually used for process initialization using `start_link` and similar. The
       second element of the tuple can be any term.
 
+    * `:regex` - A regex
+
     * `:regex_as_mfa` - A regex pattern that gets converted to an MFA tuple for caching.
       Accepts a compiled regex (`~r/pattern/flags`), a string pattern (`"pattern"`), or a
       tuple of pattern and flags (`{"pattern", "flags"}`) and converts it to
@@ -398,6 +400,7 @@ defmodule Spark.Options do
     :mfa,
     :mod_arg,
     :regex_as_mfa,
+    :regex,
     :string,
     :boolean,
     :timeout,
@@ -1086,6 +1089,46 @@ defmodule Spark.Options do
       key,
       value,
       "invalid value for #{render_key(key)}: expected tuple {mod, fun, args}, got: #{inspect(value)}"
+    )
+  end
+
+  defp validate_type(:regex, _key, %Regex{} = value) do
+    {:ok, value}
+  end
+
+  defp validate_type(:regex, key, {value, flags}) do
+    case Regex.compile(value, flags) do
+      {:ok, regex} ->
+        {:ok, regex}
+
+      {:error, reason} ->
+        error_tuple(
+          key,
+          value,
+          "invalid value for #{render_key(key)}: could not compile regex. Reason: #{reason}"
+        )
+    end
+  end
+
+  defp validate_type(:regex, key, value) when is_binary(value) do
+    case Regex.compile(value) do
+      {:ok, regex} ->
+        {:ok, regex}
+
+      {:error, reason} ->
+        error_tuple(
+          key,
+          value,
+          "invalid value for #{render_key(key)}: could not compile regex. Reason: #{reason}"
+        )
+    end
+  end
+
+  defp validate_type(:regex, key, value) do
+    error_tuple(
+      key,
+      value,
+      "invalid value for #{render_key(key)}: expected regex, got: #{inspect(value)}"
     )
   end
 

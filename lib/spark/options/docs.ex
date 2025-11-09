@@ -131,6 +131,7 @@ defmodule Spark.Options.Docs do
   defp get_raw_type_str(:atom), do: "`t:atom/0`"
   defp get_raw_type_str(:integer), do: "`t:integer/0`"
   defp get_raw_type_str(:regex_as_mfa), do: "`t:Regex.t/0`"
+  defp get_raw_type_str(:regex), do: "`t:Regex.t/0`"
   defp get_raw_type_str(:non_neg_integer), do: "`t:non_neg_integer/0`"
   defp get_raw_type_str(:pos_integer), do: "`t:pos_integer/0`"
   defp get_raw_type_str(:float), do: "`t:float/0`"
@@ -417,6 +418,9 @@ defmodule Spark.Options.Docs do
         quote(do: nil)
 
       :regex_as_mfa ->
+        quote(do: Regex.t())
+
+      :regex ->
         quote(do: Regex.t())
 
       :map ->
