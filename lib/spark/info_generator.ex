@@ -350,6 +350,9 @@ defmodule Spark.InfoGenerator do
     [{:->, [], [args, {:any, [], Elixir}]}]
   end
 
+  # Treat `and` like `or` because any of the input types is valid.
+  def spec_for_type({:and, subtypes}, opts), do: spec_for_type({:or, subtypes}, opts)
+
   def spec_for_type({:or, [type]}, _opts), do: spec_for_type(type, [])
 
   def spec_for_type({:or, [next | remaining]}, _opts),

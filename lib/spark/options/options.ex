@@ -251,6 +251,15 @@ defmodule Spark.Options do
       the list is empty, the function must have exactly one argument, i.e. `{:custom, mod, fun, []}`
       expects `mod.fun/1` to exist.
 
+    * `{:and, subtypes}` - A value that matches all of the given `subtypes`. The value is
+      matched against the subtypes in the order specified in the list of `subtypes`. If
+      all of the subtypes match then the value is valid. If one of the subtypes matches and **updates** (casts) a given value, then value is updated and
+      passed in to any subsequent checks.
+      If one of the subtypes is a keyword list or map, you won't be able to pass
+      `:keys` directly. For this reason `:keyword_list`, `:non_empty_keyword_list`,
+      and `:map` are special cased and can be used as subtypes with
+      `{:keyword_list, keys}`, `{:non_empty_keyword_list, keys}` or `{:map, keys}`.
+
     * `{:or, subtypes}` - A value that matches one of the given `subtypes`. The value is
       matched against the subtypes in the order specified in the list of `subtypes`. If
       one of the subtypes matches and **updates** (casts) the given value, the updated
@@ -437,6 +446,8 @@ defmodule Spark.Options do
           | {:fun, list(type)}
           | {:fun, list(type), type}
           | {:in, [any] | Range.t()}
+          | {:and,
+             [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}]}
           | {:or,
              [type | {:keyword_list, schema} | {:non_empty_keyword_list, schema} | {:map, schema}]}
           | {:list,
@@ -1245,6 +1256,54 @@ defmodule Spark.Options do
     end
   end
 
+  defp validate_type({:and, subtypes}, key, value) do
+    result =
+      Enum.reduce_while(subtypes, {value, []}, fn subtype, {current_value, errors_acc} ->
+        {subtype, nested_schema} =
+          case subtype do
+            {type, keys} when type in [:keyword_list, :non_empty_keyword_list, :map] ->
+              {type, keys}
+
+            other ->
+              {other, _nested_schema = nil}
+          end
+
+        case validate_type(subtype, key, current_value) do
+          {:ok, validated_value} when not is_nil(nested_schema) ->
+            case validate_options_with_schema_and_path(
+                   validated_value,
+                   nested_schema,
+                   _path = [key]
+                 ) do
+              {:ok, validated_value} ->
+                {:cont, {validated_value, errors_acc}}
+
+              {:error, %ValidationError{} = error} ->
+                {:cont, {current_value, [error | errors_acc]}}
+            end
+
+          {:ok, validated_value} ->
+            {:cont, {validated_value, errors_acc}}
+
+          {:error, %ValidationError{} = reason} ->
+            {:cont, {current_value, [reason | errors_acc]}}
+        end
+      end)
+
+    case result do
+      {value, []} ->
+        {:ok, value}
+
+      {_value, errors} ->
+        message =
+          "expected #{render_key(key)} to match all given types, but didn't match " <>
+            "all of them. Here are the reasons why it didn't match each of the types:\n\n" <>
+            Enum.map_join(errors, "\n", &("  * " <> Exception.message(&1)))
+
+        error_tuple(key, value, message)
+    end
+  end
+
   defp validate_type({:or, subtypes}, key, value) do
     result =
       Enum.reduce_while(subtypes, _errors = [], fn subtype, errors_acc ->
@@ -1642,6 +1701,7 @@ defmodule Spark.Options do
         [
           "{:fun, arity}",
           "{:in, choices}",
+          "{:and, subtypes}",
           "{:or, subtypes}",
           "{:custom, mod, fun, args}",
           "{:list, subtype}",
@@ -1808,6 +1868,20 @@ defmodule Spark.Options do
         case validate_type(subtype) do
           {:ok, _value} -> {:cont, acc}
           {:error, reason} -> {:halt, {:error, "invalid type given to :or type: #{reason}"}}
+        end
+    end)
+  end
+
+  def validate_type({:and, subtypes} = value) when is_list(subtypes) do
+    Enum.reduce_while(subtypes, {:ok, value}, fn
+      {type, _keys}, acc
+      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
+        {:cont, acc}
+
+      subtype, acc ->
+        case validate_type(subtype) do
+          {:ok, _value} -> {:cont, acc}
+          {:error, reason} -> {:halt, {:error, "invalid type given to :and type: #{reason}"}}
         end
     end)
   end
