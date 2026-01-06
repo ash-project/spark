@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
 
 ## Compatibility
 
-Autocomplete is enhanced by a plugin to ElixirSense, and therefore it only works for those who are using [ElixirLS](https://github.com/elixir-lsp/elixir-ls). We may consider adding the same extension to other language serers in the future.
+Autocomplete is enhanced by a plugin to ElixirSense, and therefore it only works for those who are using [ElixirLS](https://github.com/elixir-lsp/elixir-ls). We may consider adding the same extension to other language servers in the future.
 
 ## Setting it up
 
