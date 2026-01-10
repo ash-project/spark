@@ -490,7 +490,10 @@ defmodule Spark.Builder.Entity do
   def build(%__MODULE__{} = builder) do
     Helpers.build(builder, DslEntity, [
       fn -> validate_required(builder) end,
-      fn -> validate_args(builder) end
+      fn -> validate_duplicate_args(builder) end,
+      fn -> validate_args(builder) end,
+      fn -> validate_optional_defaults(builder) end,
+      fn -> validate_singleton_keys(builder) end
     ])
   end
 
@@ -507,14 +510,37 @@ defmodule Spark.Builder.Entity do
   def build!(%__MODULE__{} = builder) do
     Helpers.build!(builder, DslEntity, "entity", [
       fn -> validate_required(builder) end,
-      fn -> validate_args(builder) end
+      fn -> validate_duplicate_args(builder) end,
+      fn -> validate_args(builder) end,
+      fn -> validate_optional_defaults(builder) end,
+      fn -> validate_singleton_keys(builder) end
     ])
   end
 
-  
+  # ===========================================================================
+  # Private Helpers
+  # ===========================================================================
+
   defp validate_required(%__MODULE__{name: nil}), do: {:error, "Entity name is required"}
   defp validate_required(%__MODULE__{target: nil}), do: {:error, "Entity target is required"}
   defp validate_required(_builder), do: :ok
+
+  defp validate_duplicate_args(%__MODULE__{args: args}) do
+    names =
+      Enum.map(args, fn
+        {:optional, name} -> name
+        {:optional, name, _default} -> name
+        name when is_atom(name) -> name
+      end)
+
+    duplicates = names -- Enum.uniq(names)
+
+    if duplicates == [] do
+      :ok
+    else
+      {:error, "Duplicate args: #{inspect(Enum.uniq(duplicates))}"}
+    end
+  end
 
   defp validate_args(%__MODULE__{args: args, schema: schema}) do
     arg_names =
@@ -531,6 +557,48 @@ defmodule Spark.Builder.Entity do
       :ok
     else
       {:error, "Args reference non-existent schema keys: #{inspect(missing)}"}
+    end
+  end
+
+  defp validate_optional_defaults(%__MODULE__{args: args, schema: schema}) do
+    args
+    |> Enum.filter(&match?({:optional, _, _}, &1))
+    |> Enum.find_value(:ok, fn {:optional, name, default} ->
+      case Keyword.fetch(schema, name) do
+        {:ok, opts} ->
+          case Keyword.fetch(opts, :default) do
+            {:ok, ^default} ->
+              false
+
+            {:ok, schema_default} ->
+              {:error,
+               "Optional arg #{inspect(name)} default #{inspect(default)} does not match schema default #{inspect(schema_default)}"}
+
+            :error ->
+              {:error,
+               "Optional arg #{inspect(name)} has default #{inspect(default)} but schema default is not set"}
+          end
+
+        :error ->
+          false
+      end
+    end)
+    |> case do
+      :ok -> :ok
+      false -> :ok
+      {:error, _} = error -> error
+    end
+  end
+
+  defp validate_singleton_keys(%__MODULE__{singleton_entity_keys: keys, entities: entities}) do
+    entity_keys = entities |> Keyword.keys() |> MapSet.new()
+    missing = Enum.reject(keys, &MapSet.member?(entity_keys, &1))
+
+    if missing == [] do
+      :ok
+    else
+      {:error,
+       "singleton_entity_keys must be a subset of entity keys; missing: #{inspect(missing)}"}
     end
   end
 

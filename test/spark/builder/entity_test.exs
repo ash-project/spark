@@ -328,6 +328,64 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.args([:name, {:optional, :type}])
         |> Entity.build()
     end
+
+    test "returns error when args are duplicated" do
+      result =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema(name: [type: :atom])
+        |> Entity.args([:name, :name])
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "Duplicate args"
+      assert message =~ ":name"
+    end
+
+    test "errors when optional arg default differs from schema" do
+      result =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema(name: [type: :atom, default: :foo])
+        |> Entity.args([{:optional, :name, :bar}])
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "does not match schema default"
+    end
+
+    test "errors when optional arg default not in schema" do
+      result =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema(name: [type: :atom])
+        |> Entity.args([{:optional, :name, :foo}])
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "schema default is not set"
+    end
+
+    test "errors when singleton_entity_keys not in nested entities" do
+      child =
+        Entity.new(:child, NestedTarget)
+        |> Entity.schema(value: [type: :any])
+
+      result =
+        Entity.new(:parent, TestTarget)
+        |> Entity.nested_entity(:children, child)
+        |> Entity.singleton_entity_keys([:missing])
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "subset of entity keys"
+      assert message =~ ":missing"
+    end
+
+    test "succeeds when optional default matches schema default" do
+      {:ok, _entity} =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema(name: [type: :atom, default: :foo])
+        |> Entity.args([{:optional, :name, :foo}])
+        |> Entity.build()
+    end
   end
 
   describe "build!/1" do
@@ -355,7 +413,11 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.args([:name, {:optional, :type, :string}])
         |> Entity.schema(
           name: [type: :atom, required: true, doc: "The attribute name"],
-          type: [type: Type.one_of([:string, :integer, :boolean]), doc: "The type"],
+          type: [
+            type: Type.one_of([:string, :integer, :boolean]),
+            default: :string,
+            doc: "The type"
+          ],
           default: [type: :any, doc: "Default value"]
         )
         |> Entity.identifier(:name)
