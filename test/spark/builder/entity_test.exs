@@ -5,7 +5,7 @@
 defmodule Spark.Builder.EntityTest do
   use ExUnit.Case, async: true
 
-  alias Spark.Builder.Entity
+  alias Spark.Builder.{Entity, Field}
   alias Spark.Builder.Type
   alias Spark.Dsl.Entity, as: DslEntity
 
@@ -48,6 +48,20 @@ defmodule Spark.Builder.EntityTest do
 
       assert builder.schema == [name: [type: :atom], type: [type: :atom]]
     end
+
+    test "normalizes Field structs and tuples" do
+      builder =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema([
+          Field.new(:name) |> Field.type(:atom) |> Field.required(),
+          {:type, [type: :atom]}
+        ])
+
+      assert builder.schema == [
+               {:name, [type: :atom, required: true]},
+               {:type, [type: :atom]}
+             ]
+    end
   end
 
   describe "field/3" do
@@ -59,6 +73,14 @@ defmodule Spark.Builder.EntityTest do
 
       assert builder.schema[:name] == [type: :atom, required: true]
       assert builder.schema[:type] == [type: :atom]
+    end
+
+    test "accepts a Field struct" do
+      builder =
+        Entity.new(:attr, TestTarget)
+        |> Entity.field(Field.new(:name) |> Field.type(:atom))
+
+      assert builder.schema[:name] == [type: :atom]
     end
   end
 

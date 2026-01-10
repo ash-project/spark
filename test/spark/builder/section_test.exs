@@ -5,7 +5,7 @@
 defmodule Spark.Builder.SectionTest do
   use ExUnit.Case, async: true
 
-  alias Spark.Builder.Entity
+  alias Spark.Builder.{Entity, Field}
   alias Spark.Builder.Section
   alias Spark.Dsl.Section, as: DslSection
 
@@ -42,6 +42,20 @@ defmodule Spark.Builder.SectionTest do
         |> Section.schema(generate_pk: [type: :boolean, default: true])
 
       assert builder.schema == [generate_pk: [type: :boolean, default: true]]
+    end
+
+    test "normalizes Field structs and tuples" do
+      builder =
+        Section.new(:resource)
+        |> Section.schema([
+          Field.new(:name) |> Field.type(:atom) |> Field.required(),
+          {:strict, [type: :boolean, default: false]}
+        ])
+
+      assert builder.schema == [
+               {:name, [type: :atom, required: true]},
+               {:strict, [type: :boolean, default: false]}
+             ]
     end
   end
 

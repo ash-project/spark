@@ -79,6 +79,13 @@ defmodule Spark.Builder.FieldTest do
                {:port, [type: :integer, default: 5432]}
              ]
     end
+
+    test "raises on invalid entries" do
+      assert_raise ArgumentError, fn ->
+        Field.new(:config)
+        |> Field.keys([:not_valid])
+      end
+    end
   end
 
   describe "documentation functions" do
