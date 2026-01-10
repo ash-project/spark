@@ -41,6 +41,7 @@ defmodule Spark.Builder.Entity do
   """
 
   alias Spark.Dsl.Entity, as: DslEntity
+  alias Spark.Builder.Helpers
 
   @fields Spark.Dsl.Entity.__fields__()
 
@@ -474,15 +475,10 @@ defmodule Spark.Builder.Entity do
   """
   @spec build(t()) :: {:ok, DslEntity.t()} | {:error, String.t()}
   def build(%__MODULE__{} = builder) do
-    with :ok <- validate_required(builder),
-         :ok <- validate_args(builder) do
-      attrs =
-        builder
-        |> Map.from_struct()
-        |> Map.take(DslEntity.__field_names__())
-
-      {:ok, struct!(DslEntity, attrs)}
-    end
+    Helpers.build(builder, DslEntity, [
+      fn -> validate_required(builder) end,
+      fn -> validate_args(builder) end
+    ])
   end
 
   @doc """
@@ -496,10 +492,10 @@ defmodule Spark.Builder.Entity do
   """
   @spec build!(t()) :: DslEntity.t()
   def build!(%__MODULE__{} = builder) do
-    case build(builder) do
-      {:ok, entity} -> entity
-      {:error, error} -> raise ArgumentError, "Invalid entity: #{error}"
-    end
+    Helpers.build!(builder, DslEntity, "entity", [
+      fn -> validate_required(builder) end,
+      fn -> validate_args(builder) end
+    ])
   end
 
   
@@ -525,7 +521,7 @@ defmodule Spark.Builder.Entity do
     end
   end
 
-  defp resolve_entity(%__MODULE__{} = builder), do: build!(builder)
-  defp resolve_entity(%DslEntity{} = entity), do: entity
-  defp resolve_entity(fun) when is_function(fun, 0), do: resolve_entity(fun.())
+  defp resolve_entity(value) do
+    Helpers.resolve(value, &build!/1, &match?(%DslEntity{}, &1))
+  end
 end
