@@ -39,25 +39,9 @@ defmodule Spark.Builder.Section do
   alias Spark.Dsl.Entity, as: DslEntity
   alias Spark.Dsl.Section, as: DslSection
 
-  defstruct [
-    :name,
-    :links,
-    :after_define,
-    schema: [],
-    entities: [],
-    sections: [],
-    top_level?: false,
-    imports: [],
-    modules: [],
-    no_depend_modules: [],
-    auto_set_fields: [],
-    describe: "",
-    snippet: "",
-    examples: [],
-    deprecations: [],
-    patchable?: false,
-    docs: ""
-  ]
+  @fields Spark.Dsl.Section.__fields__()
+
+  defstruct @fields
 
   @type t :: %__MODULE__{
           name: atom() | nil,
@@ -423,27 +407,12 @@ defmodule Spark.Builder.Section do
   @spec build(t()) :: {:ok, DslSection.t()} | {:error, String.t()}
   def build(%__MODULE__{} = builder) do
     with :ok <- validate_required(builder) do
-      section = %DslSection{
-        name: builder.name,
-        schema: builder.schema,
-        entities: builder.entities,
-        sections: builder.sections,
-        top_level?: builder.top_level?,
-        imports: builder.imports,
-        modules: builder.modules,
-        no_depend_modules: builder.no_depend_modules,
-        auto_set_fields: builder.auto_set_fields,
-        describe: builder.describe,
-        snippet: builder.snippet,
-        links: builder.links,
-        examples: builder.examples,
-        deprecations: builder.deprecations,
-        patchable?: builder.patchable?,
-        after_define: builder.after_define,
-        docs: builder.docs
-      }
+      attrs =
+        builder
+        |> Map.from_struct()
+        |> Map.take(DslSection.__field_names__())
 
-      {:ok, section}
+      {:ok, struct!(DslSection, attrs)}
     end
   end
 
