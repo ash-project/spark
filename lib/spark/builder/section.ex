@@ -155,7 +155,7 @@ defmodule Spark.Builder.Section do
   """
   @spec entities(t(), [DslEntity.t() | EntityBuilder.t()]) :: t()
   def entities(%__MODULE__{} = builder, entities) when is_list(entities) do
-    resolved = Enum.map(entities, &resolve_entity/1)
+    resolved = resolve_entities(entities)
     %{builder | entities: builder.entities ++ resolved}
   end
 
@@ -193,7 +193,7 @@ defmodule Spark.Builder.Section do
   """
   @spec nested_sections(t(), [DslSection.t() | t()]) :: t()
   def nested_sections(%__MODULE__{} = builder, sections) when is_list(sections) do
-    resolved = Enum.map(sections, &resolve_section/1)
+    resolved = resolve_sections(sections)
     %{builder | sections: builder.sections ++ resolved}
   end
 
@@ -443,7 +443,15 @@ defmodule Spark.Builder.Section do
     Helpers.resolve(value, &EntityBuilder.build!/1, &match?(%DslEntity{}, &1))
   end
 
+  defp resolve_entities(values) do
+    Helpers.resolve_list(values, &EntityBuilder.build!/1, &match?(%DslEntity{}, &1))
+  end
+
   defp resolve_section(value) do
     Helpers.resolve(value, &build!/1, &match?(%DslSection{}, &1))
+  end
+
+  defp resolve_sections(values) do
+    Helpers.resolve_list(values, &build!/1, &match?(%DslSection{}, &1))
   end
 end

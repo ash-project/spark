@@ -251,7 +251,7 @@ defmodule Spark.Builder.Entity do
   @spec nested_entities(t(), atom(), [DslEntity.t() | t()]) :: t()
   def nested_entities(%__MODULE__{} = builder, key, entities)
       when is_atom(key) and is_list(entities) do
-    resolved = Enum.map(entities, &resolve_entity/1)
+    resolved = resolve_entities(entities)
     existing = Keyword.get(builder.entities, key, [])
     %{builder | entities: Keyword.put(builder.entities, key, existing ++ resolved)}
   end
@@ -540,5 +540,9 @@ defmodule Spark.Builder.Entity do
 
   defp resolve_entity(value) do
     Helpers.resolve(value, &build!/1, &match?(%DslEntity{}, &1))
+  end
+
+  defp resolve_entities(values) do
+    Helpers.resolve_list(values, &build!/1, &match?(%DslEntity{}, &1))
   end
 end
