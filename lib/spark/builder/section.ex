@@ -36,6 +36,7 @@ defmodule Spark.Builder.Section do
   """
 
   alias Spark.Builder.Entity, as: EntityBuilder
+  alias Spark.Builder.Helpers
   alias Spark.Dsl.Entity, as: DslEntity
   alias Spark.Dsl.Section, as: DslSection
 
@@ -406,14 +407,9 @@ defmodule Spark.Builder.Section do
   """
   @spec build(t()) :: {:ok, DslSection.t()} | {:error, String.t()}
   def build(%__MODULE__{} = builder) do
-    with :ok <- validate_required(builder) do
-      attrs =
-        builder
-        |> Map.from_struct()
-        |> Map.take(DslSection.__field_names__())
-
-      {:ok, struct!(DslSection, attrs)}
-    end
+    Helpers.build(builder, DslSection, [
+      fn -> validate_required(builder) end
+    ])
   end
 
   @doc """
@@ -427,10 +423,9 @@ defmodule Spark.Builder.Section do
   """
   @spec build!(t()) :: DslSection.t()
   def build!(%__MODULE__{} = builder) do
-    case build(builder) do
-      {:ok, section} -> section
-      {:error, error} -> raise ArgumentError, "Invalid section: #{error}"
-    end
+    Helpers.build!(builder, DslSection, "section", [
+      fn -> validate_required(builder) end
+    ])
   end
 
   # ===========================================================================
@@ -440,11 +435,11 @@ defmodule Spark.Builder.Section do
   defp validate_required(%__MODULE__{name: nil}), do: {:error, "Section name is required"}
   defp validate_required(_builder), do: :ok
 
-  defp resolve_entity(%EntityBuilder{} = builder), do: EntityBuilder.build!(builder)
-  defp resolve_entity(%DslEntity{} = entity), do: entity
-  defp resolve_entity(fun) when is_function(fun, 0), do: resolve_entity(fun.())
+  defp resolve_entity(value) do
+    Helpers.resolve(value, &EntityBuilder.build!/1, &match?(%DslEntity{}, &1))
+  end
 
-  defp resolve_section(%__MODULE__{} = builder), do: build!(builder)
-  defp resolve_section(%DslSection{} = section), do: section
-  defp resolve_section(fun) when is_function(fun, 0), do: resolve_section(fun.())
+  defp resolve_section(value) do
+    Helpers.resolve(value, &build!/1, &match?(%DslSection{}, &1))
+  end
 end
