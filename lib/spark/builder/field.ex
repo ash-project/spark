@@ -137,6 +137,7 @@ defmodule Spark.Builder.Field do
   Sets nested keys for keyword_list, non_empty_keyword_list, or map types.
 
   Accepts either a raw schema keyword list or a list of Field structs.
+  Invalid entries raise an `ArgumentError`.
 
   ## Examples
 
@@ -153,7 +154,7 @@ defmodule Spark.Builder.Field do
   """
   @spec keys(t(), Spark.Options.schema() | [t()]) :: t()
   def keys(%__MODULE__{} = field, schema) when is_list(schema) do
-    normalized = normalize_schema(schema)
+    normalized = to_schema(schema)
     %{field | keys: normalized}
   end
 
@@ -350,7 +351,7 @@ defmodule Spark.Builder.Field do
   end
 
   @doc """
-  Builds a complete schema from a list of field builders.
+  Builds a complete schema from a list of field builders or raw schema tuples.
 
   ## Examples
 
@@ -360,20 +361,18 @@ defmodule Spark.Builder.Field do
       ...> ]
       ...> |> Field.to_schema()
       [name: [type: :atom, required: true], count: [type: :integer, default: 0]]
+
+      iex> Field.to_schema([name: [type: :atom, required: true]])
+      [name: [type: :atom, required: true]]
   """
-  @spec to_schema([t()]) :: Spark.Options.schema()
+  @spec to_schema([t() | {atom(), keyword()}] | t()) :: Spark.Options.schema()
+  def to_schema(%__MODULE__{} = field), do: to_schema([field])
+
   def to_schema(fields) when is_list(fields) do
-    Enum.map(fields, &to_spec/1)
-  end
-
-  # ===========================================================================
-  # Private Helpers
-  # ===========================================================================
-
-  defp normalize_schema(fields) do
     Enum.map(fields, fn
       %__MODULE__{} = field -> to_spec(field)
       {key, opts} when is_atom(key) and is_list(opts) -> {key, opts}
+      other -> raise ArgumentError, "Invalid field specification: #{inspect(other)}"
     end)
   end
 

@@ -36,6 +36,7 @@ defmodule Spark.Builder.Section do
   """
 
   alias Spark.Builder.Entity, as: EntityBuilder
+  alias Spark.Builder.Field
   alias Spark.Builder.Helpers
   alias Spark.Dsl.Entity, as: DslEntity
   alias Spark.Dsl.Section, as: DslSection
@@ -88,6 +89,9 @@ defmodule Spark.Builder.Section do
   @doc """
   Sets the schema for section-level options.
 
+  Accepts raw `{name, opts}` tuples or `Spark.Builder.Field` structs and
+  normalizes them to `Spark.Options` format.
+
   ## Examples
 
       Section.new(:resource)
@@ -97,7 +101,7 @@ defmodule Spark.Builder.Section do
   """
   @spec schema(t(), Spark.Options.schema()) :: t()
   def schema(%__MODULE__{} = builder, schema) when is_list(schema) do
-    %{builder | schema: schema}
+    %{builder | schema: Field.to_schema(schema)}
   end
 
   @doc """

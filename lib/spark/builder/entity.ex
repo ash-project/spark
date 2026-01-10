@@ -40,8 +40,9 @@ defmodule Spark.Builder.Entity do
         |> Entity.build!()
   """
 
-  alias Spark.Dsl.Entity, as: DslEntity
+  alias Spark.Builder.Field
   alias Spark.Builder.Helpers
+  alias Spark.Dsl.Entity, as: DslEntity
 
   @fields Spark.Dsl.Entity.__fields__()
 
@@ -100,7 +101,8 @@ defmodule Spark.Builder.Entity do
   Sets the schema for the entity.
 
   The schema defines what options the entity accepts and their types.
-  Uses `Spark.Options` schema format.
+  Accepts raw `{name, opts}` tuples or `Spark.Builder.Field` structs and
+  normalizes them to `Spark.Options` format.
 
   ## Examples
 
@@ -112,13 +114,14 @@ defmodule Spark.Builder.Entity do
   """
   @spec schema(t(), Spark.Options.schema()) :: t()
   def schema(%__MODULE__{} = builder, schema) when is_list(schema) do
-    %{builder | schema: schema}
+    %{builder | schema: Field.to_schema(schema)}
   end
 
   @doc """
   Adds a single field to the schema.
 
   This is an alternative to `schema/2` for building schemas incrementally.
+  Accepts raw `{name, opts}` tuples or `Spark.Builder.Field` structs.
 
   ## Examples
 
@@ -126,9 +129,19 @@ defmodule Spark.Builder.Entity do
       |> Entity.field(:name, type: :atom, required: true, doc: "The name")
       |> Entity.field(:value, type: :any)
   """
+  @spec field(t(), Field.t()) :: t()
+  def field(%__MODULE__{} = builder, %Field{} = field) do
+    merge_schema(builder, Field.to_schema([field]))
+  end
+
+  @spec field(t(), {atom(), keyword()}) :: t()
+  def field(%__MODULE__{} = builder, {name, opts}) when is_atom(name) and is_list(opts) do
+    merge_schema(builder, Field.to_schema([{name, opts}]))
+  end
+
   @spec field(t(), atom(), keyword()) :: t()
   def field(%__MODULE__{} = builder, name, opts \\ []) when is_atom(name) and is_list(opts) do
-    %{builder | schema: Keyword.put(builder.schema, name, opts)}
+    merge_schema(builder, Field.to_schema([{name, opts}]))
   end
 
   @doc """
@@ -519,6 +532,10 @@ defmodule Spark.Builder.Entity do
     else
       {:error, "Args reference non-existent schema keys: #{inspect(missing)}"}
     end
+  end
+
+  defp merge_schema(%__MODULE__{} = builder, entries) do
+    %{builder | schema: Keyword.merge(builder.schema, entries)}
   end
 
   defp resolve_entity(value) do
