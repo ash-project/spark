@@ -18,6 +18,20 @@ defmodule Spark.Builder.EntityTest do
     defstruct [:value, :__spark_metadata__]
   end
 
+  describe "struct alignment" do
+    test "builder fields align with DSL entity fields" do
+      builder_fields =
+        %Entity{}
+        |> Map.keys()
+        |> List.delete(:__struct__)
+        |> Enum.sort()
+
+      dsl_fields = DslEntity.__field_names__() |> Enum.sort()
+
+      assert builder_fields == dsl_fields
+    end
+  end
+
   describe "new/2" do
     test "creates an entity builder with name and target" do
       builder = Entity.new(:attribute, TestTarget)

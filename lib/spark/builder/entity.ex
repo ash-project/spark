@@ -42,28 +42,9 @@ defmodule Spark.Builder.Entity do
 
   alias Spark.Dsl.Entity, as: DslEntity
 
-  defstruct [
-    :name,
-    :target,
-    :transform,
-    :recursive_as,
-    :identifier,
-    :links,
-    schema: [],
-    args: [],
-    entities: [],
-    singleton_entity_keys: [],
-    auto_set_fields: [],
-    examples: [],
-    describe: "",
-    snippet: "",
-    imports: [],
-    modules: [],
-    no_depend_modules: [],
-    hide: [],
-    deprecations: [],
-    docs: ""
-  ]
+  @fields Spark.Dsl.Entity.__fields__()
+
+  defstruct @fields
 
   @type t :: %__MODULE__{
           name: atom() | nil,
@@ -495,30 +476,12 @@ defmodule Spark.Builder.Entity do
   def build(%__MODULE__{} = builder) do
     with :ok <- validate_required(builder),
          :ok <- validate_args(builder) do
-      entity = %DslEntity{
-        name: builder.name,
-        target: builder.target,
-        schema: builder.schema,
-        args: builder.args,
-        entities: builder.entities,
-        singleton_entity_keys: builder.singleton_entity_keys,
-        auto_set_fields: builder.auto_set_fields,
-        identifier: builder.identifier,
-        transform: builder.transform,
-        recursive_as: builder.recursive_as,
-        examples: builder.examples,
-        describe: builder.describe,
-        snippet: builder.snippet,
-        imports: builder.imports,
-        modules: builder.modules,
-        no_depend_modules: builder.no_depend_modules,
-        hide: builder.hide,
-        links: builder.links,
-        deprecations: builder.deprecations,
-        docs: builder.docs
-      }
+      attrs =
+        builder
+        |> Map.from_struct()
+        |> Map.take(DslEntity.__field_names__())
 
-      {:ok, entity}
+      {:ok, struct!(DslEntity, attrs)}
     end
   end
 
