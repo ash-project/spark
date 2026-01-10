@@ -21,6 +21,20 @@ defmodule Spark.Builder.SectionTest do
     end
   end
 
+  describe "struct alignment" do
+    test "builder fields align with DSL section fields" do
+      builder_fields =
+        %Section{}
+        |> Map.keys()
+        |> List.delete(:__struct__)
+        |> Enum.sort()
+
+      dsl_fields = DslSection.__field_names__() |> Enum.sort()
+
+      assert builder_fields == dsl_fields
+    end
+  end
+
   describe "schema/2" do
     test "sets the section schema" do
       builder =
