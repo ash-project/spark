@@ -37,6 +37,12 @@ defmodule Spark.Builder.Helpers do
     end
   end
 
+  @spec resolve_list([term()], (term() -> term()), (term() -> boolean())) :: [term()]
+  def resolve_list(values, build_fun, predicate)
+      when is_list(values) and is_function(build_fun, 1) and is_function(predicate, 1) do
+    Enum.map(values, &resolve(&1, build_fun, predicate))
+  end
+
   defp run_validations([]), do: :ok
 
   defp run_validations([validation | rest]) when is_function(validation, 0) do
