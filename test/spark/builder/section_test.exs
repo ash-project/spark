@@ -278,7 +278,7 @@ defmodule Spark.Builder.SectionTest do
 
     test "returns error when name is missing" do
       builder = %Section{}
-      assert {:error, "Section name is required"} = Section.build(builder)
+      assert {:error, "name is required"} = Section.build(builder)
     end
   end
 
@@ -292,7 +292,7 @@ defmodule Spark.Builder.SectionTest do
     end
 
     test "raises on validation error" do
-      assert_raise ArgumentError, ~r/Section name is required/, fn ->
+      assert_raise ArgumentError, ~r/name is required/, fn ->
         %Section{} |> Section.build!()
       end
     end
