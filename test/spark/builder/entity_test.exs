@@ -301,15 +301,15 @@ defmodule Spark.Builder.EntityTest do
 
     test "returns error when name is missing" do
       builder = %Entity{target: TestTarget}
-      assert {:error, "Entity name is required"} = Entity.build(builder)
+      assert {:error, "name is required"} = Entity.build(builder)
     end
 
     test "returns error when target is missing" do
       builder = %Entity{name: :attr}
-      assert {:error, "Entity target is required"} = Entity.build(builder)
+      assert {:error, "target is required"} = Entity.build(builder)
     end
 
-    test "returns error when args reference non-existent schema keys" do
+    test "returns error when args reference undefined schema keys" do
       result =
         Entity.new(:attr, TestTarget)
         |> Entity.schema(name: [type: :atom])
@@ -317,7 +317,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
 
       assert {:error, message} = result
-      assert message =~ "non-existent schema keys"
+      assert message =~ "undefined schema keys"
       assert message =~ ":missing"
     end
 
@@ -337,7 +337,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
 
       assert {:error, message} = result
-      assert message =~ "Duplicate args"
+      assert message =~ "duplicate args"
       assert message =~ ":name"
     end
 
@@ -349,7 +349,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
 
       assert {:error, message} = result
-      assert message =~ "does not match schema default"
+      assert message =~ "but schema has default"
     end
 
     test "errors when optional arg default not in schema" do
@@ -360,7 +360,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
 
       assert {:error, message} = result
-      assert message =~ "schema default is not set"
+      assert message =~ "schema has no default"
     end
 
     test "errors when singleton_entity_keys not in nested entities" do
@@ -375,7 +375,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
 
       assert {:error, message} = result
-      assert message =~ "subset of entity keys"
+      assert message =~ "undefined entity keys"
       assert message =~ ":missing"
     end
 
@@ -399,7 +399,7 @@ defmodule Spark.Builder.EntityTest do
     end
 
     test "raises on validation error" do
-      assert_raise ArgumentError, ~r/Entity name is required/, fn ->
+      assert_raise ArgumentError, ~r/name is required/, fn ->
         %Entity{target: TestTarget} |> Entity.build!()
       end
     end

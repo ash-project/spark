@@ -521,8 +521,8 @@ defmodule Spark.Builder.Entity do
   # Private Helpers
   # ===========================================================================
 
-  defp validate_required(%__MODULE__{name: nil}), do: {:error, "Entity name is required"}
-  defp validate_required(%__MODULE__{target: nil}), do: {:error, "Entity target is required"}
+  defp validate_required(%__MODULE__{name: nil}), do: {:error, "name is required"}
+  defp validate_required(%__MODULE__{target: nil}), do: {:error, "target is required"}
   defp validate_required(_builder), do: :ok
 
   defp validate_duplicate_args(%__MODULE__{args: args}) do
@@ -538,7 +538,7 @@ defmodule Spark.Builder.Entity do
     if duplicates == [] do
       :ok
     else
-      {:error, "Duplicate args: #{inspect(Enum.uniq(duplicates))}"}
+      {:error, "duplicate args: #{inspect(Enum.uniq(duplicates))}"}
     end
   end
 
@@ -556,7 +556,7 @@ defmodule Spark.Builder.Entity do
     if missing == [] do
       :ok
     else
-      {:error, "Args reference non-existent schema keys: #{inspect(missing)}"}
+      {:error, "args reference undefined schema keys: #{inspect(missing)}"}
     end
   end
 
@@ -572,11 +572,11 @@ defmodule Spark.Builder.Entity do
 
             {:ok, schema_default} ->
               {:error,
-               "Optional arg #{inspect(name)} default #{inspect(default)} does not match schema default #{inspect(schema_default)}"}
+               "optional arg #{inspect(name)} has default #{inspect(default)}, but schema has default #{inspect(schema_default)}"}
 
             :error ->
               {:error,
-               "Optional arg #{inspect(name)} has default #{inspect(default)} but schema default is not set"}
+               "optional arg #{inspect(name)} has default #{inspect(default)}, but schema has no default"}
           end
 
         :error ->
@@ -597,8 +597,7 @@ defmodule Spark.Builder.Entity do
     if missing == [] do
       :ok
     else
-      {:error,
-       "singleton_entity_keys must be a subset of entity keys; missing: #{inspect(missing)}"}
+      {:error, "singleton_entity_keys references undefined entity keys: #{inspect(missing)}"}
     end
   end
 
