@@ -436,7 +436,7 @@ defmodule Spark.Builder.Section do
   # Private Helpers
   # ===========================================================================
 
-  defp validate_required(%__MODULE__{name: nil}), do: {:error, "Section name is required"}
+  defp validate_required(%__MODULE__{name: nil}), do: {:error, "name is required"}
   defp validate_required(_builder), do: :ok
 
   defp resolve_entity(value) do
