@@ -184,23 +184,40 @@ defmodule Spark.CheatSheet do
 
   defp describe(entity) do
     entity
-    |> String.split("\n")
-    |> Enum.map(&String.trim_leading/1)
-    |> Enum.map_join("\n", fn
-      "####" <> rest ->
-        "######" <> rest
+    |> preserve_code_blocks(fn text ->
+      text
+      |> String.split("\n")
+      |> Enum.map(&String.trim_leading/1)
+      |> Enum.map_join("\n", fn
+        "####" <> rest ->
+          "######" <> rest
 
-      "###" <> rest ->
-        "#####" <> rest
+        "###" <> rest ->
+          "#####" <> rest
 
-      "##" <> rest ->
-        "####" <> rest
+        "##" <> rest ->
+          "####" <> rest
 
-      "#" <> rest ->
-        "###" <> rest
+        "#" <> rest ->
+          "###" <> rest
 
-      other ->
-        other
+        other ->
+          other
+      end)
+    end)
+  end
+
+  defp preserve_code_blocks(entity, fun) do
+    parts =
+      Regex.split(~r/```[\s\S]*?```/, entity, include_captures: true)
+
+    Enum.map_join(parts, fn part ->
+      if String.starts_with?(part, "```") do
+        # Return code blocks EXACTLY as-is
+        part
+      else
+        fun.(part)
+      end
     end)
   end
 
