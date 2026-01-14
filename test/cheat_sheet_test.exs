@@ -226,7 +226,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.cheat_sheet(FakeDsl)
 
-      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
+      assert normalize_newlines(md) == normalize_newlines(expected_result)
     end
 
     test "preserves code blocks in section and entity descriptions verbatim" do
@@ -312,57 +312,57 @@ defmodule Spark.CheatSheetTest do
       md = CheatSheet.cheat_sheet(CodeDsl)
 
       expected_python_code_block_result = """
-             Root description
+      Root description
 
-             ```python
-             def fibonacci(n):
-                 if n <= 0:
-                     return []
-                 elif n == 1:
-                     return [0]
-                 elif n == 2:
-                     return [0, 1]
+      ```python
+      def fibonacci(n):
+          if n <= 0:
+              return []
+          elif n == 1:
+              return [0]
+          elif n == 2:
+              return [0, 1]
 
-                 seq = [0, 1]
-                 for i in range(2, n):
-                     next_value = seq[i-1] + seq[i-2]
-                     seq.append(next_value)
-                 return seq
+          seq = [0, 1]
+          for i in range(2, n):
+              next_value = seq[i-1] + seq[i-2]
+              seq.append(next_value)
+          return seq
 
-             print(fibonacci(10))
-             ```
+      print(fibonacci(10))
+      ```
 
-             After.
-             """
+      After.
+      """
 
       expected_elixir_code_block_result = """
-             some desc but with code example below
-             ```elixir
-             defmodule MathUtils do
-               @moduledoc \"\"\"
-               Utility functions for math operations
-               \"\"\"
+      some desc but with code example below
+      ```elixir
+      defmodule MathUtils do
+        @moduledoc \"\"\"
+        Utility functions for math operations
+        \"\"\"
 
-               # Compute factorial recursively
-               def factorial(0), do: 1
-               def factorial(n) when n > 0 do
-                 n * factorial(n - 1)
-               end
+        # Compute factorial recursively
+        def factorial(0), do: 1
+        def factorial(n) when n > 0 do
+          n * factorial(n - 1)
+        end
 
-               # Compute the nth Fibonacci number
-               def fibonacci(0), do: 0
-               def fibonacci(1), do: 1
-               def fibonacci(n) when n > 1 do
-                 fibonacci(n - 1) + fibonacci(n - 2)
-               end
-             end
+        # Compute the nth Fibonacci number
+        def fibonacci(0), do: 0
+        def fibonacci(1), do: 1
+        def fibonacci(n) when n > 1 do
+          fibonacci(n - 1) + fibonacci(n - 2)
+        end
+      end
 
-             IO.puts(\"Factorial of 5: \#{MathUtils.factorial(5)}\")
-             IO.puts(\"Fibonacci of 10: \#{MathUtils.fibonacci(10)}\")
-             ```
+      IO.puts(\"Factorial of 5: \#{MathUtils.factorial(5)}\")
+      IO.puts(\"Fibonacci of 10: \#{MathUtils.fibonacci(10)}\")
+      ```
 
-             After code block
-             """
+      After code block
+      """
 
       # Section code block must be preserved EXACTLY, including indentations
 
@@ -448,7 +448,7 @@ defmodule Spark.CheatSheetTest do
       section = hd(FakeDsl.sections())
       md = CheatSheet.section_cheat_sheet(section)
 
-      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
+      assert normalize_newlines(md) == normalize_newlines(expected_result)
     end
   end
 
@@ -504,7 +504,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.doc(FakeDsl.sections())
 
-      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
+      assert normalize_newlines(md) == normalize_newlines(expected_result)
     end
   end
 
@@ -562,7 +562,7 @@ defmodule Spark.CheatSheetTest do
       section = hd(FakeDsl.sections())
       md = CheatSheet.doc_section(section)
 
-      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
+      assert normalize_newlines(md) == normalize_newlines(expected_result)
     end
   end
 
@@ -588,7 +588,7 @@ defmodule Spark.CheatSheetTest do
       entity = hd(hd(FakeDsl.sections()).entities)
       md = CheatSheet.doc_entity(entity)
 
-      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
+      assert normalize_newlines(md) == normalize_newlines(expected_result)
     end
   end
 
