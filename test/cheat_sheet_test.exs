@@ -226,7 +226,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.cheat_sheet(FakeDsl)
 
-      assert normalize_newlines(md) == expected_result
+      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
     end
 
     test "preserves code blocks in section and entity descriptions verbatim" do
@@ -311,8 +311,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.cheat_sheet(CodeDsl)
 
-      # Section code block must be preserved EXACTLY, including indentations
-      assert md =~ """
+      expected_python_code_block_result = """
              Root description
 
              ```python
@@ -336,7 +335,7 @@ defmodule Spark.CheatSheetTest do
              After.
              """
 
-      assert md =~ """
+      expected_elixir_code_block_result = """
              some desc but with code example below
              ```elixir
              defmodule MathUtils do
@@ -364,6 +363,12 @@ defmodule Spark.CheatSheetTest do
 
              After code block
              """
+
+      # Section code block must be preserved EXACTLY, including indentations
+
+      assert normalize_newlines(md) =~ normalize_newlines(expected_python_code_block_result)
+
+      assert normalize_newlines(md) =~ normalize_newlines(expected_elixir_code_block_result)
     end
   end
 
@@ -443,7 +448,7 @@ defmodule Spark.CheatSheetTest do
       section = hd(FakeDsl.sections())
       md = CheatSheet.section_cheat_sheet(section)
 
-      assert normalize_newlines(md) == expected_result
+      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
     end
   end
 
@@ -499,7 +504,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.doc(FakeDsl.sections())
 
-      assert normalize_newlines(md) == expected_result
+      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
     end
   end
 
@@ -557,7 +562,7 @@ defmodule Spark.CheatSheetTest do
       section = hd(FakeDsl.sections())
       md = CheatSheet.doc_section(section)
 
-      assert normalize_newlines(md) == expected_result
+      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
     end
   end
 
@@ -583,7 +588,7 @@ defmodule Spark.CheatSheetTest do
       entity = hd(hd(FakeDsl.sections()).entities)
       md = CheatSheet.doc_entity(entity)
 
-      assert normalize_newlines(md) == expected_result
+      assert normalize_newlines(md) ==  normalize_newlines(expected_result)
     end
   end
 
@@ -599,7 +604,7 @@ defmodule Spark.CheatSheetTest do
 
       md = CheatSheet.doc_index(FakeDsl.sections())
 
-      assert md == String.replace_suffix(expected_result, "\n", "")
+      assert md == String.replace_suffix(normalize_newlines(expected_result), "\n", "")
     end
   end
 
