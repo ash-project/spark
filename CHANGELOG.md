@@ -12,6 +12,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.4.0](https://github.com/ash-project/spark/compare/v2.3.14...v2.4.0) (2026-01-15)
+
+
+
+
+### Features:
+
+* Add `{:and, subtypes}` option type. (#246) by James Harton
+
+### Improvements:
+
+* add `Spark.Docs.redirects_for/2` to generate DSL doc redirects by Zach Daniel
+
 ## [v2.3.14](https://github.com/ash-project/spark/compare/v2.3.13...v2.3.14) (2025-11-09)
 
 
