@@ -62,14 +62,22 @@ defmodule Spark.Docs do
     end)
   end
 
-  defp add_entity_redirects(redirects, entities, module_prefix, doc_filename, section_path, nested_entity_path) do
+  defp add_entity_redirects(
+         redirects,
+         entities,
+         module_prefix,
+         doc_filename,
+         section_path,
+         nested_entity_path
+       ) do
     Enum.reduce(entities, redirects, fn entity, acc ->
-      entity_module = Spark.Dsl.Extension.entity_mod_name(
-        module_prefix,
-        nested_entity_path,
-        section_path,
-        entity
-      )
+      entity_module =
+        Spark.Dsl.Extension.entity_mod_name(
+          module_prefix,
+          nested_entity_path,
+          section_path,
+          entity
+        )
 
       anchor = anchor(section_path ++ nested_entity_path ++ [entity.name])
       redirect_target = "#{doc_filename}##{anchor}"
@@ -86,7 +94,14 @@ defmodule Spark.Docs do
     end)
   end
 
-  defp add_nested_entity_redirects(redirects, nested_entities, module_prefix, doc_filename, section_path, nested_entity_path) do
+  defp add_nested_entity_redirects(
+         redirects,
+         nested_entities,
+         module_prefix,
+         doc_filename,
+         section_path,
+         nested_entity_path
+       ) do
     nested_entities
     |> Enum.flat_map(fn {_key, entities} -> List.wrap(entities) end)
     |> Enum.reduce(redirects, fn nested_entity, acc ->
