@@ -357,7 +357,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
     end
 
-    test "errors when singleton_entity_keys not in nested entities" do
+    test "allows singleton_entity_keys not in nested entities" do
       child =
         Entity.new(:child, NestedTarget)
         |> Entity.schema(value: [type: :any])
@@ -368,9 +368,8 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.singleton_entity_keys([:missing])
         |> Entity.build()
 
-      assert {:error, message} = result
-      assert message =~ "undefined entity keys"
-      assert message =~ ":missing"
+      assert {:ok, entity} = result
+      assert entity.singleton_entity_keys == [:missing]
     end
 
     test "succeeds when optional default matches schema default" do

@@ -491,8 +491,7 @@ defmodule Spark.Builder.Entity do
     Helpers.build(builder, DslEntity, [
       fn -> validate_required(builder) end,
       fn -> validate_duplicate_args(builder) end,
-      fn -> validate_args(builder) end,
-      fn -> validate_singleton_keys(builder) end
+      fn -> validate_args(builder) end
     ])
   end
 
@@ -510,8 +509,7 @@ defmodule Spark.Builder.Entity do
     Helpers.build!(builder, DslEntity, "entity", [
       fn -> validate_required(builder) end,
       fn -> validate_duplicate_args(builder) end,
-      fn -> validate_args(builder) end,
-      fn -> validate_singleton_keys(builder) end
+      fn -> validate_args(builder) end
     ])
   end
 
@@ -555,17 +553,6 @@ defmodule Spark.Builder.Entity do
       :ok
     else
       {:error, "args reference undefined schema keys: #{inspect(missing)}"}
-    end
-  end
-
-  defp validate_singleton_keys(%__MODULE__{singleton_entity_keys: keys, entities: entities}) do
-    entity_keys = entities |> Keyword.keys() |> MapSet.new()
-    missing = Enum.reject(keys, &MapSet.member?(entity_keys, &1))
-
-    if missing == [] do
-      :ok
-    else
-      {:error, "singleton_entity_keys references undefined entity keys: #{inspect(missing)}"}
     end
   end
 
