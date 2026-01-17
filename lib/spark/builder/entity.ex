@@ -492,7 +492,6 @@ defmodule Spark.Builder.Entity do
       fn -> validate_required(builder) end,
       fn -> validate_duplicate_args(builder) end,
       fn -> validate_args(builder) end,
-      fn -> validate_optional_defaults(builder) end,
       fn -> validate_singleton_keys(builder) end
     ])
   end
@@ -512,7 +511,6 @@ defmodule Spark.Builder.Entity do
       fn -> validate_required(builder) end,
       fn -> validate_duplicate_args(builder) end,
       fn -> validate_args(builder) end,
-      fn -> validate_optional_defaults(builder) end,
       fn -> validate_singleton_keys(builder) end
     ])
   end
@@ -557,36 +555,6 @@ defmodule Spark.Builder.Entity do
       :ok
     else
       {:error, "args reference undefined schema keys: #{inspect(missing)}"}
-    end
-  end
-
-  defp validate_optional_defaults(%__MODULE__{args: args, schema: schema}) do
-    args
-    |> Enum.filter(&match?({:optional, _, _}, &1))
-    |> Enum.find_value(:ok, fn {:optional, name, default} ->
-      case Keyword.fetch(schema, name) do
-        {:ok, opts} ->
-          case Keyword.fetch(opts, :default) do
-            {:ok, ^default} ->
-              false
-
-            {:ok, schema_default} ->
-              {:error,
-               "optional arg #{inspect(name)} has default #{inspect(default)}, but schema has default #{inspect(schema_default)}"}
-
-            :error ->
-              {:error,
-               "optional arg #{inspect(name)} has default #{inspect(default)}, but schema has no default"}
-          end
-
-        :error ->
-          false
-      end
-    end)
-    |> case do
-      :ok -> :ok
-      false -> :ok
-      {:error, _} = error -> error
     end
   end
 
