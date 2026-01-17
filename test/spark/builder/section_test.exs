@@ -214,9 +214,9 @@ defmodule Spark.Builder.SectionTest do
     test "after_define/2 sets callback" do
       builder =
         Section.new(:attributes)
-        |> Section.after_define({MyModule, :process, []})
+        |> Section.after_define({MyModule, :process})
 
-      assert builder.after_define == {MyModule, :process, []}
+      assert builder.after_define == {MyModule, :process}
     end
   end
 

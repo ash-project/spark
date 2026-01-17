@@ -61,7 +61,7 @@ defmodule Spark.Builder.Section do
           examples: [String.t()],
           deprecations: keyword(String.t()),
           patchable?: boolean(),
-          after_define: {module(), atom(), [any()]} | nil,
+          after_define: {module(), atom()} | nil,
           docs: String.t()
         }
 
@@ -253,12 +253,12 @@ defmodule Spark.Builder.Section do
   ## Examples
 
       Section.new(:attributes)
-      |> Section.after_define({MyModule, :process_attributes, []})
+      |> Section.after_define({MyModule, :process_attributes})
   """
-  @spec after_define(t(), {module(), atom(), [any()]}) :: t()
-  def after_define(%__MODULE__{} = builder, {mod, fun, args} = mfa)
-      when is_atom(mod) and is_atom(fun) and is_list(args) do
-    %{builder | after_define: mfa}
+  @spec after_define(t(), {module(), atom()}) :: t()
+  def after_define(%__MODULE__{} = builder, {mod, fun})
+      when is_atom(mod) and is_atom(fun) do
+    %{builder | after_define: {mod, fun}}
   end
 
   # ===========================================================================
