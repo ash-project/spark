@@ -11,13 +11,13 @@ defmodule Spark.DocsTest do
 
       # Check that entity modules are mapped to the correct DSL doc paths
       assert redirects["Spark.Test.Contact.Dsl.Presets.Preset"] ==
-               "dsl-spark-test-contact.html#presets-preset"
+               "dsl-spark-test-contact#presets-preset"
 
       assert redirects["Spark.Test.Contact.Dsl.Presets.PresetWithOptional"] ==
-               "dsl-spark-test-contact.html#presets-preset_with_optional"
+               "dsl-spark-test-contact#presets-preset_with_optional"
 
       assert redirects["Spark.Test.Contact.Dsl.Presets.PresetWithFnArg"] ==
-               "dsl-spark-test-contact.html#presets-preset_with_fn_arg"
+               "dsl-spark-test-contact#presets-preset_with_fn_arg"
     end
 
     test "generates redirects for nested entities" do
@@ -25,7 +25,7 @@ defmodule Spark.DocsTest do
 
       # The singleton entity is nested under preset
       assert redirects["Spark.Test.Contact.Dsl.Presets.Preset.Singleton"] ==
-               "dsl-spark-test-contact.html#presets-preset-singleton"
+               "dsl-spark-test-contact#presets-preset-singleton"
     end
 
     test "merges with existing redirects" do
@@ -37,7 +37,7 @@ defmodule Spark.DocsTest do
 
       # Should also contain the generated redirects
       assert redirects["Spark.Test.Contact.Dsl.Presets.Preset"] ==
-               "dsl-spark-test-contact.html#presets-preset"
+               "dsl-spark-test-contact#presets-preset"
     end
 
     test "handles multiple DSL extensions" do
@@ -45,11 +45,11 @@ defmodule Spark.DocsTest do
 
       # Should have redirects from Contact.Dsl
       assert redirects["Spark.Test.Contact.Dsl.Presets.Preset"] ==
-               "dsl-spark-test-contact.html#presets-preset"
+               "dsl-spark-test-contact#presets-preset"
 
       # Should have redirects from Recursive.Dsl
       assert redirects["Spark.Test.Recursive.Dsl.Steps.Step"] ==
-               "dsl-spark-test-recursive.html#steps-step"
+               "dsl-spark-test-recursive#steps-step"
     end
 
     test "handles DSL patches" do
@@ -57,7 +57,7 @@ defmodule Spark.DocsTest do
 
       # The ContactPatcher adds special_preset to presets section
       assert redirects["Spark.Test.ContactPatcher.Presets.SpecialPreset"] ==
-               "dsl-spark-test-contactpatcher.html#presets-special_preset"
+               "dsl-spark-test-contactpatcher#presets-special_preset"
     end
   end
 
