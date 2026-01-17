@@ -341,26 +341,20 @@ defmodule Spark.Builder.EntityTest do
       assert message =~ ":name"
     end
 
-    test "errors when optional arg default differs from schema" do
-      result =
+    test "allows optional arg default even when schema default differs" do
+      {:ok, _entity} =
         Entity.new(:attr, TestTarget)
         |> Entity.schema(name: [type: :atom, default: :foo])
         |> Entity.args([{:optional, :name, :bar}])
         |> Entity.build()
-
-      assert {:error, message} = result
-      assert message =~ "but schema has default"
     end
 
-    test "errors when optional arg default not in schema" do
-      result =
+    test "allows optional arg default without schema default" do
+      {:ok, _entity} =
         Entity.new(:attr, TestTarget)
         |> Entity.schema(name: [type: :atom])
         |> Entity.args([{:optional, :name, :foo}])
         |> Entity.build()
-
-      assert {:error, message} = result
-      assert message =~ "schema has no default"
     end
 
     test "errors when singleton_entity_keys not in nested entities" do
