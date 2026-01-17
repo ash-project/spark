@@ -321,6 +321,14 @@ defmodule Spark.Builder.EntityTest do
       assert message =~ ":missing"
     end
 
+    test "allows args when schema has wildcard" do
+      {:ok, _entity} =
+        Entity.new(:attr, TestTarget)
+        |> Entity.schema(*: [type: :any])
+        |> Entity.args([:name, :missing])
+        |> Entity.build()
+    end
+
     test "validates args with optional format" do
       {:ok, _entity} =
         Entity.new(:attr, TestTarget)
