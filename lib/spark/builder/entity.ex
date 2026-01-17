@@ -561,7 +561,12 @@ defmodule Spark.Builder.Entity do
   end
 
   defp merge_schema(%__MODULE__{} = builder, entries) do
-    %{builder | schema: Keyword.merge(builder.schema, entries)}
+    %{builder | schema: append_schema_entries(builder.schema, entries)}
+  end
+
+  defp append_schema_entries(schema, entries) do
+    existing_keys = schema |> Keyword.keys() |> MapSet.new()
+    schema ++ Enum.reject(entries, fn {key, _} -> MapSet.member?(existing_keys, key) end)
   end
 
   defp resolve_entity(value) do

@@ -69,6 +69,15 @@ defmodule Spark.Builder.SectionTest do
       assert builder.schema[:strict] == [type: :boolean, default: false]
       assert builder.schema[:name] == [type: :atom, required: true]
     end
+
+    test "keeps the first schema entry when adding duplicates" do
+      builder =
+        Section.new(:resource)
+        |> Section.option(:strict, type: :boolean)
+        |> Section.option(:strict, type: :integer)
+
+      assert Keyword.get_values(builder.schema, :strict) == [[type: :boolean]]
+    end
   end
 
   describe "entity/2" do

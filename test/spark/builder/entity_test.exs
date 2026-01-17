@@ -82,6 +82,15 @@ defmodule Spark.Builder.EntityTest do
 
       assert builder.schema[:name] == [type: :atom]
     end
+
+    test "keeps the first schema entry when adding duplicates" do
+      builder =
+        Entity.new(:attr, TestTarget)
+        |> Entity.field(:name, type: :atom)
+        |> Entity.field(:name, type: :string)
+
+      assert Keyword.get_values(builder.schema, :name) == [[type: :atom]]
+    end
   end
 
   describe "args/2" do
