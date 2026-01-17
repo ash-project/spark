@@ -539,20 +539,24 @@ defmodule Spark.Builder.Entity do
   end
 
   defp validate_args(%__MODULE__{args: args, schema: schema}) do
-    arg_names =
-      Enum.map(args, fn
-        {:optional, name} -> name
-        {:optional, name, _default} -> name
-        name when is_atom(name) -> name
-      end)
-
-    schema_keys = Keyword.keys(schema)
-    missing = arg_names -- schema_keys
-
-    if missing == [] do
+    if Keyword.has_key?(schema, :*) do
       :ok
     else
-      {:error, "args reference undefined schema keys: #{inspect(missing)}"}
+      arg_names =
+        Enum.map(args, fn
+          {:optional, name} -> name
+          {:optional, name, _default} -> name
+          name when is_atom(name) -> name
+        end)
+
+      schema_keys = Keyword.keys(schema)
+      missing = arg_names -- schema_keys
+
+      if missing == [] do
+        :ok
+      else
+        {:error, "args reference undefined schema keys: #{inspect(missing)}"}
+      end
     end
   end
 
