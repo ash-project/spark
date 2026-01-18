@@ -27,8 +27,8 @@ defmodule Spark.Dsl.Section do
 
   For a full example, see `Spark.Dsl.Extension`.
   """
-  defstruct [
-    :name,
+  @fields [
+    name: nil,
     imports: [],
     schema: [],
     describe: "",
@@ -47,10 +47,18 @@ defmodule Spark.Dsl.Section do
     patchable?: false
   ]
 
+  defstruct @fields
+
   alias Spark.{
     Dsl.Entity,
     Dsl.Section
   }
+
+  @doc false
+  def __fields__, do: @fields
+
+  @doc false
+  def __field_names__, do: Keyword.keys(@fields)
 
   @type name :: atom()
 
