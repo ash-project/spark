@@ -31,12 +31,12 @@ defmodule Spark.Builder.Entity do
   Entities can contain nested entities using `nested_entity/3`:
 
       Entity.new(:field, MyApp.Field)
-        |> Entity.nested_entity(:validations, fn ->
+        |> Entity.nested_entity(:validations,
           Entity.new(:validation, MyApp.Validation)
           |> Entity.args([:type])
           |> Entity.schema([type: [type: :atom, required: true]])
           |> Entity.build!()
-        end)
+        )
         |> Entity.build!()
   """
   @moduledoc since: "2.5.0"
@@ -218,23 +218,21 @@ defmodule Spark.Builder.Entity do
   Adds a nested entity under the given key.
 
   Nested entities appear as children of this entity in the DSL.
-  Accepts a built entity, a builder struct, or a function that returns one.
+  Accepts a built `%Spark.Dsl.Entity{}` or a `%Spark.Builder.Entity{}` struct.
 
   ## Examples
 
-      # With a built entity
       Entity.new(:form, Form)
       |> Entity.nested_entity(:fields, field_entity)
 
-      # With a builder function
       Entity.new(:form, Form)
-      |> Entity.nested_entity(:fields, fn ->
+      |> Entity.nested_entity(:fields,
         Entity.new(:field, Field)
         |> Entity.schema([name: [type: :atom]])
         |> Entity.build!()
-      end)
+      )
   """
-  @spec nested_entity(t(), atom(), DslEntity.t() | t() | (-> DslEntity.t() | t())) :: t()
+  @spec nested_entity(t(), atom(), DslEntity.t() | t()) :: t()
   def nested_entity(%__MODULE__{} = builder, key, entity_or_fun) when is_atom(key) do
     entity = resolve_entity(entity_or_fun)
     existing = Keyword.get(builder.entities, key, [])

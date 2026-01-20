@@ -106,18 +106,6 @@ defmodule Spark.Builder.SectionTest do
 
       assert length(builder.entities) == 1
     end
-
-    test "accepts a function" do
-      builder =
-        Section.new(:attributes)
-        |> Section.entity(fn ->
-          Entity.new(:attribute, TestTarget)
-          |> Entity.schema(name: [type: :atom])
-          |> Entity.build!()
-        end)
-
-      assert length(builder.entities) == 1
-    end
   end
 
   describe "entities/2" do
@@ -156,18 +144,6 @@ defmodule Spark.Builder.SectionTest do
       builder =
         Section.new(:resource)
         |> Section.nested_section(nested_builder)
-
-      assert length(builder.sections) == 1
-    end
-
-    test "accepts a function" do
-      builder =
-        Section.new(:resource)
-        |> Section.nested_section(fn ->
-          Section.new(:advanced)
-          |> Section.option(:debug, type: :boolean)
-          |> Section.build!()
-        end)
 
       assert length(builder.sections) == 1
     end

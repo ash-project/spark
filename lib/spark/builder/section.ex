@@ -27,11 +27,11 @@ defmodule Spark.Builder.Section do
   Sections can contain nested sections:
 
       Section.new(:resource)
-        |> Section.nested_section(fn ->
+        |> Section.nested_section(
           Section.new(:attributes)
           |> Section.entity(attribute_entity)
           |> Section.build!()
-        end)
+        )
         |> Section.build!()
   """
   @moduledoc since: "2.5.0"
@@ -126,7 +126,7 @@ defmodule Spark.Builder.Section do
   @doc """
   Adds an entity to the section.
 
-  Accepts a built entity, a builder struct, or a function that returns one.
+  Accepts a built `%Spark.Dsl.Entity{}` or a `%Spark.Builder.Entity{}` struct.
 
   ## Examples
 
@@ -134,13 +134,13 @@ defmodule Spark.Builder.Section do
       |> Section.entity(attribute_entity)
 
       Section.new(:attributes)
-      |> Section.entity(fn ->
+      |> Section.entity(
         Entity.new(:attribute, Attribute)
         |> Entity.schema([name: [type: :atom]])
         |> Entity.build!()
-      end)
+      )
   """
-  @spec entity(t(), DslEntity.t() | EntityBuilder.t() | (-> DslEntity.t())) :: t()
+  @spec entity(t(), DslEntity.t() | EntityBuilder.t()) :: t()
   def entity(%__MODULE__{} = builder, entity_or_fun) do
     entity = resolve_entity(entity_or_fun)
     %{builder | entities: builder.entities ++ [entity]}
@@ -167,18 +167,18 @@ defmodule Spark.Builder.Section do
   @doc """
   Adds a nested section.
 
-  Accepts a built section, a builder struct, or a function that returns one.
+  Accepts a built `%Spark.Dsl.Section{}` or a `%Spark.Builder.Section{}` struct.
 
   ## Examples
 
       Section.new(:resource)
-      |> Section.nested_section(fn ->
+      |> Section.nested_section(
         Section.new(:attributes)
         |> Section.entity(attribute_entity)
         |> Section.build!()
-      end)
+      )
   """
-  @spec nested_section(t(), DslSection.t() | t() | (-> DslSection.t())) :: t()
+  @spec nested_section(t(), DslSection.t() | t()) :: t()
   def nested_section(%__MODULE__{} = builder, section_or_fun) do
     section = resolve_section(section_or_fun)
     %{builder | sections: builder.sections ++ [section]}
