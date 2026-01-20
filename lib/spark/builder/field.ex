@@ -39,6 +39,7 @@ defmodule Spark.Builder.Field do
         doc: "Server configuration"
       )
   """
+  @moduledoc since: "2.5.0"
 
   defstruct [
     :name,

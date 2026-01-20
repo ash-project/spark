@@ -39,6 +39,7 @@ defmodule Spark.Builder.Entity do
         end)
         |> Entity.build!()
   """
+  @moduledoc since: "2.5.0"
 
   alias Spark.Builder.Field
   alias Spark.Builder.Helpers
