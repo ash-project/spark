@@ -6,26 +6,38 @@ defmodule Spark.Builder.Field do
   @moduledoc """
   Builder for individual schema field specifications.
 
-  This module provides a fluent API for constructing field definitions
+  This module provides an option-based API for constructing field definitions
   used in `Spark.Options` schemas. Each field can have type, validation,
   documentation, and DSL-specific attributes.
 
   ## Examples
 
       iex> alias Spark.Builder.Field
-      iex> Field.new(:name)
-      ...> |> Field.type(:atom)
-      ...> |> Field.required()
-      ...> |> Field.doc("The field name")
+      iex> Field.new(:name, type: :atom, required?: true, doc: "The field name")
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true, doc: "The field name"]}
 
       iex> alias Spark.Builder.{Field, Type}
-      iex> Field.new(:status)
-      ...> |> Field.type(Type.one_of([:pending, :active]))
-      ...> |> Field.default(:pending)
+      iex> Field.new(:status, type: Type.one_of([:pending, :active]), default: :pending)
       ...> |> Field.to_spec()
       {:status, [type: {:one_of, [:pending, :active]}, default: :pending]}
+
+  ## Nested Keys
+
+  The `:keys` option accepts either raw keyword lists or `Field` structs,
+  allowing composable nested schemas:
+
+      alias Spark.Builder.Field
+
+      Field.new(:config,
+        type: :keyword_list,
+        keys: [
+          Field.new(:host, type: :string, required?: true, doc: "Server hostname"),
+          Field.new(:port, type: :integer, default: 4000, doc: "Server port"),
+          Field.new(:ssl, type: :boolean, default: false, doc: "Enable SSL")
+        ],
+        doc: "Server configuration"
+      )
   """
 
   defstruct [
@@ -75,238 +87,31 @@ defmodule Spark.Builder.Field do
   @doc """
   Creates a new field builder with the given name.
 
+  Options can set common attributes like `:type`, `:required?`, and `:default`.
+
+  `:keys` accepts a raw schema keyword list or a list of `Field` structs.
+
+  ## Options
+
+    - `:type`, `:required?`, `:required`, `:default`, `:keys`, `:doc`,
+      `:type_doc`, `:subsection`, `:as`, `:snippet`, `:links`,
+      `:deprecated`, `:rename_to`, `:private?`, `:private`,
+      `:hide`, `:type_spec`
+
   ## Examples
 
       iex> Spark.Builder.Field.new(:my_field)
       %Spark.Builder.Field{name: :my_field}
+
+      iex> Spark.Builder.Field.new(:type, type: :atom, required?: true)
+      ...> |> Spark.Builder.Field.to_spec()
+      {:type, [type: :atom, required: true]}
   """
   @spec new(atom()) :: t()
-  def new(name) when is_atom(name) do
+  @spec new(atom(), keyword()) :: t()
+  def new(name, opts \\ []) when is_atom(name) and is_list(opts) do
     %__MODULE__{name: name}
-  end
-
-  # ===========================================================================
-  # Type & Validation
-  # ===========================================================================
-
-  @doc """
-  Sets the type for this field.
-
-  See `Spark.Options` and `Spark.Builder.Type` for available types.
-
-  ## Examples
-
-      iex> Field.new(:count) |> Field.type(:integer)
-      %Spark.Builder.Field{name: :count, type: :integer}
-  """
-  @spec type(t(), Spark.Options.type()) :: t()
-  def type(%__MODULE__{} = field, type) do
-    %{field | type: type}
-  end
-
-  @doc """
-  Marks the field as required.
-
-  ## Examples
-
-      iex> Field.new(:name) |> Field.required()
-      %Spark.Builder.Field{name: :name, required: true}
-
-      iex> Field.new(:name) |> Field.required(false)
-      %Spark.Builder.Field{name: :name, required: false}
-  """
-  @spec required(t(), boolean()) :: t()
-  def required(%__MODULE__{} = field, required? \\ true) do
-    %{field | required: required?}
-  end
-
-  @doc """
-  Sets the default value for this field.
-
-  ## Examples
-
-      iex> Field.new(:count) |> Field.default(0)
-      %Spark.Builder.Field{name: :count, default: 0, has_default: true}
-  """
-  @spec default(t(), any()) :: t()
-  def default(%__MODULE__{} = field, value) do
-    %{field | default: value, has_default: true}
-  end
-
-  @doc """
-  Sets nested keys for keyword_list, non_empty_keyword_list, or map types.
-
-  Accepts either a raw schema keyword list or a list of Field structs.
-  Invalid entries raise an `ArgumentError`.
-
-  ## Examples
-
-      iex> Field.new(:config)
-      ...> |> Field.type(:keyword_list)
-      ...> |> Field.keys([host: [type: :string], port: [type: :integer]])
-
-      iex> Field.new(:config)
-      ...> |> Field.type(:keyword_list)
-      ...> |> Field.keys([
-      ...>   Field.new(:host) |> Field.type(:string),
-      ...>   Field.new(:port) |> Field.type(:integer)
-      ...> ])
-  """
-  @spec keys(t(), Spark.Options.schema() | [t()]) :: t()
-  def keys(%__MODULE__{} = field, schema) when is_list(schema) do
-    normalized = to_schema(schema)
-    %{field | keys: normalized}
-  end
-
-  # ===========================================================================
-  # Documentation
-  # ===========================================================================
-
-  @doc """
-  Sets the documentation string for this field.
-
-  Pass `false` to explicitly hide from documentation.
-
-  ## Examples
-
-      iex> Field.new(:name) |> Field.doc("The entity name")
-  """
-  @spec doc(t(), String.t() | false) :: t()
-  def doc(%__MODULE__{} = field, doc) when is_binary(doc) or doc == false do
-    %{field | doc: doc}
-  end
-
-  @doc """
-  Sets custom type documentation.
-
-  Pass `false` to omit type from documentation.
-
-  ## Examples
-
-      iex> Field.new(:handler) |> Field.type_doc("A function or MFA tuple")
-  """
-  @spec type_doc(t(), String.t() | false) :: t()
-  def type_doc(%__MODULE__{} = field, type_doc) when is_binary(type_doc) or type_doc == false do
-    %{field | type_doc: type_doc}
-  end
-
-  @doc """
-  Sets the subsection for documentation grouping.
-
-  ## Examples
-
-      iex> Field.new(:timeout) |> Field.subsection("Advanced Options")
-  """
-  @spec subsection(t(), String.t()) :: t()
-  def subsection(%__MODULE__{} = field, subsection) when is_binary(subsection) do
-    %{field | subsection: subsection}
-  end
-
-  @doc """
-  Sets documentation links.
-
-  ## Examples
-
-      iex> Field.new(:type) |> Field.links(guides: ["documentation/types.md"])
-  """
-  @spec links(t(), keyword()) :: t()
-  def links(%__MODULE__{} = field, links) when is_list(links) do
-    %{field | links: links}
-  end
-
-  # ===========================================================================
-  # DSL Support
-  # ===========================================================================
-
-  @doc """
-  Sets an alias name for DSL usage.
-
-  The field will be stored under its original name but can be set
-  using the alias in the DSL.
-
-  ## Examples
-
-      iex> Field.new(:source_field) |> Field.as(:source)
-  """
-  @spec as(t(), atom()) :: t()
-  def as(%__MODULE__{} = field, name) when is_atom(name) do
-    %{field | as: name}
-  end
-
-  @doc """
-  Sets the snippet for IDE autocomplete.
-
-  ## Examples
-
-      iex> Field.new(:handler) |> Field.snippet("fn ${1:arg} -> ${2:body} end")
-  """
-  @spec snippet(t(), String.t()) :: t()
-  def snippet(%__MODULE__{} = field, snippet) when is_binary(snippet) do
-    %{field | snippet: snippet}
-  end
-
-  @doc """
-  Marks the field as deprecated with a message.
-
-  ## Examples
-
-      iex> Field.new(:old_option) |> Field.deprecated("Use :new_option instead")
-  """
-  @spec deprecated(t(), String.t()) :: t()
-  def deprecated(%__MODULE__{} = field, message) when is_binary(message) do
-    %{field | deprecated: message}
-  end
-
-  @doc """
-  Renames the field to a different key after validation.
-
-  ## Examples
-
-      iex> Field.new(:old_name) |> Field.rename_to(:new_name)
-  """
-  @spec rename_to(t(), atom()) :: t()
-  def rename_to(%__MODULE__{} = field, name) when is_atom(name) do
-    %{field | rename_to: name}
-  end
-
-  # ===========================================================================
-  # Metadata
-  # ===========================================================================
-
-  @doc """
-  Marks the field as private (hidden from documentation and validators).
-
-  ## Examples
-
-      iex> Field.new(:internal) |> Field.private()
-  """
-  @spec private(t(), boolean()) :: t()
-  def private(%__MODULE__{} = field, private? \\ true) do
-    %{field | private?: private?}
-  end
-
-  @doc """
-  Sets contexts where the field should be hidden from documentation.
-
-  ## Examples
-
-      iex> Field.new(:internal) |> Field.hide([:docs, :schema])
-  """
-  @spec hide(t(), [atom()]) :: t()
-  def hide(%__MODULE__{} = field, contexts) when is_list(contexts) do
-    %{field | hide: contexts}
-  end
-
-  @doc """
-  Sets a custom typespec for the field.
-
-  ## Examples
-
-      iex> Field.new(:data) |> Field.type_spec(quote do: map())
-  """
-  @spec type_spec(t(), Macro.t()) :: t()
-  def type_spec(%__MODULE__{} = field, spec) do
-    %{field | type_spec: spec}
+    |> apply_opts(opts)
   end
 
   # ===========================================================================
@@ -320,9 +125,7 @@ defmodule Spark.Builder.Field do
 
   ## Examples
 
-      iex> Field.new(:name)
-      ...> |> Field.type(:atom)
-      ...> |> Field.required()
+      iex> Field.new(:name, type: :atom, required?: true)
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true]}
   """
@@ -356,8 +159,8 @@ defmodule Spark.Builder.Field do
   ## Examples
 
       iex> [
-      ...>   Field.new(:name) |> Field.type(:atom) |> Field.required(),
-      ...>   Field.new(:count) |> Field.type(:integer) |> Field.default(0)
+      ...>   Field.new(:name, type: :atom, required?: true),
+      ...>   Field.new(:count, type: :integer, default: 0)
       ...> ]
       ...> |> Field.to_schema()
       [name: [type: :atom, required: true], count: [type: :integer, default: 0]]
@@ -374,6 +177,79 @@ defmodule Spark.Builder.Field do
       {key, opts} when is_atom(key) and is_list(opts) -> {key, opts}
       other -> raise ArgumentError, "Invalid field specification: #{inspect(other)}"
     end)
+  end
+
+  defp apply_opts(%__MODULE__{} = field, opts) do
+    Enum.reduce(opts, field, fn {key, value}, acc ->
+      apply_opt(acc, key, value)
+    end)
+  end
+
+  defp apply_opt(field, :type, value), do: %{field | type: value}
+  defp apply_opt(field, :required, value), do: %{field | required: value}
+  defp apply_opt(field, :required?, value), do: %{field | required: value}
+  defp apply_opt(field, :default, value), do: %{field | default: value, has_default: true}
+
+  defp apply_opt(field, :keys, value) when is_list(value) do
+    normalized = to_schema(value)
+    %{field | keys: normalized}
+  end
+
+  defp apply_opt(_field, :keys, value), do: raise_invalid_option(:keys, value)
+
+  defp apply_opt(field, :doc, value) when is_binary(value) or value == false do
+    %{field | doc: value}
+  end
+
+  defp apply_opt(_field, :doc, value), do: raise_invalid_option(:doc, value)
+
+  defp apply_opt(field, :type_doc, value) when is_binary(value) or value == false do
+    %{field | type_doc: value}
+  end
+
+  defp apply_opt(_field, :type_doc, value), do: raise_invalid_option(:type_doc, value)
+
+  defp apply_opt(field, :subsection, value) when is_binary(value) do
+    %{field | subsection: value}
+  end
+
+  defp apply_opt(_field, :subsection, value), do: raise_invalid_option(:subsection, value)
+
+  defp apply_opt(field, :links, value) when is_list(value) do
+    %{field | links: value}
+  end
+
+  defp apply_opt(_field, :links, value), do: raise_invalid_option(:links, value)
+
+  defp apply_opt(field, :as, value) when is_atom(value), do: %{field | as: value}
+  defp apply_opt(_field, :as, value), do: raise_invalid_option(:as, value)
+
+  defp apply_opt(field, :snippet, value) when is_binary(value), do: %{field | snippet: value}
+  defp apply_opt(_field, :snippet, value), do: raise_invalid_option(:snippet, value)
+
+  defp apply_opt(field, :deprecated, value) when is_binary(value) do
+    %{field | deprecated: value}
+  end
+
+  defp apply_opt(_field, :deprecated, value), do: raise_invalid_option(:deprecated, value)
+
+  defp apply_opt(field, :rename_to, value) when is_atom(value), do: %{field | rename_to: value}
+  defp apply_opt(_field, :rename_to, value), do: raise_invalid_option(:rename_to, value)
+
+  defp apply_opt(field, :private?, value), do: %{field | private?: value}
+  defp apply_opt(field, :private, value), do: %{field | private?: value}
+
+  defp apply_opt(field, :hide, value) when is_list(value), do: %{field | hide: value}
+  defp apply_opt(_field, :hide, value), do: raise_invalid_option(:hide, value)
+
+  defp apply_opt(field, :type_spec, value), do: %{field | type_spec: value}
+
+  defp apply_opt(_field, key, _value) do
+    raise ArgumentError, "Unknown field option: #{inspect(key)}"
+  end
+
+  defp raise_invalid_option(key, value) do
+    raise ArgumentError, "Invalid value for #{inspect(key)} option: #{inspect(value)}"
   end
 
   defp maybe_add(acc, _key, value, default) when value == default, do: acc
