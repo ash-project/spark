@@ -159,18 +159,6 @@ defmodule Spark.Builder.EntityTest do
       assert length(builder.entities[:children]) == 1
     end
 
-    test "accepts a function" do
-      builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entity(:children, fn ->
-          Entity.new(:nested, NestedTarget)
-          |> Entity.schema(value: [type: :any])
-          |> Entity.build!()
-        end)
-
-      assert length(builder.entities[:children]) == 1
-    end
-
     test "appends to existing entities" do
       nested1 = Entity.new(:nested1, NestedTarget) |> Entity.schema(value: [type: :any])
       nested2 = Entity.new(:nested2, NestedTarget) |> Entity.schema(value: [type: :any])

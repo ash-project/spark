@@ -30,10 +30,10 @@ defmodule Spark.Builder.Helpers do
   @spec resolve(term(), (term() -> term()), (term() -> boolean())) :: term()
   def resolve(value, build_fun, predicate)
       when is_function(build_fun, 1) and is_function(predicate, 1) do
-    cond do
-      is_function(value, 0) -> resolve(value.(), build_fun, predicate)
-      predicate.(value) -> value
-      true -> build_fun.(value)
+    if predicate.(value) do
+      value
+    else
+      build_fun.(value)
     end
   end
 
