@@ -13,6 +13,8 @@ Writing extensions generally involves three main components.
 
 The DSL is declared as a series of `Spark.Dsl.Section`, which can contain `Spark.Dsl.Entity` and further `Spark.Dsl.Section` structs. See `Spark.Dsl.Section` and `Spark.Dsl.Entity` for more information.
 
+If you want to build those structs programmatically, see [Building Extensions with the Builder API](build-extensions-with-builders.md).
+
 ## Transformers
 
 Extension writing gets a bit more complicated when you get into the world of transformers, but this is also where a lot of the power is. Each transformer can declare other transformers it must go before or after, and then is given the opportunity to modify the entirety of the DSL it is extending up to that point. This allows extensions to make rich modifications to the structure in question. See `Spark.Dsl.Transformer` for more information
