@@ -6,7 +6,6 @@ defmodule Spark.Builder.EntityTest do
   use ExUnit.Case, async: true
 
   alias Spark.Builder.{Entity, Field}
-  alias Spark.Builder.Type
   alias Spark.Dsl.Entity, as: DslEntity
 
   # Test target struct
@@ -424,7 +423,7 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.schema(
           name: [type: :atom, required: true, doc: "The attribute name"],
           type: [
-            type: Type.one_of([:string, :integer, :boolean]),
+            type: {:one_of, [:string, :integer, :boolean]},
             default: :string,
             doc: "The type"
           ],
