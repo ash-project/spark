@@ -34,6 +34,7 @@ defmodule Spark.Builder.Section do
         end)
         |> Section.build!()
   """
+  @moduledoc since: "2.5.0"
 
   alias Spark.Builder.Entity, as: EntityBuilder
   alias Spark.Builder.Field
