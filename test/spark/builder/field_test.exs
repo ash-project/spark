@@ -102,14 +102,12 @@ defmodule Spark.Builder.FieldTest do
         Field.new(:source_field,
           as: :source,
           snippet: "fn ${1:arg} -> ${2:body} end",
-          deprecated: "Use :new_option instead",
-          rename_to: :new_name
+          deprecated: "Use :new_option instead"
         )
 
       assert field.as == :source
       assert field.snippet == "fn ${1:arg} -> ${2:body} end"
       assert field.deprecated == "Use :new_option instead"
-      assert field.rename_to == :new_name
     end
 
     test "sets metadata options" do
