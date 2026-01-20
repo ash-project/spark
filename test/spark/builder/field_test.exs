@@ -6,7 +6,6 @@ defmodule Spark.Builder.FieldTest do
   use ExUnit.Case, async: true
 
   alias Spark.Builder.Field
-  alias Spark.Builder.Type
 
   describe "new/1" do
     test "creates a field with the given name" do
@@ -35,7 +34,7 @@ defmodule Spark.Builder.FieldTest do
     end
 
     test "works with complex types" do
-      field = Field.new(:items, type: Type.list(:atom))
+      field = Field.new(:items, type: {:list, :atom})
       assert field.type == {:list, :atom}
     end
 
@@ -201,7 +200,7 @@ defmodule Spark.Builder.FieldTest do
     test "supports full option-based construction" do
       {name, opts} =
         Field.new(:status,
-          type: Type.one_of([:pending, :active, :completed]),
+          type: {:one_of, [:pending, :active, :completed]},
           default: :pending,
           doc: "Current status",
           deprecated: "Use :state instead"

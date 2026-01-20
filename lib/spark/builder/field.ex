@@ -17,8 +17,8 @@ defmodule Spark.Builder.Field do
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true, doc: "The field name"]}
 
-      iex> alias Spark.Builder.{Field, Type}
-      iex> Field.new(:status, type: Type.one_of([:pending, :active]), default: :pending)
+      iex> alias Spark.Builder.Field
+      iex> Field.new(:status, type: {:one_of, [:pending, :active]}, default: :pending)
       ...> |> Field.to_spec()
       {:status, [type: {:one_of, [:pending, :active]}, default: :pending]}
 
