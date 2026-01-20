@@ -17,62 +17,53 @@ defmodule Spark.Builder.FieldTest do
     end
   end
 
-  describe "type/2" do
-    test "sets the type" do
-      field = Field.new(:name) |> Field.type(:atom)
+  describe "new/2" do
+    test "applies provided options" do
+      field =
+        Field.new(:name,
+          type: :atom,
+          required?: true,
+          default: :pending,
+          doc: "The name"
+        )
+
       assert field.type == :atom
+      assert field.required == true
+      assert field.default == :pending
+      assert field.has_default == true
+      assert field.doc == "The name"
     end
 
     test "works with complex types" do
-      field = Field.new(:items) |> Field.type(Type.list(:atom))
+      field = Field.new(:items, type: Type.list(:atom))
       assert field.type == {:list, :atom}
     end
-  end
 
-  describe "required/1" do
-    test "marks field as required" do
-      field = Field.new(:name) |> Field.required()
-      assert field.required == true
-    end
-
-    test "can unset required" do
-      field = Field.new(:name) |> Field.required() |> Field.required(false)
-      assert field.required == false
-    end
-  end
-
-  describe "default/2" do
-    test "sets default value" do
-      field = Field.new(:count) |> Field.default(0)
-      assert field.default == 0
-      assert field.has_default == true
-    end
-
-    test "works with nil default" do
-      field = Field.new(:value) |> Field.default(nil)
+    test "supports nil defaults" do
+      field = Field.new(:value, default: nil)
       assert field.default == nil
       assert field.has_default == true
     end
-  end
 
-  describe "keys/2" do
-    test "sets nested schema with raw keyword list" do
+    test "normalizes nested keys from raw keyword list" do
       field =
-        Field.new(:config)
-        |> Field.type(:keyword_list)
-        |> Field.keys(host: [type: :string], port: [type: :integer])
+        Field.new(:config,
+          type: :keyword_list,
+          keys: [host: [type: :string], port: [type: :integer]]
+        )
 
       assert field.keys == [host: [type: :string], port: [type: :integer]]
     end
 
-    test "normalizes Field builders to specs" do
+    test "normalizes nested keys from Field builders" do
       field =
-        Field.new(:config)
-        |> Field.type(:keyword_list)
-        |> Field.keys([
-          Field.new(:host) |> Field.type(:string),
-          Field.new(:port) |> Field.type(:integer) |> Field.default(5432)
-        ])
+        Field.new(:config,
+          type: :keyword_list,
+          keys: [
+            Field.new(:host, type: :string),
+            Field.new(:port, type: :integer, default: 5432)
+          ]
+        )
 
       assert field.keys == [
                {:host, [type: :string]},
@@ -80,78 +71,67 @@ defmodule Spark.Builder.FieldTest do
              ]
     end
 
-    test "raises on invalid entries" do
+    test "raises on invalid keys entries" do
       assert_raise ArgumentError, fn ->
-        Field.new(:config)
-        |> Field.keys([:not_valid])
+        Field.new(:config, keys: [:not_valid])
       end
     end
-  end
 
-  describe "documentation functions" do
-    test "doc/2 sets documentation" do
-      field = Field.new(:name) |> Field.doc("The entity name")
+    test "sets documentation options" do
+      field =
+        Field.new(:handler,
+          doc: "The entity name",
+          type_doc: "A function or MFA",
+          subsection: "Advanced Options",
+          links: [guides: ["docs/types.md"]]
+        )
+
       assert field.doc == "The entity name"
-    end
-
-    test "doc/2 accepts false to hide" do
-      field = Field.new(:internal) |> Field.doc(false)
-      assert field.doc == false
-    end
-
-    test "type_doc/2 sets type documentation" do
-      field = Field.new(:handler) |> Field.type_doc("A function or MFA")
       assert field.type_doc == "A function or MFA"
-    end
-
-    test "subsection/2 sets documentation subsection" do
-      field = Field.new(:timeout) |> Field.subsection("Advanced Options")
       assert field.subsection == "Advanced Options"
-    end
-
-    test "links/2 sets documentation links" do
-      field = Field.new(:type) |> Field.links(guides: ["docs/types.md"])
       assert field.links == [guides: ["docs/types.md"]]
     end
-  end
 
-  describe "DSL support functions" do
-    test "as/2 sets alias name" do
-      field = Field.new(:source_field) |> Field.as(:source)
+    test "accepts false documentation values" do
+      field = Field.new(:internal, doc: false, type_doc: false)
+      assert field.doc == false
+      assert field.type_doc == false
+    end
+
+    test "sets DSL support options" do
+      field =
+        Field.new(:source_field,
+          as: :source,
+          snippet: "fn ${1:arg} -> ${2:body} end",
+          deprecated: "Use :new_option instead",
+          rename_to: :new_name
+        )
+
       assert field.as == :source
-    end
-
-    test "snippet/2 sets autocomplete snippet" do
-      field = Field.new(:handler) |> Field.snippet("fn ${1:arg} -> ${2:body} end")
       assert field.snippet == "fn ${1:arg} -> ${2:body} end"
-    end
-
-    test "deprecated/2 sets deprecation message" do
-      field = Field.new(:old_option) |> Field.deprecated("Use :new_option instead")
       assert field.deprecated == "Use :new_option instead"
-    end
-
-    test "rename_to/2 sets rename target" do
-      field = Field.new(:old_name) |> Field.rename_to(:new_name)
       assert field.rename_to == :new_name
     end
-  end
 
-  describe "metadata functions" do
-    test "private/1 marks as private" do
-      field = Field.new(:internal) |> Field.private()
-      assert field.private? == true
-    end
-
-    test "hide/2 sets hide contexts" do
-      field = Field.new(:internal) |> Field.hide([:docs, :schema])
-      assert field.hide == [:docs, :schema]
-    end
-
-    test "type_spec/2 sets custom typespec" do
+    test "sets metadata options" do
       spec = quote(do: map())
-      field = Field.new(:data) |> Field.type_spec(spec)
+
+      field =
+        Field.new(:internal,
+          private?: true,
+          hide: [:docs, :schema],
+          type_spec: spec
+        )
+
+      assert field.private? == true
+      assert field.hide == [:docs, :schema]
       assert field.type_spec == spec
+    end
+
+    test "raises on unknown options" do
+      assert_raise ArgumentError, ~r/Unknown field option/, fn ->
+        Field.new(:name, unknown: :value)
+      end
     end
   end
 
@@ -166,10 +146,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes all set options" do
       {name, opts} =
-        Field.new(:name)
-        |> Field.type(:atom)
-        |> Field.required()
-        |> Field.doc("The name")
+        Field.new(:name, type: :atom, required?: true, doc: "The name")
         |> Field.to_spec()
 
       assert name == :name
@@ -180,9 +157,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes default when set" do
       {_name, opts} =
-        Field.new(:count)
-        |> Field.type(:integer)
-        |> Field.default(0)
+        Field.new(:count, type: :integer, default: 0)
         |> Field.to_spec()
 
       assert opts[:default] == 0
@@ -190,8 +165,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "excludes default values (required: false, private?: false)" do
       {_name, opts} =
-        Field.new(:name)
-        |> Field.type(:atom)
+        Field.new(:name, type: :atom)
         |> Field.to_spec()
 
       refute Keyword.has_key?(opts, :required)
@@ -200,9 +174,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes nested keys" do
       {_name, opts} =
-        Field.new(:config)
-        |> Field.type(:keyword_list)
-        |> Field.keys(host: [type: :string])
+        Field.new(:config, type: :keyword_list, keys: [host: [type: :string]])
         |> Field.to_spec()
 
       assert opts[:keys] == [host: [type: :string]]
@@ -213,8 +185,8 @@ defmodule Spark.Builder.FieldTest do
     test "builds complete schema from field list" do
       schema =
         [
-          Field.new(:name) |> Field.type(:atom) |> Field.required(),
-          Field.new(:count) |> Field.type(:integer) |> Field.default(0)
+          Field.new(:name, type: :atom, required?: true),
+          Field.new(:count, type: :integer, default: 0)
         ]
         |> Field.to_schema()
 
@@ -225,14 +197,15 @@ defmodule Spark.Builder.FieldTest do
     end
   end
 
-  describe "pipe chaining" do
-    test "supports full pipeline construction" do
+  describe "option construction" do
+    test "supports full option-based construction" do
       {name, opts} =
-        Field.new(:status)
-        |> Field.type(Type.one_of([:pending, :active, :completed]))
-        |> Field.default(:pending)
-        |> Field.doc("Current status")
-        |> Field.deprecated("Use :state instead")
+        Field.new(:status,
+          type: Type.one_of([:pending, :active, :completed]),
+          default: :pending,
+          doc: "Current status",
+          deprecated: "Use :state instead"
+        )
         |> Field.to_spec()
 
       assert name == :status
