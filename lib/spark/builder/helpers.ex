@@ -43,6 +43,13 @@ defmodule Spark.Builder.Helpers do
     Enum.map(values, &resolve(&1, build_fun, predicate))
   end
 
+  @spec append_schema_entries(Spark.Options.schema(), Spark.Options.schema()) ::
+          Spark.Options.schema()
+  def append_schema_entries(schema, entries) do
+    existing_keys = schema |> Keyword.keys() |> MapSet.new()
+    schema ++ Enum.reject(entries, fn {key, _} -> MapSet.member?(existing_keys, key) end)
+  end
+
   defp run_validations([]), do: :ok
 
   defp run_validations([validation | rest]) when is_function(validation, 0) do
