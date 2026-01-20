@@ -116,7 +116,7 @@ defmodule Spark.Builder.Section do
   """
   @spec option(t(), atom(), keyword()) :: t()
   def option(%__MODULE__{} = builder, name, opts \\ []) when is_atom(name) and is_list(opts) do
-    %{builder | schema: append_schema_entries(builder.schema, [{name, opts}])}
+    %{builder | schema: Helpers.append_schema_entries(builder.schema, [{name, opts}])}
   end
 
   # ===========================================================================
@@ -454,10 +454,5 @@ defmodule Spark.Builder.Section do
 
   defp resolve_sections(values) do
     Helpers.resolve_list(values, &build!/1, &match?(%DslSection{}, &1))
-  end
-
-  defp append_schema_entries(schema, entries) do
-    existing_keys = schema |> Keyword.keys() |> MapSet.new()
-    schema ++ Enum.reject(entries, fn {key, _} -> MapSet.member?(existing_keys, key) end)
   end
 end
