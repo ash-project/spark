@@ -52,7 +52,6 @@ defmodule Spark.Builder.Field do
     :links,
     :deprecated,
     :type_spec,
-    :rename_to,
     type: :any,
     required: false,
     private?: false,
@@ -76,8 +75,7 @@ defmodule Spark.Builder.Field do
           deprecated: String.t() | nil,
           private?: boolean(),
           hide: [atom()],
-          type_spec: Macro.t() | nil,
-          rename_to: atom() | nil
+          type_spec: Macro.t() | nil
         }
 
   # ===========================================================================
@@ -95,7 +93,7 @@ defmodule Spark.Builder.Field do
 
     - `:type`, `:required?`, `:required`, `:default`, `:keys`, `:doc`,
       `:type_doc`, `:subsection`, `:as`, `:snippet`, `:links`,
-      `:deprecated`, `:rename_to`, `:private?`, `:private`,
+      `:deprecated`, `:private?`, `:private`,
       `:hide`, `:type_spec`
 
   ## Examples
@@ -147,7 +145,6 @@ defmodule Spark.Builder.Field do
       |> maybe_add(:private?, field.private?, false)
       |> maybe_add(:hide, field.hide, [])
       |> maybe_add_if_present(:type_spec, field.type_spec)
-      |> maybe_add_if_present(:rename_to, field.rename_to)
       |> Enum.reverse()
 
     {name, opts}
@@ -232,9 +229,6 @@ defmodule Spark.Builder.Field do
   end
 
   defp apply_opt(_field, :deprecated, value), do: raise_invalid_option(:deprecated, value)
-
-  defp apply_opt(field, :rename_to, value) when is_atom(value), do: %{field | rename_to: value}
-  defp apply_opt(_field, :rename_to, value), do: raise_invalid_option(:rename_to, value)
 
   defp apply_opt(field, :private?, value), do: %{field | private?: value}
   defp apply_opt(field, :private, value), do: %{field | private?: value}
