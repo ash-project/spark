@@ -7,20 +7,19 @@ defmodule Spark.Builder.FieldTest do
 
   alias Spark.Builder.Field
 
-  describe "new/1" do
-    test "creates a field with the given name" do
-      field = Field.new(:my_field)
+  describe "new/2" do
+    test "creates a field with the given name and type" do
+      field = Field.new(:my_field, :any)
       assert field.name == :my_field
       assert field.type == :any
       assert field.required == false
     end
   end
 
-  describe "new/2" do
+  describe "new/3" do
     test "applies provided options" do
       field =
-        Field.new(:name,
-          type: :atom,
+        Field.new(:name, :atom,
           required?: true,
           default: :pending,
           doc: "The name"
@@ -34,20 +33,19 @@ defmodule Spark.Builder.FieldTest do
     end
 
     test "works with complex types" do
-      field = Field.new(:items, type: {:list, :atom})
+      field = Field.new(:items, {:list, :atom})
       assert field.type == {:list, :atom}
     end
 
     test "supports nil defaults" do
-      field = Field.new(:value, default: nil)
+      field = Field.new(:value, :any, default: nil)
       assert field.default == nil
       assert field.has_default == true
     end
 
     test "normalizes nested keys from raw keyword list" do
       field =
-        Field.new(:config,
-          type: :keyword_list,
+        Field.new(:config, :keyword_list,
           keys: [host: [type: :string], port: [type: :integer]]
         )
 
@@ -56,11 +54,10 @@ defmodule Spark.Builder.FieldTest do
 
     test "normalizes nested keys from Field builders" do
       field =
-        Field.new(:config,
-          type: :keyword_list,
+        Field.new(:config, :keyword_list,
           keys: [
-            Field.new(:host, type: :string),
-            Field.new(:port, type: :integer, default: 5432)
+            Field.new(:host, :string),
+            Field.new(:port, :integer, default: 5432)
           ]
         )
 
@@ -72,13 +69,13 @@ defmodule Spark.Builder.FieldTest do
 
     test "raises on invalid keys entries" do
       assert_raise ArgumentError, fn ->
-        Field.new(:config, keys: [:not_valid])
+        Field.new(:config, :keyword_list, keys: [:not_valid])
       end
     end
 
     test "sets documentation options" do
       field =
-        Field.new(:handler,
+        Field.new(:handler, :any,
           doc: "The entity name",
           type_doc: "A function or MFA",
           subsection: "Advanced Options",
@@ -92,14 +89,14 @@ defmodule Spark.Builder.FieldTest do
     end
 
     test "accepts false documentation values" do
-      field = Field.new(:internal, doc: false, type_doc: false)
+      field = Field.new(:internal, :any, doc: false, type_doc: false)
       assert field.doc == false
       assert field.type_doc == false
     end
 
     test "sets DSL support options" do
       field =
-        Field.new(:source_field,
+        Field.new(:source_field, :any,
           as: :source,
           snippet: "fn ${1:arg} -> ${2:body} end",
           deprecated: "Use :new_option instead"
@@ -114,7 +111,7 @@ defmodule Spark.Builder.FieldTest do
       spec = quote(do: map())
 
       field =
-        Field.new(:internal,
+        Field.new(:internal, :any,
           private?: true,
           hide: [:docs, :schema],
           type_spec: spec
@@ -127,14 +124,14 @@ defmodule Spark.Builder.FieldTest do
 
     test "raises on unknown options" do
       assert_raise ArgumentError, ~r/Unknown field option/, fn ->
-        Field.new(:name, unknown: :value)
+        Field.new(:name, :atom, unknown: :value)
       end
     end
   end
 
   describe "to_spec/1" do
     test "converts to schema tuple with minimal options" do
-      {name, opts} = Field.new(:name) |> Field.to_spec()
+      {name, opts} = Field.new(:name, :any) |> Field.to_spec()
 
       assert name == :name
       # type: :any is the default, so it's excluded from opts
@@ -143,7 +140,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes all set options" do
       {name, opts} =
-        Field.new(:name, type: :atom, required?: true, doc: "The name")
+        Field.new(:name, :atom, required?: true, doc: "The name")
         |> Field.to_spec()
 
       assert name == :name
@@ -154,7 +151,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes default when set" do
       {_name, opts} =
-        Field.new(:count, type: :integer, default: 0)
+        Field.new(:count, :integer, default: 0)
         |> Field.to_spec()
 
       assert opts[:default] == 0
@@ -162,7 +159,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "excludes default values (required: false, private?: false)" do
       {_name, opts} =
-        Field.new(:name, type: :atom)
+        Field.new(:name, :atom)
         |> Field.to_spec()
 
       refute Keyword.has_key?(opts, :required)
@@ -171,7 +168,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes nested keys" do
       {_name, opts} =
-        Field.new(:config, type: :keyword_list, keys: [host: [type: :string]])
+        Field.new(:config, :keyword_list, keys: [host: [type: :string]])
         |> Field.to_spec()
 
       assert opts[:keys] == [host: [type: :string]]
@@ -182,8 +179,8 @@ defmodule Spark.Builder.FieldTest do
     test "builds complete schema from field list" do
       schema =
         [
-          Field.new(:name, type: :atom, required?: true),
-          Field.new(:count, type: :integer, default: 0)
+          Field.new(:name, :atom, required?: true),
+          Field.new(:count, :integer, default: 0)
         ]
         |> Field.to_schema()
 
@@ -197,8 +194,7 @@ defmodule Spark.Builder.FieldTest do
   describe "option construction" do
     test "supports full option-based construction" do
       {name, opts} =
-        Field.new(:status,
-          type: {:one_of, [:pending, :active, :completed]},
+        Field.new(:status, {:one_of, [:pending, :active, :completed]},
           default: :pending,
           doc: "Current status",
           deprecated: "Use :state instead"

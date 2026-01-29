@@ -13,12 +13,12 @@ defmodule Spark.Builder.Field do
   ## Examples
 
       iex> alias Spark.Builder.Field
-      iex> Field.new(:name, type: :atom, required?: true, doc: "The field name")
+      iex> Field.new(:name, :atom, required?: true, doc: "The field name")
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true, doc: "The field name"]}
 
       iex> alias Spark.Builder.Field
-      iex> Field.new(:status, type: {:one_of, [:pending, :active]}, default: :pending)
+      iex> Field.new(:status, {:one_of, [:pending, :active]}, default: :pending)
       ...> |> Field.to_spec()
       {:status, [type: {:one_of, [:pending, :active]}, default: :pending]}
 
@@ -29,12 +29,11 @@ defmodule Spark.Builder.Field do
 
       alias Spark.Builder.Field
 
-      Field.new(:config,
-        type: :keyword_list,
+      Field.new(:config, :keyword_list,
         keys: [
-          Field.new(:host, type: :string, required?: true, doc: "Server hostname"),
-          Field.new(:port, type: :integer, default: 4000, doc: "Server port"),
-          Field.new(:ssl, type: :boolean, default: false, doc: "Enable SSL")
+          Field.new(:host, :string, required?: true, doc: "Server hostname"),
+          Field.new(:port, :integer, default: 4000, doc: "Server port"),
+          Field.new(:ssl, :boolean, default: false, doc: "Enable SSL")
         ],
         doc: "Server configuration"
       )
@@ -84,32 +83,32 @@ defmodule Spark.Builder.Field do
   # ===========================================================================
 
   @doc """
-  Creates a new field builder with the given name.
+  Creates a new field builder with the given name and type.
 
-  Options can set common attributes like `:type`, `:required?`, and `:default`.
+  Options can set common attributes like `:required?`, and `:default`.
 
   `:keys` accepts a raw schema keyword list or a list of `Field` structs.
 
   ## Options
 
-    - `:type`, `:required?`, `:required`, `:default`, `:keys`, `:doc`,
+    - `:required?`, `:required`, `:default`, `:keys`, `:doc`,
       `:type_doc`, `:subsection`, `:as`, `:snippet`, `:links`,
       `:deprecated`, `:private?`, `:private`,
       `:hide`, `:type_spec`
 
   ## Examples
 
-      iex> Spark.Builder.Field.new(:my_field)
-      %Spark.Builder.Field{name: :my_field}
+      iex> Spark.Builder.Field.new(:my_field, :any)
+      %Spark.Builder.Field{name: :my_field, type: :any}
 
-      iex> Spark.Builder.Field.new(:type, type: :atom, required?: true)
+      iex> Spark.Builder.Field.new(:type, :atom, required?: true)
       ...> |> Spark.Builder.Field.to_spec()
       {:type, [type: :atom, required: true]}
   """
-  @spec new(atom()) :: t()
-  @spec new(atom(), keyword()) :: t()
-  def new(name, opts \\ []) when is_atom(name) and is_list(opts) do
-    %__MODULE__{name: name}
+  @spec new(atom(), Spark.Options.type()) :: t()
+  @spec new(atom(), Spark.Options.type(), keyword()) :: t()
+  def new(name, type, opts \\ []) when is_atom(name) and is_list(opts) do
+    %__MODULE__{name: name, type: type}
     |> apply_opts(opts)
   end
 
@@ -124,7 +123,7 @@ defmodule Spark.Builder.Field do
 
   ## Examples
 
-      iex> Field.new(:name, type: :atom, required?: true)
+      iex> Field.new(:name, :atom, required?: true)
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true]}
   """
@@ -157,8 +156,8 @@ defmodule Spark.Builder.Field do
   ## Examples
 
       iex> [
-      ...>   Field.new(:name, type: :atom, required?: true),
-      ...>   Field.new(:count, type: :integer, default: 0)
+      ...>   Field.new(:name, :atom, required?: true),
+      ...>   Field.new(:count, :integer, default: 0)
       ...> ]
       ...> |> Field.to_schema()
       [name: [type: :atom, required: true], count: [type: :integer, default: 0]]
@@ -183,7 +182,6 @@ defmodule Spark.Builder.Field do
     end)
   end
 
-  defp apply_opt(field, :type, value), do: %{field | type: value}
   defp apply_opt(field, :required, value), do: %{field | required: value}
   defp apply_opt(field, :required?, value), do: %{field | required: value}
   defp apply_opt(field, :default, value), do: %{field | default: value, has_default: true}
