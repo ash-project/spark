@@ -52,7 +52,7 @@ defmodule Spark.Builder.EntityTest do
       builder =
         Entity.new(:attr, TestTarget)
         |> Entity.schema([
-          Field.new(:name, type: :atom, required?: true),
+          Field.new(:name, :atom, required?: true),
           {:type, [type: :atom]}
         ])
 
@@ -77,7 +77,7 @@ defmodule Spark.Builder.EntityTest do
     test "accepts a Field struct" do
       builder =
         Entity.new(:attr, TestTarget)
-        |> Entity.field(Field.new(:name, type: :atom))
+        |> Entity.field(Field.new(:name, :atom))
 
       assert builder.schema[:name] == [type: :atom]
     end

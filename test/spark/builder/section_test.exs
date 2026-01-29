@@ -48,7 +48,7 @@ defmodule Spark.Builder.SectionTest do
       builder =
         Section.new(:resource)
         |> Section.schema([
-          Field.new(:name, type: :atom, required?: true),
+          Field.new(:name, :atom, required?: true),
           {:strict, [type: :boolean, default: false]}
         ])
 
