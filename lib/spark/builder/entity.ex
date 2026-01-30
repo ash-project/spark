@@ -266,7 +266,10 @@ defmodule Spark.Builder.Entity do
     if Keyword.has_key?(schema, :*) do
       :ok
     else
-      schema_keys = Keyword.keys(schema)
+      schema_keys =
+        Enum.map(schema, fn {key, opts} ->
+          opts[:as] || key
+        end)
 
       auto_keys =
         case auto do
