@@ -20,7 +20,7 @@ defmodule Spark.Builder.FieldTest do
     test "applies provided options" do
       field =
         Field.new(:name, :atom,
-          required?: true,
+          required: true,
           default: :pending,
           doc: "The name"
         )
@@ -45,9 +45,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "normalizes nested keys from raw keyword list" do
       field =
-        Field.new(:config, :keyword_list,
-          keys: [host: [type: :string], port: [type: :integer]]
-        )
+        Field.new(:config, :keyword_list, keys: [host: [type: :string], port: [type: :integer]])
 
       assert field.keys == [host: [type: :string], port: [type: :integer]]
     end
@@ -65,6 +63,15 @@ defmodule Spark.Builder.FieldTest do
                {:host, [type: :string]},
                {:port, [type: :integer, default: 5432]}
              ]
+    end
+
+    test "accepts lazy nested keys functions" do
+      lazy_schema = fn -> [host: [type: :string]] end
+
+      field =
+        Field.new(:config, :keyword_list, keys: lazy_schema)
+
+      assert field.keys == lazy_schema
     end
 
     test "raises on invalid keys entries" do
@@ -140,7 +147,7 @@ defmodule Spark.Builder.FieldTest do
 
     test "includes all set options" do
       {name, opts} =
-        Field.new(:name, :atom, required?: true, doc: "The name")
+        Field.new(:name, :atom, required: true, doc: "The name")
         |> Field.to_spec()
 
       assert name == :name
@@ -179,7 +186,7 @@ defmodule Spark.Builder.FieldTest do
     test "builds complete schema from field list" do
       schema =
         [
-          Field.new(:name, :atom, required?: true),
+          Field.new(:name, :atom, required: true),
           Field.new(:count, :integer, default: 0)
         ]
         |> Field.to_schema()

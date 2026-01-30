@@ -16,18 +16,20 @@ defmodule Spark.Builder.DslIntegrationTest do
 
     use Spark.Dsl.Extension,
       sections: [
-        Section.new(:items)
-        |> Section.entities([
-          Entity.new(:item, Item)
-          |> Entity.args([:name])
-          |> Entity.schema([
-            Field.new(:name, :atom, required?: true),
-            Field.new(:kind, {:one_of, [:small, :large]}, required?: true),
-            Field.new(:count, :integer, default: 0)
-          ])
-          |> Entity.identifier(:name)
-          |> Entity.build!()
-        ])
+        Section.new(:items,
+          entities: [
+            Entity.new(:item, Item,
+              args: [:name],
+              schema: [
+                Field.new(:name, :atom, required: true),
+                Field.new(:kind, {:one_of, [:small, :large]}, required: true),
+                Field.new(:count, :integer, default: 0)
+              ],
+              identifier: :name
+            )
+            |> Entity.build!()
+          ]
+        )
         |> Section.build!()
       ]
 
@@ -59,7 +61,6 @@ defmodule Spark.Builder.DslIntegrationTest do
       :meta,
       :hidden_field,
       :private_field,
-      :private_alias_field,
       :type_spec_field,
       :__identifier__,
       :__spark_metadata__
@@ -72,41 +73,42 @@ defmodule Spark.Builder.DslIntegrationTest do
 
     use Spark.Dsl.Extension,
       sections: [
-        Section.new(:items)
-        |> Section.entities([
-          Entity.new(:item, FullOptionsItem)
-          |> Entity.args([:name])
-          |> Entity.schema([
-            Field.new(:name, :atom, required?: true, doc: "Item name"),
-            Field.new(:kind, {:one_of, [:small, :large]},
-              required: true,
-              doc: "Item kind"
-            ),
-            Field.new(:count, :integer, default: 0, doc: "Item count"),
-            Field.new(:source_field, :atom, as: :source, required?: true),
-            Field.new(:config, :keyword_list,
-              keys: [
-                host: [type: :string, doc: "Host"],
-                port: [type: :integer, default: 4000, doc: "Port"]
+        Section.new(:items,
+          entities: [
+            Entity.new(:item, FullOptionsItem,
+              args: [:name],
+              schema: [
+                Field.new(:name, :atom, required: true, doc: "Item name"),
+                Field.new(:kind, {:one_of, [:small, :large]},
+                  required: true,
+                  doc: "Item kind"
+                ),
+                Field.new(:count, :integer, default: 0, doc: "Item count"),
+                Field.new(:source_field, :atom, as: :source, required: true),
+                Field.new(:config, :keyword_list,
+                  keys: [
+                    host: [type: :string, doc: "Host"],
+                    port: [type: :integer, default: 4000, doc: "Port"]
+                  ],
+                  subsection: "Config Options",
+                  doc: "Configuration"
+                ),
+                Field.new(:meta, :string,
+                  doc: "Metadata value",
+                  type_doc: "meta-type",
+                  links: [guides: ["docs/meta.md"]],
+                  snippet: "meta ${1:value}",
+                  deprecated: "Use :kind instead"
+                ),
+                Field.new(:hidden_field, :string, hide: [:docs]),
+                Field.new(:private_field, :string, private?: true),
+                Field.new(:type_spec_field, :any, type_spec: quote(do: term()))
               ],
-              subsection: "Config Options",
-              doc: "Configuration"
-            ),
-            Field.new(:meta, :string,
-              doc: "Metadata value",
-              type_doc: "meta-type",
-              links: [guides: ["docs/meta.md"]],
-              snippet: "meta ${1:value}",
-              deprecated: "Use :kind instead"
-            ),
-            Field.new(:hidden_field, :string, hide: [:docs]),
-            Field.new(:private_field, :string, private?: true),
-            Field.new(:private_alias_field, :string, private: true),
-            Field.new(:type_spec_field, :any, type_spec: quote(do: term()))
-          ])
-          |> Entity.identifier(:name)
-          |> Entity.build!()
-        ])
+              identifier: :name
+            )
+            |> Entity.build!()
+          ]
+        )
         |> Section.build!()
       ]
 
@@ -249,7 +251,6 @@ defmodule Spark.Builder.DslIntegrationTest do
     assert schema[:meta][:deprecated] == "Use :kind instead"
     assert schema[:hidden_field][:hide] == [:docs]
     assert schema[:private_field][:private?] == true
-    assert schema[:private_alias_field][:private?] == true
     assert Macro.to_string(schema[:type_spec_field][:type_spec]) == "term()"
 
     docs = Spark.Options.docs(schema)

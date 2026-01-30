@@ -13,7 +13,7 @@ share schema fragments, or keep DSL construction in code instead of raw structs.
 ## Example: notifications extension
 
 Define a small DSL with a single `notifications` section and a `notification`
-entity. The schema uses `Field.new/2` options for types, defaults, docs, and
+entity. The schema uses `Field.new/3` with `(name, type, opts)` for types, defaults, docs, and
 nested keys.
 
 ### Inline approach
@@ -30,31 +30,31 @@ defmodule MyApp.Notifications.Dsl do
 
   use Spark.Dsl.Extension,
     sections: [
-      Section.new(:notifications)
-      |> Section.describe("Notification configuration")
-      |> Section.entities([
-        Entity.new(:notification, MyApp.Notifications.Notification)
-        |> Entity.describe("Defines a notification delivery")
-        |> Entity.args([:name, :type])
-        |> Entity.schema([
-          Field.new(:name, type: :atom, required?: true, doc: "Notification name"),
-          Field.new(:type,
-            type: {:one_of, [:email, :slack]},
-            required?: true,
-            doc: "Notification type"
-          ),
-          Field.new(:target, type: :string, doc: "Delivery target"),
-          Field.new(:metadata,
-            type: :keyword_list,
-            keys: [
-              priority: [type: :integer, default: 0, doc: "Priority level"]
+      Section.new(:notifications,
+        describe: "Notification configuration",
+        entities: [
+          Entity.new(:notification, MyApp.Notifications.Notification,
+            describe: "Defines a notification delivery",
+            args: [:name, :type],
+            schema: [
+              Field.new(:name, :atom, required: true, doc: "Notification name"),
+              Field.new(:type, {:one_of, [:email, :slack]},
+                required: true,
+                doc: "Notification type"
+              ),
+              Field.new(:target, :string, doc: "Delivery target"),
+              Field.new(:metadata, :keyword_list,
+                keys: [
+                  priority: [type: :integer, default: 0, doc: "Priority level"]
+                ],
+                doc: "Optional metadata"
+              )
             ],
-            doc: "Optional metadata"
+            identifier: :name
           )
-        ])
-        |> Entity.identifier(:name)
-        |> Entity.build!()
-      ])
+          |> Entity.build!()
+        ]
+      )
       |> Section.build!()
     ]
 
@@ -76,33 +76,33 @@ defmodule MyApp.Notifications.Dsl.Builder do
   alias Spark.Builder.{Entity, Field, Section}
 
   def notification_entity do
-    Entity.new(:notification, MyApp.Notifications.Notification)
-    |> Entity.describe("Defines a notification delivery")
-    |> Entity.args([:name, :type])
-    |> Entity.schema([
-      Field.new(:name, type: :atom, required?: true, doc: "Notification name"),
-      Field.new(:type,
-        type: {:one_of, [:email, :slack]},
-        required?: true,
-        doc: "Notification type"
-      ),
-      Field.new(:target, type: :string, doc: "Delivery target"),
-      Field.new(:metadata,
-        type: :keyword_list,
-        keys: [
-          priority: [type: :integer, default: 0, doc: "Priority level"]
-        ],
-        doc: "Optional metadata"
-      )
-    ])
-    |> Entity.identifier(:name)
+    Entity.new(:notification, MyApp.Notifications.Notification,
+      describe: "Defines a notification delivery",
+      args: [:name, :type],
+      schema: [
+        Field.new(:name, :atom, required: true, doc: "Notification name"),
+        Field.new(:type, {:one_of, [:email, :slack]},
+          required: true,
+          doc: "Notification type"
+        ),
+        Field.new(:target, :string, doc: "Delivery target"),
+        Field.new(:metadata, :keyword_list,
+          keys: [
+            priority: [type: :integer, default: 0, doc: "Priority level"]
+          ],
+          doc: "Optional metadata"
+        )
+      ],
+      identifier: :name
+    )
     |> Entity.build!()
   end
 
   def notifications_section do
-    Section.new(:notifications)
-    |> Section.describe("Notification configuration")
-    |> Section.entities([notification_entity()])
+    Section.new(:notifications,
+      describe: "Notification configuration",
+      entities: [notification_entity()]
+    )
     |> Section.build!()
   end
 end
@@ -145,6 +145,6 @@ end
 ## Notes
 
 - Types are passed as atoms or tuples (for example `{:one_of, [:email, :slack]}`).
-- Use `Field.new/2` options to set `:required?`, `:default`, `:keys`, and docs.
+- Use `Field.new/3` with `(name, type, opts)` to set `:required`, `:default`, `:keys`, and docs.
 - The builder modules are `Spark.Builder.Field`, `Spark.Builder.Entity`, and
   `Spark.Builder.Section`.
