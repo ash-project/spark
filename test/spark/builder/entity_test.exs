@@ -270,6 +270,27 @@ defmodule Spark.Builder.EntityTest do
         |> Entity.build()
     end
 
+    test "allows identifier referencing :as alias" do
+      {:ok, _entity} =
+        Entity.new(:attr, TestTarget,
+          schema: [source_field: [type: :atom, as: :source]],
+          identifier: :source
+        )
+        |> Entity.build()
+    end
+
+    test "rejects identifier referencing original key when :as alias exists" do
+      result =
+        Entity.new(:attr, TestTarget,
+          schema: [source_field: [type: :atom, as: :source]],
+          identifier: :source_field
+        )
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "identifier references undefined"
+    end
+
     test "validates args with optional format" do
       {:ok, _entity} =
         Entity.new(:attr, TestTarget,
