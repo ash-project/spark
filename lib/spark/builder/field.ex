@@ -13,7 +13,7 @@ defmodule Spark.Builder.Field do
   ## Examples
 
       iex> alias Spark.Builder.Field
-      iex> Field.new(:name, :atom, required?: true, doc: "The field name")
+      iex> Field.new(:name, :atom, required: true, doc: "The field name")
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true, doc: "The field name"]}
 
@@ -24,18 +24,24 @@ defmodule Spark.Builder.Field do
 
   ## Nested Keys
 
-  The `:keys` option accepts either raw keyword lists or `Field` structs,
-  allowing composable nested schemas:
+  The `:keys` option accepts raw keyword lists, `Field` structs, or a
+  zero-arity function returning a schema, allowing composable nested schemas:
 
       alias Spark.Builder.Field
 
       Field.new(:config, :keyword_list,
         keys: [
-          Field.new(:host, :string, required?: true, doc: "Server hostname"),
+          Field.new(:host, :string, required: true, doc: "Server hostname"),
           Field.new(:port, :integer, default: 4000, doc: "Server port"),
           Field.new(:ssl, :boolean, default: false, doc: "Enable SSL")
         ],
         doc: "Server configuration"
+      )
+
+  Lazy schemas are supported:
+
+      Field.new(:config, :keyword_list,
+        keys: &__MODULE__.options_schema/0
       )
   """
   @moduledoc since: "2.5.0"
@@ -65,7 +71,7 @@ defmodule Spark.Builder.Field do
           required: boolean(),
           default: any(),
           has_default: boolean(),
-          keys: Spark.Options.schema() | nil,
+          keys: Spark.Options.schema() | (-> Spark.Options.schema()) | nil,
           doc: String.t() | false | nil,
           type_doc: String.t() | false | nil,
           subsection: String.t() | nil,
@@ -85,23 +91,23 @@ defmodule Spark.Builder.Field do
   @doc """
   Creates a new field builder with the given name and type.
 
-  Options can set common attributes like `:required?`, and `:default`.
+  Options can set common attributes like `:required` and `:default`.
 
-  `:keys` accepts a raw schema keyword list or a list of `Field` structs.
+  `:keys` accepts a raw schema keyword list, a list of `Field` structs, or a
+  zero-arity function that returns a schema.
 
   ## Options
 
-    - `:required?`, `:required`, `:default`, `:keys`, `:doc`,
-      `:type_doc`, `:subsection`, `:as`, `:snippet`, `:links`,
-      `:deprecated`, `:private?`, `:private`,
-      `:hide`, `:type_spec`
+    - `:required`, `:default`, `:keys`, `:doc`, `:type_doc`,
+      `:subsection`, `:as`, `:snippet`, `:links`, `:deprecated`,
+      `:private?`, `:hide`, `:type_spec`
 
   ## Examples
 
       iex> Spark.Builder.Field.new(:my_field, :any)
       %Spark.Builder.Field{name: :my_field, type: :any}
 
-      iex> Spark.Builder.Field.new(:type, :atom, required?: true)
+      iex> Spark.Builder.Field.new(:type, :atom, required: true)
       ...> |> Spark.Builder.Field.to_spec()
       {:type, [type: :atom, required: true]}
   """
@@ -123,7 +129,7 @@ defmodule Spark.Builder.Field do
 
   ## Examples
 
-      iex> Field.new(:name, :atom, required?: true)
+      iex> Field.new(:name, :atom, required: true)
       ...> |> Field.to_spec()
       {:name, [type: :atom, required: true]}
   """
@@ -156,7 +162,7 @@ defmodule Spark.Builder.Field do
   ## Examples
 
       iex> [
-      ...>   Field.new(:name, :atom, required?: true),
+      ...>   Field.new(:name, :atom, required: true),
       ...>   Field.new(:count, :integer, default: 0)
       ...> ]
       ...> |> Field.to_schema()
@@ -183,12 +189,15 @@ defmodule Spark.Builder.Field do
   end
 
   defp apply_opt(field, :required, value), do: %{field | required: value}
-  defp apply_opt(field, :required?, value), do: %{field | required: value}
   defp apply_opt(field, :default, value), do: %{field | default: value, has_default: true}
 
   defp apply_opt(field, :keys, value) when is_list(value) do
     normalized = to_schema(value)
     %{field | keys: normalized}
+  end
+
+  defp apply_opt(field, :keys, value) when is_function(value) do
+    %{field | keys: value}
   end
 
   defp apply_opt(_field, :keys, value), do: raise_invalid_option(:keys, value)
@@ -230,7 +239,6 @@ defmodule Spark.Builder.Field do
   defp apply_opt(_field, :deprecated, value), do: raise_invalid_option(:deprecated, value)
 
   defp apply_opt(field, :private?, value), do: %{field | private?: value}
-  defp apply_opt(field, :private, value), do: %{field | private?: value}
 
   defp apply_opt(field, :hide, value) when is_list(value), do: %{field | hide: value}
   defp apply_opt(_field, :hide, value), do: raise_invalid_option(:hide, value)

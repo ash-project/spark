@@ -31,253 +31,155 @@ defmodule Spark.Builder.EntityTest do
     end
   end
 
-  describe "new/2" do
+  describe "new/3" do
     test "creates an entity builder with name and target" do
       builder = Entity.new(:attribute, TestTarget)
       assert builder.name == :attribute
       assert builder.target == TestTarget
     end
-  end
 
-  describe "schema/2" do
-    test "sets the schema" do
+    test "accepts schema option" do
       builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom], type: [type: :atom])
+        Entity.new(:attr, TestTarget, schema: [name: [type: :atom], type: [type: :atom]])
 
       assert builder.schema == [name: [type: :atom], type: [type: :atom]]
     end
 
-    test "normalizes Field structs and tuples" do
+    test "normalizes Field structs and tuples in schema" do
       builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema([
-          Field.new(:name, :atom, required?: true),
-          {:type, [type: :atom]}
-        ])
+        Entity.new(:attr, TestTarget,
+          schema: [
+            Field.new(:name, :atom, required: true),
+            {:type, [type: :atom]}
+          ]
+        )
 
       assert builder.schema == [
                {:name, [type: :atom, required: true]},
                {:type, [type: :atom]}
              ]
     end
-  end
 
-  describe "field/3" do
-    test "adds a field to the schema" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.field(:name, type: :atom, required: true)
-        |> Entity.field(:type, type: :atom)
-
-      assert builder.schema[:name] == [type: :atom, required: true]
-      assert builder.schema[:type] == [type: :atom]
-    end
-
-    test "accepts a Field struct" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.field(Field.new(:name, :atom))
-
-      assert builder.schema[:name] == [type: :atom]
-    end
-
-    test "keeps the first schema entry when adding duplicates" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.field(:name, type: :atom)
-        |> Entity.field(:name, type: :string)
-
-      assert Keyword.get_values(builder.schema, :name) == [[type: :atom]]
-    end
-  end
-
-  describe "args/2" do
-    test "sets positional arguments" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.args([:name, :type])
-
+    test "accepts args option" do
+      builder = Entity.new(:attr, TestTarget, args: [:name, :type])
       assert builder.args == [:name, :type]
     end
 
     test "supports optional args" do
       builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.args([:name, {:optional, :type}, {:optional, :default, nil}])
+        Entity.new(:attr, TestTarget,
+          args: [:name, {:optional, :type}, {:optional, :default, nil}]
+        )
 
       assert builder.args == [:name, {:optional, :type}, {:optional, :default, nil}]
     end
-  end
 
-  describe "identifier/2" do
-    test "sets identifier field" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.identifier(:name)
+    test "accepts identifier option" do
+      builder = Entity.new(:attr, TestTarget, identifier: :name)
       assert builder.identifier == :name
     end
 
-    test "supports auto unique integer" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.identifier({:auto, :unique_integer})
+    test "supports auto unique integer identifier" do
+      builder = Entity.new(:attr, TestTarget, identifier: {:auto, :unique_integer})
       assert builder.identifier == {:auto, :unique_integer}
     end
-  end
 
-  describe "transform/2" do
-    test "sets transform function" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.transform({MyModule, :validate, []})
-
+    test "accepts transform option" do
+      builder = Entity.new(:attr, TestTarget, transform: {MyModule, :validate, []})
       assert builder.transform == {MyModule, :validate, []}
     end
-  end
 
-  describe "nested_entity/3" do
-    test "adds a nested entity" do
+    test "accepts entities option with built entities" do
       nested =
-        Entity.new(:nested, NestedTarget)
-        |> Entity.schema(value: [type: :any])
+        Entity.new(:nested, NestedTarget, schema: [value: [type: :any]])
         |> Entity.build!()
 
       builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entity(:children, nested)
+        Entity.new(:parent, TestTarget, entities: [children: [nested]])
 
       assert length(builder.entities[:children]) == 1
       assert hd(builder.entities[:children]).name == :nested
     end
 
-    test "accepts a builder struct" do
+    test "accepts entities option with builder structs" do
       nested_builder =
-        Entity.new(:nested, NestedTarget)
-        |> Entity.schema(value: [type: :any])
+        Entity.new(:nested, NestedTarget, schema: [value: [type: :any]])
 
       builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entity(:children, nested_builder)
+        Entity.new(:parent, TestTarget, entities: [children: [nested_builder]])
 
       assert length(builder.entities[:children]) == 1
     end
 
-    test "appends to existing entities" do
-      nested1 = Entity.new(:nested1, NestedTarget) |> Entity.schema(value: [type: :any])
-      nested2 = Entity.new(:nested2, NestedTarget) |> Entity.schema(value: [type: :any])
+    test "accepts multiple entities under same key" do
+      nested1 = Entity.new(:nested1, NestedTarget, schema: [value: [type: :any]])
+      nested2 = Entity.new(:nested2, NestedTarget, schema: [value: [type: :any]])
 
       builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entity(:children, nested1)
-        |> Entity.nested_entity(:children, nested2)
+        Entity.new(:parent, TestTarget, entities: [children: [nested1, nested2]])
 
       assert length(builder.entities[:children]) == 2
     end
-  end
 
-  describe "nested_entities/3" do
-    test "adds multiple nested entities at once" do
-      nested1 = Entity.new(:n1, NestedTarget) |> Entity.schema(value: [type: :any])
-      nested2 = Entity.new(:n2, NestedTarget) |> Entity.schema(value: [type: :any])
-
-      builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entities(:children, [nested1, nested2])
-
-      assert length(builder.entities[:children]) == 2
-    end
-  end
-
-  describe "singleton_entity_keys/2" do
-    test "sets singleton keys" do
-      builder =
-        Entity.new(:parent, TestTarget)
-        |> Entity.singleton_entity_keys([:primary_key])
-
+    test "accepts singleton_entity_keys option" do
+      builder = Entity.new(:parent, TestTarget, singleton_entity_keys: [:primary_key])
       assert builder.singleton_entity_keys == [:primary_key]
     end
-  end
 
-  describe "recursive_as/2" do
-    test "sets recursive key" do
-      builder = Entity.new(:step, TestTarget) |> Entity.recursive_as(:steps)
+    test "accepts recursive_as option" do
+      builder = Entity.new(:step, TestTarget, recursive_as: :steps)
       assert builder.recursive_as == :steps
     end
-  end
 
-  describe "auto_set_fields/2" do
-    test "sets auto fields" do
+    test "accepts auto_set_fields option" do
       builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.auto_set_fields(kind: :attribute, source: :dsl)
+        Entity.new(:attr, TestTarget, auto_set_fields: [kind: :attribute, source: :dsl])
 
       assert builder.auto_set_fields == [kind: :attribute, source: :dsl]
     end
-  end
 
-  describe "auto_set_field/3" do
-    test "adds single auto field" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.auto_set_field(:internal, true)
-        |> Entity.auto_set_field(:source, :dsl)
-
-      assert builder.auto_set_fields[:internal] == true
-      assert builder.auto_set_fields[:source] == :dsl
-    end
-  end
-
-  describe "documentation functions" do
-    test "describe/2 sets description" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.describe("An attribute")
+    test "accepts describe option" do
+      builder = Entity.new(:attr, TestTarget, describe: "An attribute")
       assert builder.describe == "An attribute"
     end
 
-    test "examples/2 sets all examples" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.examples(["example 1", "example 2"])
+    test "accepts examples option" do
+      builder = Entity.new(:attr, TestTarget, examples: ["example 1", "example 2"])
       assert builder.examples == ["example 1", "example 2"]
     end
 
-    test "example/2 appends an example" do
-      builder =
-        Entity.new(:attr, TestTarget)
-        |> Entity.example("example 1")
-        |> Entity.example("example 2")
-
-      assert builder.examples == ["example 1", "example 2"]
-    end
-
-    test "snippet/2 sets snippet" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.snippet("attribute :${1:name}")
+    test "accepts snippet option" do
+      builder = Entity.new(:attr, TestTarget, snippet: "attribute :${1:name}")
       assert builder.snippet == "attribute :${1:name}"
     end
 
-    test "links/2 sets links" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.links(guides: ["docs/attrs.md"])
+    test "accepts links option" do
+      builder = Entity.new(:attr, TestTarget, links: [guides: ["docs/attrs.md"]])
       assert builder.links == [guides: ["docs/attrs.md"]]
     end
 
-    test "deprecations/2 sets deprecations" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.deprecations(old: "Use :new")
+    test "accepts deprecations option" do
+      builder = Entity.new(:attr, TestTarget, deprecations: [old: "Use :new"])
       assert builder.deprecations == [old: "Use :new"]
     end
-  end
 
-  describe "module functions" do
-    test "imports/2 sets imports" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.imports([MyHelpers])
+    test "accepts imports option" do
+      builder = Entity.new(:attr, TestTarget, imports: [MyHelpers])
       assert builder.imports == [MyHelpers]
     end
 
-    test "modules/2 sets module fields" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.modules([:module])
+    test "accepts modules option" do
+      builder = Entity.new(:attr, TestTarget, modules: [:module])
       assert builder.modules == [:module]
     end
 
-    test "no_depend_modules/2 sets no-depend module fields" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.no_depend_modules([:optional])
+    test "accepts no_depend_modules option" do
+      builder = Entity.new(:attr, TestTarget, no_depend_modules: [:optional])
       assert builder.no_depend_modules == [:optional]
     end
 
-    test "hide/2 sets hidden fields" do
-      builder = Entity.new(:attr, TestTarget) |> Entity.hide([:internal])
+    test "accepts hide option" do
+      builder = Entity.new(:attr, TestTarget, hide: [:internal])
       assert builder.hide == [:internal]
     end
   end
@@ -285,8 +187,7 @@ defmodule Spark.Builder.EntityTest do
   describe "build/1" do
     test "returns {:ok, entity} on success" do
       {:ok, entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom])
+        Entity.new(:attr, TestTarget, schema: [name: [type: :atom]])
         |> Entity.build()
 
       assert %DslEntity{} = entity
@@ -305,11 +206,22 @@ defmodule Spark.Builder.EntityTest do
       assert {:error, "target is required"} = Entity.build(builder)
     end
 
+    test "returns error when unknown builder options are provided" do
+      result =
+        Entity.new(:attr, TestTarget, snipet: "attribute :${1:name}")
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "unknown options"
+      assert message =~ ":snipet"
+    end
+
     test "returns error when args reference undefined schema keys" do
       result =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom])
-        |> Entity.args([:name, :missing])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom]],
+          args: [:name, :missing]
+        )
         |> Entity.build()
 
       assert {:error, message} = result
@@ -319,25 +231,60 @@ defmodule Spark.Builder.EntityTest do
 
     test "allows args when schema has wildcard" do
       {:ok, _entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(*: [type: :any])
-        |> Entity.args([:name, :missing])
+        Entity.new(:attr, TestTarget,
+          schema: [*: [type: :any]],
+          args: [:name, :missing]
+        )
+        |> Entity.build()
+    end
+
+    test "returns error when identifier is not in schema or auto_set_fields" do
+      result =
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom]],
+          identifier: :missing
+        )
+        |> Entity.build()
+
+      assert {:error, message} = result
+      assert message =~ "identifier references undefined"
+      assert message =~ ":missing"
+    end
+
+    test "allows identifier in auto_set_fields" do
+      {:ok, _entity} =
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom]],
+          auto_set_fields: [source: :dsl],
+          identifier: :source
+        )
+        |> Entity.build()
+    end
+
+    test "allows identifier when schema has wildcard" do
+      {:ok, _entity} =
+        Entity.new(:attr, TestTarget,
+          schema: [*: [type: :any]],
+          identifier: :anything
+        )
         |> Entity.build()
     end
 
     test "validates args with optional format" do
       {:ok, _entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom], type: [type: :atom])
-        |> Entity.args([:name, {:optional, :type}])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom], type: [type: :atom]],
+          args: [:name, {:optional, :type}]
+        )
         |> Entity.build()
     end
 
     test "returns error when args are duplicated" do
       result =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom])
-        |> Entity.args([:name, :name])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom]],
+          args: [:name, :name]
+        )
         |> Entity.build()
 
       assert {:error, message} = result
@@ -347,29 +294,30 @@ defmodule Spark.Builder.EntityTest do
 
     test "allows optional arg default even when schema default differs" do
       {:ok, _entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom, default: :foo])
-        |> Entity.args([{:optional, :name, :bar}])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom, default: :foo]],
+          args: [{:optional, :name, :bar}]
+        )
         |> Entity.build()
     end
 
     test "allows optional arg default without schema default" do
       {:ok, _entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom])
-        |> Entity.args([{:optional, :name, :foo}])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom]],
+          args: [{:optional, :name, :foo}]
+        )
         |> Entity.build()
     end
 
     test "allows singleton_entity_keys not in nested entities" do
-      child =
-        Entity.new(:child, NestedTarget)
-        |> Entity.schema(value: [type: :any])
+      child = Entity.new(:child, NestedTarget, schema: [value: [type: :any]])
 
       result =
-        Entity.new(:parent, TestTarget)
-        |> Entity.nested_entity(:children, child)
-        |> Entity.singleton_entity_keys([:missing])
+        Entity.new(:parent, TestTarget,
+          entities: [children: [child]],
+          singleton_entity_keys: [:missing]
+        )
         |> Entity.build()
 
       assert {:ok, entity} = result
@@ -378,9 +326,10 @@ defmodule Spark.Builder.EntityTest do
 
     test "succeeds when optional default matches schema default" do
       {:ok, _entity} =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom, default: :foo])
-        |> Entity.args([{:optional, :name, :foo}])
+        Entity.new(:attr, TestTarget,
+          schema: [name: [type: :atom, default: :foo]],
+          args: [{:optional, :name, :foo}]
+        )
         |> Entity.build()
     end
   end
@@ -388,8 +337,7 @@ defmodule Spark.Builder.EntityTest do
   describe "build!/1" do
     test "returns entity on success" do
       entity =
-        Entity.new(:attr, TestTarget)
-        |> Entity.schema(name: [type: :atom])
+        Entity.new(:attr, TestTarget, schema: [name: [type: :atom]])
         |> Entity.build!()
 
       assert %DslEntity{} = entity
@@ -400,26 +348,34 @@ defmodule Spark.Builder.EntityTest do
         %Entity{target: TestTarget} |> Entity.build!()
       end
     end
+
+    test "raises on unknown builder options" do
+      assert_raise ArgumentError, ~r/unknown options/, fn ->
+        Entity.new(:attr, TestTarget, snipet: "attribute :${1:name}")
+        |> Entity.build!()
+      end
+    end
   end
 
   describe "complete pipeline" do
     test "builds a fully configured entity" do
       entity =
-        Entity.new(:attribute, TestTarget)
-        |> Entity.describe("Defines an attribute")
-        |> Entity.args([:name, {:optional, :type, :string}])
-        |> Entity.schema(
-          name: [type: :atom, required: true, doc: "The attribute name"],
-          type: [
-            type: {:one_of, [:string, :integer, :boolean]},
-            default: :string,
-            doc: "The type"
+        Entity.new(:attribute, TestTarget,
+          describe: "Defines an attribute",
+          args: [:name, {:optional, :type, :string}],
+          schema: [
+            name: [type: :atom, required: true, doc: "The attribute name"],
+            type: [
+              type: {:one_of, [:string, :integer, :boolean]},
+              default: :string,
+              doc: "The type"
+            ],
+            default: [type: :any, doc: "Default value"]
           ],
-          default: [type: :any, doc: "Default value"]
+          identifier: :name,
+          examples: ["attribute :email, :string"],
+          snippet: "attribute :${1:name}, :${2:type}"
         )
-        |> Entity.identifier(:name)
-        |> Entity.example("attribute :email, :string")
-        |> Entity.snippet("attribute :${1:name}, :${2:type}")
         |> Entity.build!()
 
       assert entity.name == :attribute
