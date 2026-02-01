@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 spark contributors <https://github.com/ash-project/spark/graphs.contributors>
+# SPDX-FileCopyrightText: 2025 spark contributors <https://github.com/ash-project/spark/graphs/contributors>
 #
 # SPDX-License-Identifier: MIT
 
