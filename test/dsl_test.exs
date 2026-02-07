@@ -1014,4 +1014,82 @@ defmodule Spark.DslTest do
       assert warning_output =~ "__spark_metadata__: nil"
     end
   end
+
+  describe "sibling sections with same-named children" do
+    defmodule SiblingCollisionExtension do
+      @moduledoc false
+
+      @table_settings %Spark.Dsl.Section{
+        name: :settings,
+        schema: [read: [type: :atom], get: [type: :atom]]
+      }
+
+      @form_settings %Spark.Dsl.Section{
+        name: :settings,
+        schema: [create: [type: :atom], update: [type: :atom]]
+      }
+
+      @table %Spark.Dsl.Section{name: :table, sections: [@table_settings]}
+      @form %Spark.Dsl.Section{name: :form, sections: [@form_settings]}
+      @repro %Spark.Dsl.Section{name: :repro, sections: [@table, @form]}
+
+      use Spark.Dsl.Extension, sections: [@repro]
+    end
+
+    defmodule SiblingCollisionDsl do
+      @moduledoc false
+      use Spark.Dsl, default_extensions: [extensions: SiblingCollisionExtension]
+    end
+
+    test "sibling sections with same-named child sections do not collide" do
+      defmodule SiblingCollisionResource do
+        @moduledoc false
+        use SiblingCollisionDsl
+
+        repro do
+          table do
+            settings do
+              read(:my_read)
+              get(:my_get)
+            end
+          end
+
+          form do
+            settings do
+              create(:my_create)
+              update(:my_update)
+            end
+          end
+        end
+      end
+
+      assert :my_read ==
+               Spark.Dsl.Extension.get_opt(
+                 SiblingCollisionResource,
+                 [:repro, :table, :settings],
+                 :read
+               )
+
+      assert :my_get ==
+               Spark.Dsl.Extension.get_opt(
+                 SiblingCollisionResource,
+                 [:repro, :table, :settings],
+                 :get
+               )
+
+      assert :my_create ==
+               Spark.Dsl.Extension.get_opt(
+                 SiblingCollisionResource,
+                 [:repro, :form, :settings],
+                 :create
+               )
+
+      assert :my_update ==
+               Spark.Dsl.Extension.get_opt(
+                 SiblingCollisionResource,
+                 [:repro, :form, :settings],
+                 :update
+               )
+    end
+  end
 end
