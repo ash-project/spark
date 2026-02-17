@@ -67,11 +67,11 @@ defmodule Spark.Dsl.Entity do
   For a full example, see `Spark.Dsl.Extension`.
   """
 
-  defstruct [
-    :name,
-    :target,
-    :transform,
-    :recursive_as,
+  @fields [
+    name: nil,
+    target: nil,
+    transform: nil,
+    recursive_as: nil,
     examples: [],
     entities: [],
     singleton_entity_keys: [],
@@ -90,7 +90,15 @@ defmodule Spark.Dsl.Entity do
     docs: ""
   ]
 
+  defstruct @fields
+
   alias Spark.{Dsl.Entity}
+
+  @doc false
+  def __fields__, do: @fields
+
+  @doc false
+  def __field_names__, do: Keyword.keys(@fields)
 
   @typedoc """
   Defines the struct that will be built from this entity definition.
