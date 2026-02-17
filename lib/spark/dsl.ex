@@ -624,6 +624,8 @@ defmodule Spark.Dsl do
 
         def fetch_opt(_, _), do: :error
 
+        @dialyzer {:nowarn_function, section_anno: 1, opt_anno: 2}
+
         @doc false
         @spec section_anno(list(atom)) :: :erl_anno.anno() | nil
         for {path, %{section_anno: section_anno}} <- @spark_dsl_config,
