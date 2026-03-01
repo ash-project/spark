@@ -179,6 +179,7 @@ defmodule Spark.Options.Docs do
   defp get_raw_type_str(:fun), do: "function"
   defp get_raw_type_str({:fun, _}), do: "function"
   defp get_raw_type_str({:fun, _, _}), do: "function"
+  defp get_raw_type_str({:function, _}), do: "function"
 
   defp get_raw_type_str({:wrap_list, subtype}) do
     if subtype_str = get_raw_type_str(subtype), do: "one or a list of #{subtype_str}"
@@ -289,6 +290,28 @@ defmodule Spark.Options.Docs do
       Enum.map_join(0..(arity - 1), ", ", fn _ -> "any" end)
 
     "(#{args} -> any)"
+  end
+
+  def dsl_docs_type({:function, opts}) when is_list(opts) do
+    args = opts[:args]
+    returns = opts[:returns]
+    arity = opts[:arity] || (args && length(args))
+
+    cond do
+      args && returns ->
+        args_str = Enum.map_join(args, ", ", &dsl_docs_type/1)
+        "(#{args_str} -> #{dsl_docs_type(returns)})"
+
+      args ->
+        args_str = Enum.map_join(args, ", ", &dsl_docs_type/1)
+        "(#{args_str} -> any)"
+
+      arity ->
+        dsl_docs_type({:fun, arity})
+
+      true ->
+        "(... -> any)"
+    end
   end
 
   def dsl_docs_type({:fun, args}) when is_list(args) do
@@ -442,6 +465,18 @@ defmodule Spark.Options.Docs do
 
       {:fun, arg_types, return_type} ->
         function_spec(arg_types, return_type)
+
+      {:function, opts} ->
+        args = opts[:args]
+        returns = opts[:returns]
+        arity = opts[:arity] || (args && length(args))
+
+        cond do
+          args && returns -> function_spec(args, returns)
+          args -> function_spec(args)
+          arity -> function_spec(arity)
+          true -> quote(do: (... -> term()))
+        end
 
       {:in, %Range{first: first, last: last} = range} ->
         if Map.get(range, :step) in [nil, 1] do

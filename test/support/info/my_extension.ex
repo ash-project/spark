@@ -12,6 +12,14 @@ defmodule MyExtension do
         type: :map,
         required: false,
         default: %{}
+      ],
+      callback: [
+        type: {:function, args: [:map], returns: :string},
+        required: false
+      ],
+      handler: [
+        type: {:or, [:string, {:function, args: [:map], returns: :string}]},
+        required: false
       ]
     ],
     entities: []

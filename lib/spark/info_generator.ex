@@ -350,6 +350,25 @@ defmodule Spark.InfoGenerator do
     [{:->, [], [args, {:any, [], Elixir}]}]
   end
 
+  def spec_for_type({:function, opts}, _opts) do
+    args =
+      if arg_types = opts[:args] do
+        Enum.map(arg_types, &spec_for_type(&1, []))
+      else
+        arity = opts[:arity] || 0
+        List.duplicate({:any, [], Elixir}, arity)
+      end
+
+    returns =
+      if return_type = opts[:returns] do
+        spec_for_type(return_type, [])
+      else
+        {:any, [], Elixir}
+      end
+
+    [{:->, [], [args, returns]}]
+  end
+
   # Treat `and` like `or` because any of the input types is valid.
   def spec_for_type({:and, subtypes}, opts), do: spec_for_type({:or, subtypes}, opts)
 

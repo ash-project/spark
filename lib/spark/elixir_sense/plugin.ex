@@ -956,6 +956,26 @@ defmodule Spark.ElixirSense.Plugin do
         end
         """
 
+      match?({:function, _}, config[:type]) ->
+        {:function, opts} = config[:type]
+        arity = opts[:arity] || length(opts[:args] || [])
+
+        if arity == 0 do
+          """
+          fn ->
+            ${0:body}
+          end
+          """
+        else
+          args = Enum.map_join(0..(arity - 1), ", ", &"arg#{&1 + 1}")
+
+          """
+          fn #{args} ->
+            ${#{arity}:body}
+          end
+          """
+        end
+
       match?(:map, config[:type]) || match?({:map, _, _}, config[:type]) ->
         "%{${1:key} => ${2:value}}"
 

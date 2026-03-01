@@ -205,6 +205,12 @@ defmodule Spark.Options do
 
     * `{:fun, args_types, return_type}` - A function with the specified arguments and return type.
 
+    * `{:function, arity: n, args: [...], returns: type}` - A function type with named options. All keys are optional.
+      `:arity` specifies the arity, `:args` specifies argument types, and `:returns` specifies the return type.
+      For example, `{:function, args: [:map], returns: :string}` is a function taking a map and returning a string.
+      This format is preferred over the 3-tuple `{:fun, args, return_type}` as it is a 2-tuple and avoids
+      AST escaping issues when used in nested type positions.
+
     * `{:in, choices}` or `{:one_of, choices}` - A value that is a member of one of the `choices`. `choices`
       should be a list of terms or a `Range`. The value is an element in said
       list of terms, that is, `value in choices` is `true`.
@@ -1220,6 +1226,11 @@ defmodule Spark.Options do
     )
   end
 
+  defp validate_type({:function, opts}, key, value) when is_list(opts) do
+    arity = opts[:arity] || length(opts[:args] || [])
+    validate_type({:fun, arity}, key, value)
+  end
+
   defp validate_type(nil, _key, nil), do: {:ok, nil}
 
   defp validate_type(nil, key, value),
@@ -1707,7 +1718,8 @@ defmodule Spark.Options do
           "{:list, subtype}",
           "{:tuple, list_of_subtypes}",
           "{:map, key_type, value_type}",
-          "{:struct, struct_name}"
+          "{:struct, struct_name}",
+          "{:function, arity: n, args: [...], returns: type}"
         ]
 
     Enum.join(types, ", ")
@@ -1738,17 +1750,7 @@ defmodule Spark.Options do
   end
 
   def validate_type({:fun, list}) when is_list(list) do
-    Enum.reduce_while(list, {:ok, list}, fn
-      {type, _keys}, acc
-      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
-        {:cont, acc}
-
-      subtype, acc ->
-        case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
-        end
-    end)
+    validate_fun_arg_types(list)
   end
 
   def validate_type({:fun, list, returns}) when is_list(list) do
@@ -1775,6 +1777,35 @@ defmodule Spark.Options do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  def validate_type({:function, opts}) when is_list(opts) do
+    arity = opts[:arity]
+    args = opts[:args]
+    returns = opts[:returns]
+
+    extra_keys = Keyword.keys(opts) -- [:arity, :args, :returns]
+
+    cond do
+      extra_keys != [] ->
+        {:error,
+         "invalid keys #{inspect(extra_keys)} in function type. Only :arity, :args, and :returns are supported"}
+
+      arity != nil && (!is_integer(arity) || arity < 0) ->
+        {:error, "expected :arity to be a non-negative integer, got: #{inspect(arity)}"}
+
+      args != nil && !is_list(args) ->
+        {:error, "expected :args to be a list of types, got: #{inspect(args)}"}
+
+      arity != nil && args != nil && length(args) != arity ->
+        {:error, "expected :args length (#{length(args)}) to match :arity (#{arity})"}
+
+      true ->
+        with {:ok, _} <- validate_fun_args(args || []),
+             {:ok, _} <- validate_fun_returns(returns) do
+          {:ok, {:function, opts}}
+        end
     end
   end
 
@@ -1948,6 +1979,43 @@ defmodule Spark.Options do
 
   def validate_type(value) do
     {:error, "unknown type #{inspect(value)}.\n\nAvailable types: #{available_types()}"}
+  end
+
+  defp validate_fun_arg_types(list) do
+    Enum.reduce_while(list, {:ok, list}, fn
+      {type, _keys}, acc
+      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
+        {:cont, acc}
+
+      subtype, acc ->
+        case validate_type(subtype) do
+          {:ok, _value} -> {:cont, acc}
+          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
+        end
+    end)
+  end
+
+  defp validate_fun_args(args) do
+    Enum.reduce_while(args, {:ok, args}, fn
+      {type, _keys}, acc
+      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
+        {:cont, acc}
+
+      subtype, acc ->
+        case validate_type(subtype) do
+          {:ok, _value} -> {:cont, acc}
+          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
+        end
+    end)
+  end
+
+  defp validate_fun_returns(nil), do: {:ok, nil}
+
+  defp validate_fun_returns(returns) do
+    case validate_type(returns) do
+      {:ok, _} -> {:ok, returns}
+      {:error, error} -> {:error, "invalid return type given to :fun type: #{error}"}
+    end
   end
 
   defp error_tuple(key, value, message) do
