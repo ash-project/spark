@@ -12,6 +12,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.4.1](https://github.com/ash-project/spark/compare/v2.4.0...v2.4.1) (2026-02-22)
+
+
+
+
+### Bug Fixes:
+
+* suppress Dialyzer warnings for generated anno functions on OTP 28 (#261) by jeffhuen
+
+* Handle same-named sibling sections in DSL extensions by Zach Daniel
+
+* docs redirect tests (#252) by leonqadirie
+
 ## [v2.4.0](https://github.com/ash-project/spark/compare/v2.3.14...v2.4.0) (2026-01-15)
 
 

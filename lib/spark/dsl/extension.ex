@@ -1143,7 +1143,10 @@ defmodule Spark.Dsl.Extension do
       if section.schema == [] do
         nil
       else
-        Spark.Dsl.Extension.module_concat([mod, Macro.camelize(to_string(section.name)), Options])
+        Spark.Dsl.Extension.module_concat([
+          section_mod_name(mod, path, section),
+          Options
+        ])
       end
 
     entity_modules =
@@ -1173,17 +1176,8 @@ defmodule Spark.Dsl.Extension do
 
     section_modules =
       Enum.map(section.sections, fn nested_section ->
-        nested_mod_name =
-          path
-          |> Enum.drop(1)
-          |> Enum.map(fn nested_section_name ->
-            Macro.camelize(to_string(nested_section_name))
-          end)
-
         mod_name =
-          Spark.Dsl.Extension.module_concat(
-            [mod | nested_mod_name] ++ [Macro.camelize(to_string(nested_section.name))]
-          )
+          section_mod_name(mod, path ++ [section.name], nested_section)
 
         Spark.Dsl.Extension.async_compile(agent, fn ->
           {:module, module, _, _} =
