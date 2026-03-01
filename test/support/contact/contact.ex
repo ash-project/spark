@@ -256,6 +256,12 @@ defmodule Spark.Test.Contact do
       ]
     }
 
+    @singleton_section %Spark.Dsl.Section{
+      name: :singleton_section,
+      entities: [@singleton],
+      singleton_entity_keys: [:singleton]
+    }
+
     @awesome_status %Spark.Dsl.Section{
       name: :awesome?,
       schema: [
@@ -276,7 +282,14 @@ defmodule Spark.Test.Contact do
     end
 
     use Spark.Dsl.Extension,
-      sections: [@contact, @personal_details, @address, @presets, @awesome_status],
+      sections: [
+        @contact,
+        @personal_details,
+        @address,
+        @presets,
+        @singleton_section,
+        @awesome_status
+      ],
       verifiers: [Spark.Test.Contact.Verifiers.VerifyNotGandalf],
       transformers: [Transformer]
 

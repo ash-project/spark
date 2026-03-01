@@ -439,7 +439,12 @@ defmodule Spark.Dsl.Extension do
       @doc false
       def sections, do: @_sections
       @doc false
-      def verifiers, do: [Spark.Dsl.Verifiers.VerifyEntityUniqueness | @_verifiers]
+      def verifiers,
+        do: [
+          Spark.Dsl.Verifiers.VerifyEntityUniqueness,
+          Spark.Dsl.Verifiers.VerifySectionSingletonEntities | @_verifiers
+        ]
+
       @doc false
       def persisters, do: @_persisters
       @doc false

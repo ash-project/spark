@@ -25,6 +25,9 @@ defmodule Spark.Dsl.Section do
   To create a section that is available at the top level (i.e not  nested inside of its own name), use
   `top_level?: true`. Remember, however, that this has no effect on sections nested inside of other sections.
 
+  `singleton_entity_keys` specifies a set of entity names (by their `:name` field) that should only
+  appear at most once within the section. This is validated automatically during compilation.
+
   For a full example, see `Spark.Dsl.Extension`.
   """
   defstruct [
@@ -40,6 +43,7 @@ defmodule Spark.Dsl.Section do
     top_level?: false,
     no_depend_modules: [],
     auto_set_fields: [],
+    singleton_entity_keys: [],
     deprecations: [],
     entities: [],
     sections: [],
@@ -111,6 +115,8 @@ defmodule Spark.Dsl.Section do
 
   @type auto_set_fields() :: keyword(any)
 
+  @type singleton_entity_keys :: [atom]
+
   @type entities :: [Entity.t()]
 
   @type sections :: [Section.t()]
@@ -134,6 +140,7 @@ defmodule Spark.Dsl.Section do
           modules: modules(),
           no_depend_modules: no_depend_modules(),
           auto_set_fields: auto_set_fields(),
+          singleton_entity_keys: singleton_entity_keys(),
           entities: entities(),
           sections: sections(),
           docs: docs(),

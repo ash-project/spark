@@ -364,6 +364,55 @@ defmodule Spark.DslTest do
         end
       end
     end
+
+    test "section singleton_entity_keys allows zero entities" do
+      defmodule SectionSingletonZero do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        personal_details do
+          first_name("Zach")
+        end
+      end
+    end
+
+    test "section singleton_entity_keys allows one entity" do
+      defmodule SectionSingletonOne do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        singleton_section do
+          singleton(:only_one)
+        end
+
+        personal_details do
+          first_name("Zach")
+        end
+      end
+
+      assert [%Spark.Test.Contact.Dsl.Singleton{value: :only_one}] =
+               Spark.Dsl.Extension.get_entities(SectionSingletonOne, [:singleton_section])
+    end
+
+    test "section singleton_entity_keys rejects multiple entities" do
+      import ExUnit.CaptureIO
+
+      assert capture_io(:stderr, fn ->
+               defmodule SectionSingletonMultiple do
+                 @moduledoc false
+                 use Spark.Test.Contact
+
+                 singleton_section do
+                   singleton(:first)
+                   singleton(:second)
+                 end
+
+                 personal_details do
+                   first_name("Zach")
+                 end
+               end
+             end) =~ "Expected at most one singleton"
+    end
   end
 
   describe "annotation tracking" do
