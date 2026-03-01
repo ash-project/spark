@@ -88,6 +88,66 @@ defmodule Spark.Builder.Section do
           docs: String.t()
         }
 
+  @options_schema [
+    schema: [type: {:custom, __MODULE__, :cast_schema, []}, default: []],
+    entities: [type: {:custom, __MODULE__, :cast_entities, []}, default: []],
+    sections: [type: {:custom, __MODULE__, :cast_sections, []}, default: []],
+    top_level?: [type: :boolean, default: false],
+    patchable?: [type: :boolean, default: false],
+    auto_set_fields: [type: :keyword_list, default: []],
+    singleton_entity_keys: [type: {:list, :atom}, default: []],
+    after_define: [type: {:custom, __MODULE__, :cast_after_define, []}],
+    imports: [type: {:list, :atom}, default: []],
+    modules: [type: {:list, :atom}, default: []],
+    no_depend_modules: [type: {:list, :atom}, default: []],
+    examples: [type: {:list, :string}, default: []],
+    describe: [type: :string, default: ""],
+    snippet: [type: :string, default: ""],
+    links: [type: {:or, [:keyword_list, {:literal, nil}]}],
+    deprecations: [type: :keyword_list, default: []],
+    docs: [type: :string, default: ""]
+  ]
+
+  @doc false
+  def cast_schema(value) when is_list(value) do
+    {:ok, Field.to_schema(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_schema(value),
+    do: {:error, "expected a keyword list for :schema, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_entities(value) when is_list(value) do
+    {:ok, resolve_entities(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_entities(value),
+    do: {:error, "expected a list for :entities, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_sections(value) when is_list(value) do
+    {:ok, resolve_sections(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_sections(value),
+    do: {:error, "expected a list for :sections, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_after_define(nil), do: {:ok, nil}
+
+  def cast_after_define({module, function})
+      when is_atom(module) and is_atom(function),
+      do: {:ok, {module, function}}
+
+  def cast_after_define(value),
+    do: {:error, "after_define must be {module, function}, got: #{inspect(value)}"}
+
   @doc """
   Creates a new section builder with the given name and options.
 
@@ -109,20 +169,13 @@ defmodule Spark.Builder.Section do
   """
   @spec new(atom(), keyword()) :: t()
   def new(name, opts \\ []) when is_atom(name) and is_list(opts) do
-    {schema, opts} = Keyword.pop(opts, :schema, [])
-    {entities, opts} = Keyword.pop(opts, :entities, [])
-    {sections, opts} = Keyword.pop(opts, :sections, [])
+    case Spark.Options.validate(opts, @options_schema) do
+      {:ok, validated} ->
+        struct!(%__MODULE__{name: name}, validated)
 
-    base = %__MODULE__{name: name}
-
-    builder =
-      Enum.reduce(opts, base, fn {key, value}, acc ->
-        Map.put(acc, key, value)
-      end)
-
-    builder = %{builder | schema: Field.to_schema(schema)}
-    builder = %{builder | entities: resolve_entities(entities)}
-    %{builder | sections: resolve_sections(sections)}
+      {:error, error} ->
+        raise ArgumentError, Exception.message(error)
+    end
   end
 
   @doc """
@@ -140,9 +193,7 @@ defmodule Spark.Builder.Section do
   @spec build(t()) :: {:ok, DslSection.t()} | {:error, String.t()}
   def build(%__MODULE__{} = builder) do
     Helpers.build(builder, DslSection, [
-      fn -> validate_required(builder) end,
-      fn -> validate_known_keys(builder) end,
-      fn -> validate_after_define(builder) end
+      fn -> validate_required(builder) end
     ])
   end
 
@@ -159,9 +210,7 @@ defmodule Spark.Builder.Section do
   @spec build!(t()) :: DslSection.t()
   def build!(%__MODULE__{} = builder) do
     Helpers.build!(builder, DslSection, "section", [
-      fn -> validate_required(builder) end,
-      fn -> validate_known_keys(builder) end,
-      fn -> validate_after_define(builder) end
+      fn -> validate_required(builder) end
     ])
   end
 
@@ -171,33 +220,6 @@ defmodule Spark.Builder.Section do
 
   defp validate_required(%__MODULE__{name: nil}), do: {:error, "name is required"}
   defp validate_required(_builder), do: :ok
-
-  defp validate_known_keys(%__MODULE__{} = builder) do
-    known = MapSet.new(DslSection.__field_names__())
-
-    unknown =
-      builder
-      |> Map.from_struct()
-      |> Map.keys()
-      |> Enum.reject(&MapSet.member?(known, &1))
-      |> Enum.sort()
-
-    if unknown == [] do
-      :ok
-    else
-      {:error, "unknown options: #{inspect(unknown)}"}
-    end
-  end
-
-  defp validate_after_define(%__MODULE__{after_define: nil}), do: :ok
-
-  defp validate_after_define(%__MODULE__{after_define: {module, function}})
-       when is_atom(module) and is_atom(function),
-       do: :ok
-
-  defp validate_after_define(%__MODULE__{after_define: value}) do
-    {:error, "after_define must be {module, function}, got: #{inspect(value)}"}
-  end
 
   defp resolve_entities(values) do
     Helpers.resolve_list(values, &EntityBuilder.build!/1, &match?(%DslEntity{}, &1))

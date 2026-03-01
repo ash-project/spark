@@ -98,6 +98,80 @@ defmodule Spark.Builder.Entity do
           docs: String.t()
         }
 
+  @options_schema [
+    schema: [type: {:custom, __MODULE__, :cast_schema, []}, default: []],
+    args: [type: {:custom, __MODULE__, :cast_args, []}, default: []],
+    entities: [type: {:custom, __MODULE__, :cast_entities, []}, default: []],
+    singleton_entity_keys: [type: {:list, :atom}, default: []],
+    auto_set_fields: [type: :keyword_list, default: []],
+    identifier: [type: {:custom, __MODULE__, :cast_identifier, []}],
+    transform: [type: {:custom, __MODULE__, :cast_transform, []}],
+    recursive_as: [type: :atom],
+    examples: [type: {:list, :string}, default: []],
+    describe: [type: :string, default: ""],
+    snippet: [type: :string, default: ""],
+    links: [type: {:or, [:keyword_list, {:literal, nil}]}],
+    hide: [type: {:list, :atom}, default: []],
+    deprecations: [type: :keyword_list, default: []],
+    docs: [type: :string, default: ""],
+    imports: [type: {:list, :atom}, default: []],
+    modules: [type: {:list, :atom}, default: []],
+    no_depend_modules: [type: {:list, :atom}, default: []]
+  ]
+
+  @doc false
+  def cast_schema(value) when is_list(value) do
+    {:ok, Field.to_schema(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_schema(value),
+    do: {:error, "expected a keyword list for :schema, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_args(value) when is_list(value) do
+    if Enum.all?(value, fn
+         name when is_atom(name) -> true
+         {:optional, name} when is_atom(name) -> true
+         {:optional, name, _default} when is_atom(name) -> true
+         _ -> false
+       end) do
+      {:ok, value}
+    else
+      {:error, "each arg must be an atom, {:optional, atom}, or {:optional, atom, default}"}
+    end
+  end
+
+  def cast_args(value), do: {:error, "expected a list for :args, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_entities(value) when is_list(value) do
+    {:ok, resolve_entities_keyword(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_entities(value),
+    do: {:error, "expected a keyword list for :entities, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_identifier(nil), do: {:ok, nil}
+  def cast_identifier({:auto, :unique_integer}), do: {:ok, {:auto, :unique_integer}}
+  def cast_identifier(value) when is_atom(value), do: {:ok, value}
+
+  def cast_identifier(value),
+    do: {:error, "identifier must be an atom or {:auto, :unique_integer}, got: #{inspect(value)}"}
+
+  @doc false
+  def cast_transform(nil), do: {:ok, nil}
+
+  def cast_transform({m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
+    do: {:ok, {m, f, a}}
+
+  def cast_transform(value),
+    do: {:error, "transform must be {module, function, args}, got: #{inspect(value)}"}
+
   @doc """
   Creates a new entity builder with the given name, target struct module, and options.
 
@@ -120,18 +194,13 @@ defmodule Spark.Builder.Entity do
   """
   @spec new(atom(), module(), keyword()) :: t()
   def new(name, target, opts \\ []) when is_atom(name) and is_atom(target) and is_list(opts) do
-    {schema, opts} = Keyword.pop(opts, :schema, [])
-    {entities, opts} = Keyword.pop(opts, :entities, [])
+    case Spark.Options.validate(opts, @options_schema) do
+      {:ok, validated} ->
+        struct!(%__MODULE__{name: name, target: target}, validated)
 
-    base = %__MODULE__{name: name, target: target}
-
-    builder =
-      Enum.reduce(opts, base, fn {key, value}, acc ->
-        Map.put(acc, key, value)
-      end)
-
-    builder = %{builder | schema: Field.to_schema(schema)}
-    %{builder | entities: resolve_entities_keyword(entities)}
+      {:error, error} ->
+        raise ArgumentError, Exception.message(error)
+    end
   end
 
   @doc """
@@ -156,7 +225,6 @@ defmodule Spark.Builder.Entity do
   def build(%__MODULE__{} = builder) do
     Helpers.build(builder, DslEntity, [
       fn -> validate_required(builder) end,
-      fn -> validate_known_keys(builder) end,
       fn -> validate_duplicate_args(builder) end,
       fn -> validate_args(builder) end,
       fn -> validate_identifier(builder) end
@@ -177,7 +245,6 @@ defmodule Spark.Builder.Entity do
   def build!(%__MODULE__{} = builder) do
     Helpers.build!(builder, DslEntity, "entity", [
       fn -> validate_required(builder) end,
-      fn -> validate_known_keys(builder) end,
       fn -> validate_duplicate_args(builder) end,
       fn -> validate_args(builder) end,
       fn -> validate_identifier(builder) end
@@ -191,23 +258,6 @@ defmodule Spark.Builder.Entity do
   defp validate_required(%__MODULE__{name: nil}), do: {:error, "name is required"}
   defp validate_required(%__MODULE__{target: nil}), do: {:error, "target is required"}
   defp validate_required(_builder), do: :ok
-
-  defp validate_known_keys(%__MODULE__{} = builder) do
-    known = MapSet.new(DslEntity.__field_names__())
-
-    unknown =
-      builder
-      |> Map.from_struct()
-      |> Map.keys()
-      |> Enum.reject(&MapSet.member?(known, &1))
-      |> Enum.sort()
-
-    if unknown == [] do
-      :ok
-    else
-      {:error, "unknown options: #{inspect(unknown)}"}
-    end
-  end
 
   defp validate_duplicate_args(%__MODULE__{args: args}) do
     names =
@@ -251,11 +301,6 @@ defmodule Spark.Builder.Entity do
   defp validate_identifier(%__MODULE__{identifier: nil}), do: :ok
 
   defp validate_identifier(%__MODULE__{identifier: {:auto, :unique_integer}}), do: :ok
-
-  defp validate_identifier(%__MODULE__{identifier: identifier}) when not is_atom(identifier) do
-    {:error,
-     "identifier must be an atom or {:auto, :unique_integer}, got: #{inspect(identifier)}"}
-  end
 
   defp validate_identifier(%__MODULE__{
          identifier: identifier,

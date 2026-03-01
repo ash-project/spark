@@ -202,23 +202,16 @@ defmodule Spark.Builder.SectionTest do
       assert {:error, "name is required"} = Section.build(builder)
     end
 
-    test "returns error when unknown builder options are provided" do
-      result =
+    test "raises when unknown builder options are provided" do
+      assert_raise ArgumentError, ~r/top_level/, fn ->
         Section.new(:attributes, top_level: true)
-        |> Section.build()
-
-      assert {:error, message} = result
-      assert message =~ "unknown options"
-      assert message =~ ":top_level"
+      end
     end
 
-    test "returns error when after_define is invalid" do
-      result =
+    test "raises when after_define is invalid" do
+      assert_raise ArgumentError, ~r/after_define/, fn ->
         Section.new(:attributes, after_define: :not_a_tuple)
-        |> Section.build()
-
-      assert {:error, message} = result
-      assert message =~ "after_define must be"
+      end
     end
   end
 
@@ -238,9 +231,8 @@ defmodule Spark.Builder.SectionTest do
     end
 
     test "raises on unknown builder options" do
-      assert_raise ArgumentError, ~r/unknown options/, fn ->
+      assert_raise ArgumentError, ~r/top_level/, fn ->
         Section.new(:attributes, top_level: true)
-        |> Section.build!()
       end
     end
   end

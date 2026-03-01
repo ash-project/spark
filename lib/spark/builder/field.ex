@@ -88,6 +88,34 @@ defmodule Spark.Builder.Field do
   # Constructor
   # ===========================================================================
 
+  @options_schema [
+    required: [type: :boolean],
+    default: [type: :any],
+    keys: [type: {:custom, __MODULE__, :cast_keys, []}],
+    doc: [type: {:or, [:string, {:literal, false}]}],
+    type_doc: [type: {:or, [:string, {:literal, false}]}],
+    subsection: [type: :string],
+    as: [type: :atom],
+    snippet: [type: :string],
+    links: [type: :keyword_list],
+    deprecated: [type: :string],
+    private?: [type: :boolean],
+    hide: [type: {:list, :atom}],
+    type_spec: [type: :any]
+  ]
+
+  @doc false
+  def cast_keys(value) when is_list(value) do
+    {:ok, to_schema(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_keys(value) when is_function(value), do: {:ok, value}
+
+  def cast_keys(value),
+    do: {:error, "expected a keyword list or function for :keys, got: #{inspect(value)}"}
+
   @doc """
   Creates a new field builder with the given name and type.
 
@@ -114,8 +142,16 @@ defmodule Spark.Builder.Field do
   @spec new(atom(), Spark.Options.type()) :: t()
   @spec new(atom(), Spark.Options.type(), keyword()) :: t()
   def new(name, type, opts \\ []) when is_atom(name) and is_list(opts) do
-    %__MODULE__{name: name, type: type}
-    |> apply_opts(opts)
+    case Spark.Options.validate(opts, @options_schema) do
+      {:ok, validated} ->
+        has_default = Keyword.has_key?(validated, :default)
+
+        %__MODULE__{name: name, type: type, has_default: has_default}
+        |> struct!(validated)
+
+      {:error, error} ->
+        raise ArgumentError, Exception.message(error)
+    end
   end
 
   # ===========================================================================
@@ -180,77 +216,6 @@ defmodule Spark.Builder.Field do
       {key, opts} when is_atom(key) and is_list(opts) -> {key, opts}
       other -> raise ArgumentError, "Invalid field specification: #{inspect(other)}"
     end)
-  end
-
-  defp apply_opts(%__MODULE__{} = field, opts) do
-    Enum.reduce(opts, field, fn {key, value}, acc ->
-      apply_opt(acc, key, value)
-    end)
-  end
-
-  defp apply_opt(field, :required, value), do: %{field | required: value}
-  defp apply_opt(field, :default, value), do: %{field | default: value, has_default: true}
-
-  defp apply_opt(field, :keys, value) when is_list(value) do
-    normalized = to_schema(value)
-    %{field | keys: normalized}
-  end
-
-  defp apply_opt(field, :keys, value) when is_function(value) do
-    %{field | keys: value}
-  end
-
-  defp apply_opt(_field, :keys, value), do: raise_invalid_option(:keys, value)
-
-  defp apply_opt(field, :doc, value) when is_binary(value) or value == false do
-    %{field | doc: value}
-  end
-
-  defp apply_opt(_field, :doc, value), do: raise_invalid_option(:doc, value)
-
-  defp apply_opt(field, :type_doc, value) when is_binary(value) or value == false do
-    %{field | type_doc: value}
-  end
-
-  defp apply_opt(_field, :type_doc, value), do: raise_invalid_option(:type_doc, value)
-
-  defp apply_opt(field, :subsection, value) when is_binary(value) do
-    %{field | subsection: value}
-  end
-
-  defp apply_opt(_field, :subsection, value), do: raise_invalid_option(:subsection, value)
-
-  defp apply_opt(field, :links, value) when is_list(value) do
-    %{field | links: value}
-  end
-
-  defp apply_opt(_field, :links, value), do: raise_invalid_option(:links, value)
-
-  defp apply_opt(field, :as, value) when is_atom(value), do: %{field | as: value}
-  defp apply_opt(_field, :as, value), do: raise_invalid_option(:as, value)
-
-  defp apply_opt(field, :snippet, value) when is_binary(value), do: %{field | snippet: value}
-  defp apply_opt(_field, :snippet, value), do: raise_invalid_option(:snippet, value)
-
-  defp apply_opt(field, :deprecated, value) when is_binary(value) do
-    %{field | deprecated: value}
-  end
-
-  defp apply_opt(_field, :deprecated, value), do: raise_invalid_option(:deprecated, value)
-
-  defp apply_opt(field, :private?, value), do: %{field | private?: value}
-
-  defp apply_opt(field, :hide, value) when is_list(value), do: %{field | hide: value}
-  defp apply_opt(_field, :hide, value), do: raise_invalid_option(:hide, value)
-
-  defp apply_opt(field, :type_spec, value), do: %{field | type_spec: value}
-
-  defp apply_opt(_field, key, _value) do
-    raise ArgumentError, "Unknown field option: #{inspect(key)}"
-  end
-
-  defp raise_invalid_option(key, value) do
-    raise ArgumentError, "Invalid value for #{inspect(key)} option: #{inspect(value)}"
   end
 
   defp maybe_add(acc, _key, value, default) when value == default, do: acc

@@ -130,7 +130,7 @@ defmodule Spark.Builder.FieldTest do
     end
 
     test "raises on unknown options" do
-      assert_raise ArgumentError, ~r/Unknown field option/, fn ->
+      assert_raise ArgumentError, ~r/unknown options/, fn ->
         Field.new(:name, :atom, unknown: :value)
       end
     end

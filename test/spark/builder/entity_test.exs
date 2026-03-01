@@ -206,14 +206,10 @@ defmodule Spark.Builder.EntityTest do
       assert {:error, "target is required"} = Entity.build(builder)
     end
 
-    test "returns error when unknown builder options are provided" do
-      result =
+    test "raises when unknown builder options are provided" do
+      assert_raise ArgumentError, ~r/snipet/, fn ->
         Entity.new(:attr, TestTarget, snipet: "attribute :${1:name}")
-        |> Entity.build()
-
-      assert {:error, message} = result
-      assert message =~ "unknown options"
-      assert message =~ ":snipet"
+      end
     end
 
     test "returns error when args reference undefined schema keys" do
@@ -371,9 +367,8 @@ defmodule Spark.Builder.EntityTest do
     end
 
     test "raises on unknown builder options" do
-      assert_raise ArgumentError, ~r/unknown options/, fn ->
+      assert_raise ArgumentError, ~r/snipet/, fn ->
         Entity.new(:attr, TestTarget, snipet: "attribute :${1:name}")
-        |> Entity.build!()
       end
     end
   end
