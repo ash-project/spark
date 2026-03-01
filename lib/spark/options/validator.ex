@@ -245,7 +245,7 @@ defmodule Spark.Options.Validator do
                   %Spark.Options.ValidationError{
                     key: unquote(key),
                     message:
-                      "invalid value for #{Spark.Options.render_key(unquote(key))}: expected integer, got: #{inspect(value)}",
+                      "invalid value for #{Spark.Options.render_key(unquote(key))}: expected string, got: #{inspect(value)}",
                     value: value
                   }}}
               end
