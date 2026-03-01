@@ -17,4 +17,9 @@ defmodule MyExtension do
     entities: []
   }
   use Spark.Dsl.Extension, sections: [@my_section]
+
+  defmodule Dsl do
+    @moduledoc false
+    use Spark.Dsl, default_extensions: [extensions: MyExtension]
+  end
 end
