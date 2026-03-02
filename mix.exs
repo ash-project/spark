@@ -16,6 +16,7 @@ defmodule Spark.MixProject do
       elixir: "~> 1.15",
       elixirc_options: [
         warnings_as_errors: true,
+        ignore_module_conflict: Mix.env() == :test,
         parser_options: [
           token_metadata: true,
           parser_columns: true
