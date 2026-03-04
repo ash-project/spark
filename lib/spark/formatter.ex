@@ -103,7 +103,7 @@ if Code.ensure_loaded?(Sourceror) do
           false ->
             case get_extensions(body, config) do
               {:ok, extensions, type, using} ->
-                replacement = format_resource(body, extensions, config, type, using)
+                replacement = format_resource(body, extensions, config, type, using, opts)
 
                 patches =
                   body
@@ -135,7 +135,7 @@ if Code.ensure_loaded?(Sourceror) do
       patches
     end
 
-    defp format_resource(body, extensions, config, _type, using) do
+    defp format_resource(body, extensions, config, _type, using, opts) do
       sections =
         extensions
         |> Enum.flat_map(fn extension ->
@@ -179,14 +179,14 @@ if Code.ensure_loaded?(Sourceror) do
       |> Enum.map(&elem(&1, 0))
       |> then(fn sections ->
         if config[:remove_parens?] do
-          de_paren(sections, Enum.flat_map(extensions, & &1.sections()), extensions)
+          de_paren(sections, Enum.flat_map(extensions, & &1.sections()), extensions, opts)
         else
           sections
         end
       end)
     end
 
-    defp de_paren(actual_sections, dsl_sections, extensions) do
+    defp de_paren(actual_sections, dsl_sections, extensions, opts) do
       actual_sections
       |> Enum.map(fn
         {name, meta, body} ->
@@ -195,7 +195,7 @@ if Code.ensure_loaded?(Sourceror) do
               {name, meta, body}
 
             section ->
-              {name, meta, de_paren_section(body, section, extensions)}
+              {name, meta, de_paren_section(body, section, extensions, opts)}
           end
 
         other ->
@@ -203,8 +203,10 @@ if Code.ensure_loaded?(Sourceror) do
       end)
     end
 
-    defp de_paren_section(body, section, extensions) do
-      builders = all_entity_builders([section], extensions)
+    defp de_paren_section(body, section, extensions, opts) do
+      locals_without_parens = Keyword.get(opts, :locals_without_parens, [])
+
+      builders = all_entity_builders([section], extensions) ++ locals_without_parens
 
       Macro.prewalk(body, fn
         {func, meta, body} = node when is_atom(func) ->
@@ -285,17 +287,13 @@ if Code.ensure_loaded?(Sourceror) do
             []
         end
         |> List.wrap()
+        |> Enum.filter(&is_atom/1)
         |> Enum.flat_map(fn extension ->
-          case is_atom(extension) and Code.ensure_compiled(extension) do
-            {:module, module} ->
-              if Spark.implements_behaviour?(module, Spark.Dsl.Extension) do
-                [module]
-              else
-                []
-              end
-
-            _ ->
-              []
+          if Code.ensure_loaded?(extension) and
+               Spark.implements_behaviour?(extension, Spark.Dsl.Extension) do
+            [extension]
+          else
+            []
           end
         end)
       end)

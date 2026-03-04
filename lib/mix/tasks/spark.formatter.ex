@@ -28,27 +28,6 @@ if Code.ensure_loaded?(Sourceror) do
 
       locals_without_parens =
         Enum.flat_map(extensions, fn extension_mod ->
-          case Code.ensure_compiled(extension_mod) do
-            {:module, _module} ->
-              :ok
-
-            other ->
-              error_msg =
-                if Mix.Project.umbrella?() do
-                  """
-                  Error ensuring extension compiled: #{inspect(other)}
-
-                  You are running this task from an umbrella project root.
-                  Try running this task from within a sub-app directory, or compile the project first:
-                    cd apps/<your_app> && mix spark.formatter --extensions #{opts[:extensions]}
-                  """
-                else
-                  "Error ensuring extension compiled #{inspect(other)}"
-                end
-
-              raise error_msg
-          end
-
           all_entity_builders_everywhere(
             extension_mod.sections(),
             extension_mod.dsl_patches(),
