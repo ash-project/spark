@@ -84,6 +84,7 @@ defmodule Spark.MixProject do
         "documentation/how_to/split-up-large-dsls.md",
         "documentation/how_to/use-source-annotations.md",
         "documentation/how_to/setup-autocomplete.md",
+        "documentation/how_to/build-extensions-with-builders.md",
         "documentation/tutorials/get-started-with-spark.md"
       ],
       groups_for_extras: [
