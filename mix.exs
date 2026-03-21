@@ -79,13 +79,13 @@ defmodule Spark.MixProject do
         ]
       ],
       extras: [
+        "documentation/tutorials/get-started-with-spark.md",
         "documentation/how_to/upgrade-to-2.0.md",
         "documentation/how_to/writing-extensions.md",
         "documentation/how_to/split-up-large-dsls.md",
         "documentation/how_to/use-source-annotations.md",
         "documentation/how_to/setup-autocomplete.md",
-        "documentation/how_to/build-extensions-with-builders.md",
-        "documentation/tutorials/get-started-with-spark.md"
+        "documentation/how_to/build-extensions-with-builders.md"
       ],
       groups_for_extras: [
         "How To": ~r/documentation\/how_to/,

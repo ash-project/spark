@@ -61,63 +61,49 @@ There are many ways you can enhance this data validator, but we are using this o
 We define our DSL as a `Spark.Dsl.Extension`. All DSLs are defined in extensions, but you can define DSLs that use
 certain extensions by default, which is what we will do here.
 
-Here we are building up one big nested data structure of a `%Spark.Dsl.Section{}`, which spark
-uses under the hood to allow users to write in the DSL syntax described above.
+We use the builder API (`Spark.Builder.Section`, `Spark.Builder.Entity`, and `Spark.Builder.Field`) to
+construct our DSL definition. The builders provide a clean, composable way to define sections, entities, and
+their schemas.
 
 ```elixir
 defmodule MyLibrary.Validator.Dsl do
+  alias Spark.Builder.{Entity, Field, Section}
+
   defmodule Field do
     # The __spark_metadata__ field is required for Spark entities
     # It stores source location information for better error messages and tooling
     defstruct [:name, :type, :transform, :check, :__spark_metadata__]
   end
 
-  @field %Spark.Dsl.Entity{
-    name: :field,
-    args: [:name, :type],
-    target: Field,
+  @field Entity.new(:field, Field,
     describe: "A field that is accepted by the validator",
-    # you can include nested entities here, but
-    # note that you provide a keyword list like below
-    # we need to know which struct key to place the nested entities in
-    # entities: [
-    #   key: [...]
-    # ],
+    args: [:name, :type],
     schema: [
-      name: [
-        type: :atom,
-        required: true,
-        doc: "The name of the field"
-      ],
-      type: [
-        type: {:one_of, [:integer, :string]},
+      Field.new(:name, :atom, required: true, doc: "The name of the field"),
+      Field.new(:type, {:one_of, [:integer, :string]},
         required: true,
         doc: "The type of the field"
-      ],
-      check: [
-        type: {:fun, 1},
+      ),
+      Field.new(:check, {:fun, 1},
         doc: "A function that can be used to check if the value is valid after type validation."
-      ],
-      transform: [
-        type: {:fun, 1},
+      ),
+      Field.new(:transform, {:fun, 1},
         doc: "A function that will be used to transform the value after successful validation"
-      ]
+      )
     ]
-  }
+  )
+  |> Entity.build!()
 
-  @fields %Spark.Dsl.Section{
-    name: :fields,
+  @fields Section.new(:fields,
+    describe: "Configure the fields that are supported and required",
     schema: [
-      required: [
-        type: {:list, :atom},
+      Field.new(:required, {:list, :atom},
         doc: "The fields that must be provided for validation to succeed"
-      ]
+      )
     ],
-    entities: [
-      @field
-    ],
-    describe: "Configure the fields that are supported and required"
-  }
+    entities: [@field]
+  )
+  |> Section.build!()
 
   use Spark.Dsl.Extension, sections: [@fields]
 end
