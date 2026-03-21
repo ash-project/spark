@@ -129,22 +129,3 @@ defmodule MyApp.Config do
   end
 end
 ```
-
-## Introspection helpers
-
-You can expose a small info module that wraps `Spark.Dsl.Extension` helpers.
-
-```elixir
-defmodule MyApp.Notifications.Info do
-  def notifications(module) do
-    Spark.Dsl.Extension.get_entities(module, [:notifications])
-  end
-end
-```
-
-## Notes
-
-- Types are passed as atoms or tuples (for example `{:one_of, [:email, :slack]}`).
-- Use `Field.new/3` with `(name, type, opts)` to set `:required`, `:default`, `:keys`, and docs.
-- The builder modules are `Spark.Builder.Field`, `Spark.Builder.Entity`, and
-  `Spark.Builder.Section`.
