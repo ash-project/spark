@@ -85,7 +85,7 @@ use Spark.Dsl.Extension, sections: [@fields]
   automatically, including all options and usage examples
 * ⚡ **Developer Tools** - Mix tasks for formatting, code generation, and
   maintaining `locals_without_parens` automatically
-* 🔄 **Compile-time Processing** - Use transformers to modify DSL structure$
+* 🔄 **Compile-time Processing** - Use transformers to modify DSL structures
   during compilation and verifiers to validate correctness
 * 🎯 **Type Safety** - Rich schema validation ensures DSL usage is correct at
   compile time with helpful error messages
