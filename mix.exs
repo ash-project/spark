@@ -88,8 +88,8 @@ defmodule Spark.MixProject do
         "documentation/how_to/build-extensions-with-builders.md"
       ],
       groups_for_extras: [
-        "How To": ~r/documentation\/how_to/,
-        Tutorials: ~r/documentation\/tutorials/
+        Tutorials: ~r/documentation\/tutorials/,
+        "How To": ~r/documentation\/how_to/
       ],
       groups_for_modules: [
         "DSLs and Extensions": ~r/^Spark.Dsl/,
