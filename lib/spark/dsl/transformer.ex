@@ -4,18 +4,49 @@
 
 defmodule Spark.Dsl.Transformer do
   @moduledoc """
-  A transformer manipulates and/or validates the entire DSL state of a resource.
+  A transformer manipulates and/or validates the entire DSL state of a module at compile time.
 
-  It's `transform/1` takes a `map`, which is just the values/configurations at each point
-  of the DSL. Don't manipulate it directly, if possible, instead use functions like
-  `get_entities/3` and `replace_entity/4` to manipulate it.
+  Transformers run during compilation and can read, modify, and persist DSL state. They are the
+  primary mechanism for setting defaults, building entities programmatically, caching computed
+  values, and reshaping configuration before the module is finalized.
 
-  Use the `after?/1` and `before?/1` callbacks to ensure that your transformer
-  runs either before or after some other transformer.
+  ## Usage
 
-  Return `true` in `after_compile/0` to have the transformer run in an `after_compile` hook,
-  but keep in mind that no modifications to the dsl structure will be retained, so there is no
-  real point in modifying the dsl that you return.
+      defmodule MyApp.MyExtension.Transformers.SetDefaults do
+        use Spark.Dsl.Transformer
+
+        def transform(dsl_state) do
+          # Read entities and options
+          actions = Spark.Dsl.Transformer.get_entities(dsl_state, [:actions])
+
+          # Modify DSL state and return it
+          dsl_state = Spark.Dsl.Transformer.persist(dsl_state, :action_count, length(actions))
+          {:ok, dsl_state}
+        end
+      end
+
+  ## Callbacks
+
+  - `transform/1` - Receives the DSL state map. Return `{:ok, dsl_state}` to continue with
+    modifications, `:ok` to continue without modifications, `{:error, term}` to halt with an
+    error, `{:warn, dsl_state, warnings}` to continue with warnings, or `:halt` to silently
+    stop processing further transformers.
+
+  - `before?/1` - Return `true` if this transformer must run before the given transformer module.
+
+  - `after?/1` - Return `true` if this transformer must run after the given transformer module.
+
+  ## Reading vs. Modifying State
+
+  Use the helper functions in this module rather than manipulating the DSL state map directly.
+  For reading: `get_entities/2`, `get_option/3`, `fetch_option/3`, `get_persisted/2`.
+  For writing: `add_entity/3`, `replace_entity/3`, `remove_entity/3`, `set_option/4`, `persist/3`.
+
+  ## Transformers vs. Verifiers
+
+  If you only need to validate state without modifying it, and you reference other modules
+  (e.g. checking that a referenced module exists), use `Spark.Dsl.Verifier` instead.
+  Verifiers run after compilation and do not create compile-time dependencies between modules.
   """
 
   @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
@@ -105,18 +136,29 @@ defmodule Spark.Dsl.Transformer do
     )
   end
 
+  @doc """
+  Retrieves a value that was previously stored with `persist/3`.
+
+  Returns `default` if the key has not been persisted.
+  """
   def get_persisted(dsl, key, default \\ nil) do
     dsl
     |> Map.get(:persist, %{})
     |> Map.get(key, default)
   end
 
+  @doc """
+  Fetches a persisted value, returning `{:ok, value}` or `:error`.
+  """
   def fetch_persisted(dsl, key) do
     dsl
     |> Map.get(:persist, %{})
     |> Map.fetch(key)
   end
 
+  @doc """
+  Same as `build_entity/4` but raises on error.
+  """
   def build_entity!(extension, path, name, opts) do
     case build_entity(extension, path, name, opts) do
       {:ok, entity} ->
@@ -131,6 +173,18 @@ defmodule Spark.Dsl.Transformer do
     end
   end
 
+  @doc """
+  Programmatically builds an entity struct defined in the given extension.
+
+  `path` is the section path (e.g. `[:actions]`), `name` is the entity name (e.g. `:read`),
+  and `opts` is a keyword list of options matching the entity's schema. The entity's schema
+  validations and transforms are applied.
+
+  Commonly used to add entities to DSL state in a transformer:
+
+      {:ok, action} = Transformer.build_entity(Ash.Resource.Dsl, [:actions], :read, name: :read)
+      dsl_state = Transformer.add_entity(dsl_state, [:actions], action)
+  """
   def build_entity(extension, path, name, opts) do
     do_build_entity(extension.sections(), path, name, opts)
   end
@@ -207,6 +261,11 @@ defmodule Spark.Dsl.Transformer do
     end
   end
 
+  @doc """
+  Adds an entity to the DSL state at the given section path.
+
+  By default, entities are prepended. Pass `type: :append` to append instead.
+  """
   def add_entity(dsl_state, path, entity, opts \\ []) do
     Map.update(dsl_state, path, %{entities: [entity], opts: []}, fn config ->
       Map.update(config, :entities, [entity], fn entities ->
@@ -219,6 +278,11 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
+  @doc """
+  Removes entities at the given path that match the filter function.
+
+  The function receives each entity and should return `true` for entities to remove.
+  """
   def remove_entity(dsl_state, path, func) do
     Map.update(dsl_state, path, %{entities: [], opts: []}, fn config ->
       Map.update(config, :entities, [], fn entities ->
@@ -227,12 +291,18 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
+  @doc """
+  Returns all entities at the given section path.
+  """
   def get_entities(dsl_state, path) do
     dsl_state
     |> Map.get(path, %{entities: []})
     |> Map.get(:entities, [])
   end
 
+  @doc """
+  Fetches a DSL option, returning `{:ok, value}` or `:error`.
+  """
   def fetch_option(dsl_state, path, option) do
     dsl_state
     |> Map.get(path, Spark.Dsl.Extension.default_section_config())
@@ -241,6 +311,9 @@ defmodule Spark.Dsl.Transformer do
     |> Keyword.fetch(option)
   end
 
+  @doc """
+  Returns the source location annotation for a section, useful for error reporting.
+  """
   @spec get_section_anno(map, list(atom)) :: :erl_anno.anno() | nil
   def get_section_anno(dsl_state, path) do
     dsl_state
@@ -248,6 +321,9 @@ defmodule Spark.Dsl.Transformer do
     |> Map.get(:section_anno)
   end
 
+  @doc """
+  Returns the source location annotation for a specific option, useful for error reporting.
+  """
   @spec get_opt_anno(map, list(atom), atom) :: :erl_anno.anno() | nil
   def get_opt_anno(dsl_state, path, option) do
     dsl_state
@@ -256,6 +332,9 @@ defmodule Spark.Dsl.Transformer do
     |> Keyword.get(option)
   end
 
+  @doc """
+  Gets a DSL option value at the given section path, returning `default` if not set.
+  """
   def get_option(dsl_state, path, option, default \\ nil) do
     dsl_state
     |> Map.get(path, Spark.Dsl.Extension.default_section_config())
@@ -264,6 +343,9 @@ defmodule Spark.Dsl.Transformer do
     |> Keyword.get(option, default)
   end
 
+  @doc """
+  Sets a DSL option value at the given section path.
+  """
   def set_option(dsl_state, path, option, value) do
     dsl_state
     |> Map.put_new(path, Spark.Dsl.Extension.default_section_config())
@@ -277,6 +359,12 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
+  @doc """
+  Replaces an entity at the given path with `replacement`.
+
+  By default, matches on struct type and `__identifier__`. Pass a custom `matcher`
+  function to control which entity gets replaced.
+  """
   def replace_entity(dsl_state, path, replacement, matcher \\ nil) do
     matcher =
       matcher ||
@@ -302,6 +390,7 @@ defmodule Spark.Dsl.Transformer do
     end)
   end
 
+  @doc false
   def sort(transformers) do
     digraph = :digraph.new()
 

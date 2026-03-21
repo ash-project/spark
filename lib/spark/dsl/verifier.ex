@@ -4,9 +4,37 @@
 
 defmodule Spark.Dsl.Verifier do
   @moduledoc """
-  A verifier gets the dsl state and can return `:ok` or `:error`.
+  A verifier validates DSL state after compilation without modifying it.
 
-  In a verifier, you can reference and depend on other modules without causing compile time dependencies.
+  Unlike transformers, verifiers run after the module is compiled, so referencing other
+  modules (e.g. checking that a related resource exists) will not create compile-time
+  dependencies between them.
+
+  ## Usage
+
+      defmodule MyApp.MyExtension.Verifiers.ValidateNames do
+        use Spark.Dsl.Verifier
+
+        def verify(dsl_state) do
+          case Spark.Dsl.Verifier.get_option(dsl_state, [:my_section], :name) do
+            nil -> {:error, Spark.Error.DslError.exception(message: "name is required")}
+            _name -> :ok
+          end
+        end
+      end
+
+  ## Callback
+
+  `verify/1` receives the DSL state and should return:
+
+  - `:ok` - validation passed
+  - `{:error, term}` - validation failed
+  - `{:warn, warning | [warning]}` - validation passed with warnings
+
+  ## Reading State
+
+  This module delegates read-only functions from `Spark.Dsl.Transformer`:
+  `get_entities/2`, `get_option/3`, `fetch_option/3`, `get_persisted/2`.
   """
 
   @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
