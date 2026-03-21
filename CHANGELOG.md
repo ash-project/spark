@@ -12,6 +12,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.5.0](https://github.com/ash-project/spark/compare/v2.4.1...v2.5.0) (2026-03-21)
+
+
+
+
+### Features:
+
+* Builder API for Sections and Entities (#253) by leonqadirie
+
+### Bug Fixes:
+
+* don't use Code.ensure_compiled by Zach Daniel
+
+* show correct error message when expecting strings by Zach Daniel
+
+### Improvements:
+
+* add `singleton_entity_keys` to sections by Zach Daniel
+
+* add new `{:function, ...` type by Zach Daniel
+
 ## [v2.4.1](https://github.com/ash-project/spark/compare/v2.4.0...v2.4.1) (2026-02-22)
 
 
