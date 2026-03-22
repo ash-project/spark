@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.6.0](https://github.com/ash-project/spark/compare/v2.5.0...v2.6.0) (2026-03-22)
+
+
+
+
+### Features:
+
+* sort persisters using before/after callbacks (#264) by Torkild Gundersen Kjevik
+
 ## [v2.5.0](https://github.com/ash-project/spark/compare/v2.4.1...v2.5.0) (2026-03-21)
 
 
