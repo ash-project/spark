@@ -680,7 +680,7 @@ defmodule Spark.Dsl.Extension do
           |> Enum.flat_map(& &1.transformers())
           |> Transformer.sort()
           |> Enum.reject(& &1.after_compile?())
-          |> Enum.concat(Enum.flat_map(@extensions, & &1.persisters()))
+          |> Enum.concat(@extensions |> Enum.flat_map(& &1.persisters()) |> Transformer.sort())
         else
           []
         end
