@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.6.1](https://github.com/ash-project/spark/compare/v2.6.0...v2.6.1) (2026-03-25)
+
+
+
+
+### Bug Fixes:
+
+* only de-paren sections and entities that have builders at the current level, not nested levels by Zach Daniel
+
 ## [v2.6.0](https://github.com/ash-project/spark/compare/v2.5.0...v2.6.0) (2026-03-22)
 
 
