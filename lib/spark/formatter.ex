@@ -204,26 +204,142 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     defp de_paren_section(body, section, extensions, opts) do
-      locals_without_parens = Keyword.get(opts, :locals_without_parens, [])
+      lwp = Keyword.get(opts, :locals_without_parens, [])
+      process_section_body(body, section, extensions, lwp, [section.name])
+    end
 
-      builders = all_entity_builders([section], extensions) ++ locals_without_parens
+    defp process_section_body(args, section, extensions, lwp, path) do
+      entities = section_entities_at_path(section, extensions, path)
+      builders = section_level_builders(section, entities) ++ lwp
+      children = section_children(section, entities)
+      find_and_process_do_blocks(args, builders, children, extensions, lwp, path)
+    end
 
-      Macro.prewalk(body, fn
-        {func, meta, body} = node when is_atom(func) ->
-          count = Enum.count(List.wrap(body))
+    defp process_entity_body(args, entity, extensions, lwp) do
+      nested = all_nested_entities(entity)
+      builders = entity_level_builders(entity, nested) ++ lwp
+      children = entity_children(nested)
+      find_and_process_do_blocks(args, builders, children, extensions, lwp, [])
+    end
 
-          builders = Keyword.get_values(builders, func)
+    defp find_and_process_do_blocks(args, builders, children, extensions, lwp, path)
+         when is_list(args) do
+      Enum.map(args, fn
+        kw when is_list(kw) ->
+          Enum.map(kw, fn
+            {{:__block__, bm, [:do]}, {:__block__, body_meta, body_exprs}} ->
+              {{:__block__, bm, [:do]},
+               {:__block__, body_meta,
+                Enum.map(
+                  body_exprs,
+                  &de_paren_at_level(&1, builders, children, extensions, lwp, path)
+                )}}
 
-          if Enum.any?(builders, &(&1 in [count, count - 1])) &&
-               Keyword.keyword?(meta) &&
-               meta[:closing] do
-            {func, Keyword.delete(meta, :closing), body}
-          else
-            node
-          end
+            {{:__block__, bm, [:do]}, single_expr} ->
+              {{:__block__, bm, [:do]},
+               de_paren_at_level(single_expr, builders, children, extensions, lwp, path)}
 
-        node ->
-          node
+            other ->
+              other
+          end)
+
+        other ->
+          other
+      end)
+    end
+
+    defp find_and_process_do_blocks(args, _, _, _, _, _), do: args
+
+    defp de_paren_at_level({func, meta, args}, builders, children, extensions, lwp, path)
+         when is_atom(func) do
+      count = Enum.count(List.wrap(args))
+      matched = Keyword.get_values(builders, func)
+
+      meta =
+        if Enum.any?(matched, &(&1 in [count, count - 1])) &&
+             Keyword.keyword?(meta) &&
+             meta[:closing] do
+          Keyword.delete(meta, :closing)
+        else
+          meta
+        end
+
+      args =
+        case Map.get(children, func) do
+          {:section, subsection} ->
+            process_section_body(args, subsection, extensions, lwp, path ++ [subsection.name])
+
+          {:entity, entity} ->
+            process_entity_body(args, entity, extensions, lwp)
+
+          nil ->
+            args
+        end
+
+      {func, meta, args}
+    end
+
+    defp de_paren_at_level(node, _, _, _, _, _), do: node
+
+    defp section_entities_at_path(section, extensions, path) do
+      patched =
+        extensions
+        |> Enum.flat_map(& &1.dsl_patches())
+        |> Enum.filter(fn
+          %Spark.Dsl.Patch.AddEntity{section_path: ^path} -> true
+          _ -> false
+        end)
+        |> Enum.map(& &1.entity)
+
+      section.entities ++ patched
+    end
+
+    defp section_level_builders(section, entities) do
+      section_option_builders(section) ++
+        Enum.flat_map(entities, fn entity ->
+          arg_count = Enum.count(entity.args)
+          non_optional = Enum.count(entity.args, &is_atom/1)
+
+          Enum.flat_map(non_optional..arg_count, fn n ->
+            [{entity.name, n}, {entity.name, n + 1}]
+          end)
+        end)
+    end
+
+    defp entity_level_builders(entity, nested_entities) do
+      entity_args_to_drop = Spark.Dsl.Entity.required_arg_names(entity)
+
+      option_builders =
+        entity.schema
+        |> Keyword.drop(entity_args_to_drop)
+        |> Enum.map(fn {key, _} -> {key, 1} end)
+
+      nested_builders =
+        Enum.flat_map(nested_entities, fn nested ->
+          arg_count = Enum.count(nested.args)
+          non_optional = Enum.count(nested.args, &is_atom/1)
+
+          Enum.flat_map(non_optional..arg_count, fn n ->
+            [{nested.name, n}, {nested.name, n + 1}]
+          end)
+        end)
+
+      option_builders ++ nested_builders
+    end
+
+    defp section_children(section, entities) do
+      entity_map = Map.new(entities, &{&1.name, {:entity, &1}})
+      section_map = Map.new(section.sections, &{&1.name, {:section, &1}})
+      Map.merge(entity_map, section_map)
+    end
+
+    defp entity_children(nested_entities) do
+      Map.new(nested_entities, &{&1.name, {:entity, &1}})
+    end
+
+    defp all_nested_entities(entity) do
+      Enum.flat_map(entity.entities, fn {_, nested} ->
+        List.wrap(nested)
       end)
     end
 
