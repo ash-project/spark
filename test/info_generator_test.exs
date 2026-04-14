@@ -21,6 +21,12 @@ defmodule Spark.InfoGeneratorTest do
     end
   end
 
+  describe "{:tuple, subtypes} type" do
+    test "compiles and generates info functions for a list of 3-tuples" do
+      assert :error = Info.my_section_guard(Resource)
+    end
+  end
+
   describe "{:function, ...} type" do
     test "compiles and generates info functions for {:function, args: [...], returns: ...}" do
       assert :error = Info.my_section_callback(Resource)

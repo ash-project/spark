@@ -314,10 +314,12 @@ defmodule Spark.InfoGenerator do
   end
 
   def spec_for_type({:literal, value}, _opts) when is_tuple(value) do
-    value
-    |> Tuple.to_list()
-    |> Enum.map(&spec_for_type({:literal, &1}, []))
-    |> List.to_tuple()
+    specs =
+      value
+      |> Tuple.to_list()
+      |> Enum.map(&spec_for_type({:literal, &1}, []))
+
+    {:{}, [], specs}
   end
 
   def spec_for_type({:literal, value}, _opts) when is_list(value) do
@@ -410,9 +412,8 @@ defmodule Spark.InfoGenerator do
   def spec_for_type({:custom, _, _, _}, _opts), do: spec_for_type(:any, [])
 
   def spec_for_type({:tuple, subtypes}, _opts) do
-    subtypes
-    |> Enum.map(&spec_for_type(&1, []))
-    |> List.to_tuple()
+    specs = Enum.map(subtypes, &spec_for_type(&1, []))
+    {:{}, [], specs}
   end
 
   def spec_for_type(:quoted, _opts) do
