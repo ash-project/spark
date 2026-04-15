@@ -264,12 +264,64 @@ iex(1)> MyLibrary.Validator.Info.fields(MyApp.PersonValidator)
 ]
 ```
 
+### Persisters
+
+Persisters are a special kind of transformer used to precompute and cache values onto the DSL.
+They implement the same `Spark.Dsl.Transformer` behaviour, but are listed under `persisters:`
+instead of `transformers:`. The key differences are:
+
+- Persisters **always** run after all transformers have finished — they see the complete,
+  fully-transformed DSL state. A persister cannot run before a transformer, even if it declares
+  `before?(SomeTransformer)` — that declaration is silently ignored.
+- By convention, persisters should **only** write to the persisted data map (via
+  `Spark.Dsl.Transformer.persist/3`) and should not add, remove, or modify sections or entities.
+- Persisters support `before?`/`after?` ordering relative to other persisters.
+
+A typical use case is caching a derived value so it can be read quickly at runtime without
+re-traversing the DSL:
+
+```elixir
+defmodule MyLibrary.Validator.Persisters.CacheFieldNames do
+  use Spark.Dsl.Transformer
+
+  def transform(dsl_state) do
+    field_names =
+      dsl_state
+      |> Spark.Dsl.Transformer.get_entities([:fields])
+      |> Enum.map(& &1.name)
+
+    {:ok, Spark.Dsl.Transformer.persist(dsl_state, :field_names, field_names)}
+  end
+end
+```
+
+```elixir
+use Spark.Dsl.Extension,
+  sections: [@fields],
+  transformers: [
+    MyLibrary.Validator.Transformers.AddId,
+    MyLibrary.Validator.Transformers.GenerateValidate
+  ],
+  persisters: [
+    MyLibrary.Validator.Persisters.CacheFieldNames
+  ],
+  verifiers: [
+    MyLibrary.Validator.Verifiers.VerifyRequired
+  ]
+```
+
 ### Verifiers
 
-Verifiers are similar to transformers, except that they *cannot modify the structure*. They can
-only return `:ok` or `{:error, error}`. This is important because when verifiers are running
-you know that you are looking at the *final* structure of the DSL. Prefer to write verifiers
-over transformers if you are only doing some kind of validation.
+Verifiers validate DSL state, but unlike transformers and persisters, they run **after** the
+module has been compiled. They are read-only — they can only return `:ok`, `{:error, error}`,
+or `{:warn, warning}`, and cannot modify the DSL state.
+
+Because verifiers run post-compilation, they can safely reference other modules without creating
+compile-time dependencies between them. This is important when building extensions that need to
+cross-check multiple Spark-based modules (e.g. verifying that a referenced resource exists).
+
+Prefer verifiers over transformers when you are only doing validation — they see the final,
+fully-transformed DSL state and avoid circular compile-time dependencies.
 
 Lets make a verifier that says that all fields in `required` must also be in `fields`.
 
@@ -386,6 +438,9 @@ use Spark.Dsl.Extension,
   transformers: [
     MyLibrary.Validator.Transformers.AddId,
     MyLibrary.Validator.Transformers.GenerateValidate
+  ],
+  persisters: [
+    MyLibrary.Validator.Persisters.CacheFieldNames
   ],
   verifiers: [
     MyLibrary.Validator.Verifiers.VerifyRequired

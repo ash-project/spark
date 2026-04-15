@@ -87,13 +87,29 @@ defmodule Spark.Dsl.Extension do
   Often, we will need to do complex validation/validate based on the configuration
   of other resources. Due to the nature of building compile time DSLs, there are
   many restrictions around that process. To support these complex use cases, extensions
-  can include `transformers` which can validate/transform the DSL state after all basic
-  sections/entities have been created. See `Spark.Dsl.Transformer` for more information.
-  Transformers are provided as an option to `use`, like so:
+  can include `transformers`, `persisters`, and `verifiers`. These run in the following
+  order:
 
-      use Spark.Dsl.Extension, sections: [@cars], transformers: [
-        MyApp.Transformers.ValidateNoOverlappingMakesAndModels
-      ]
+  1. **Transformers** — run during compilation, in dependency order (controlled by `before?/1`
+     and `after?/1`). Can read and modify any part of the DSL state. See `Spark.Dsl.Transformer`.
+
+  2. **Persisters** — run during compilation, always after all transformers. They implement the
+     same `Spark.Dsl.Transformer` behaviour but are declared under `persisters:`. By convention
+     they should only write to the persisted data map via `Spark.Dsl.Transformer.persist/3`.
+     They support `before?`/`after?` ordering relative to other persisters, but any ordering
+     declarations targeting transformers are silently ignored.
+
+  3. **Verifiers** — run after the module is compiled. Read-only. Do not create compile-time
+     dependencies between modules, so they are safe to use when referencing other Spark-based
+     modules. See `Spark.Dsl.Verifier`.
+
+  All three are provided as options to `use`:
+
+      use Spark.Dsl.Extension,
+        sections: [@cars],
+        transformers: [MyApp.Transformers.ValidateNoOverlappingMakesAndModels],
+        persisters: [MyApp.Persisters.CacheCarCount],
+        verifiers: [MyApp.Verifiers.CheckManufacturerExists]
 
   By default, the generated modules will have names like `__MODULE__.SectionName.EntityName`, and that could
   potentially conflict with modules you are defining, so you can specify the `module_prefix` option, which would allow

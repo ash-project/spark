@@ -42,11 +42,17 @@ defmodule Spark.Dsl.Transformer do
   For reading: `get_entities/2`, `get_option/3`, `fetch_option/3`, `get_persisted/2`.
   For writing: `add_entity/3`, `replace_entity/3`, `remove_entity/3`, `set_option/4`, `persist/3`.
 
-  ## Transformers vs. Verifiers
+  ## Transformers vs. Persisters vs. Verifiers
 
-  If you only need to validate state without modifying it, and you reference other modules
-  (e.g. checking that a referenced module exists), use `Spark.Dsl.Verifier` instead.
-  Verifiers run after compilation and do not create compile-time dependencies between modules.
+  **Persisters** also use this behaviour (`use Spark.Dsl.Transformer`) but are declared under
+  `persisters:` in the extension rather than `transformers:`. They always run after all
+  transformers have completed, regardless of any `before?`/`after?` declarations targeting
+  transformer modules. By convention, persisters should only write to the persisted data map
+  via `persist/3` and should not mutate sections or entities. They support `before?`/`after?`
+  ordering relative to other persisters. See `Spark.Dsl.Extension` for more.
+
+  **Verifiers** (`Spark.Dsl.Verifier`) are for validation only — they run after compilation,
+  cannot modify DSL state, and do not create compile-time dependencies between modules.
   """
 
   @type warning() :: String.t() | {String.t(), :erl_anno.anno()}

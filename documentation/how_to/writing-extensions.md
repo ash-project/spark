@@ -15,9 +15,104 @@ The DSL is declared as a series of `Spark.Dsl.Section`, which can contain `Spark
 
 If you want to build those structs programmatically, see [Building Extensions with the Builder API](build-extensions-with-builders.md).
 
+## Compile-time processing: Transformers, Persisters, and Verifiers
+
+Extensions can hook into compilation at two stages: during compilation (Transformers and Persisters) and after compilation (Verifiers). Within the compilation stage, all Transformers run before any Persisters.
+
+The overall execution order is:
+
+1. **Transformers** — run during compilation, in dependency order. Can read and modify any part of the DSL state.
+2. **Persisters** — run during compilation, after all Transformers have completed. Should only write to the persisted data map.
+3. **Verifiers** — run after the module is compiled. Read-only. Does not create compile-time dependencies between modules.
+
+All three are declared as options to `use Spark.Dsl.Extension`:
+
+```elixir
+use Spark.Dsl.Extension,
+  sections: [@my_section],
+  transformers: [MyApp.Transformers.SetDefaults],
+  persisters: [MyApp.Persisters.CacheComputedValues],
+  verifiers: [MyApp.Verifiers.ValidateConfig]
+```
+
 ## Transformers
 
-Extension writing gets a bit more complicated when you get into the world of transformers, but this is also where a lot of the power is. Each transformer can declare other transformers it must go before or after, and then is given the opportunity to modify the entirety of the DSL it is extending up to that point. This allows extensions to make rich modifications to the structure in question. See `Spark.Dsl.Transformer` for more information
+Each transformer can declare other transformers it must go before or after using `before?/1` and `after?/1` callbacks, and is then given the opportunity to modify the entirety of the DSL state. This allows extensions to make rich modifications to the structure in question.
+
+```elixir
+defmodule MyApp.Transformers.SetDefaults do
+  use Spark.Dsl.Transformer
+
+  def transform(dsl_state) do
+    name = Spark.Dsl.Transformer.get_option(dsl_state, [:my_section], :name)
+    dsl_state = Spark.Dsl.Transformer.persist(dsl_state, :name, name || :default)
+    {:ok, dsl_state}
+  end
+
+  def after?(MyApp.Transformers.EarlierTransformer), do: true
+  def after?(_), do: false
+end
+```
+
+See `Spark.Dsl.Transformer` for the full list of helper functions and return values.
+
+## Persisters
+
+Persisters implement the same `Spark.Dsl.Transformer` behaviour as transformers — they use `use Spark.Dsl.Transformer` and define a `transform/1` callback. The differences are:
+
+- They are listed under `persisters:` instead of `transformers:`
+- They **always** run after all transformers have finished, regardless of any `before?`/`after?` declarations targeting transformers (those are silently ignored)
+- By convention, they should **only** write to the persisted data map via `Spark.Dsl.Transformer.persist/3`, and should not mutate sections or entities
+
+Persisters do support `before?`/`after?` ordering relative to **other persisters**.
+
+Use persisters to precompute and cache derived values that need a complete, fully-transformed view of the DSL:
+
+```elixir
+defmodule MyApp.Persisters.CacheActionNames do
+  use Spark.Dsl.Transformer
+
+  def transform(dsl_state) do
+    action_names =
+      dsl_state
+      |> Spark.Dsl.Transformer.get_entities([:actions])
+      |> Enum.map(& &1.name)
+
+    {:ok, Spark.Dsl.Transformer.persist(dsl_state, :action_names, action_names)}
+  end
+end
+```
+
+Persisted values can be retrieved at runtime via `Spark.Dsl.Extension.get_persisted/3`.
+
+## Verifiers
+
+Verifiers validate DSL state after the module has been compiled. They are read-only — they cannot modify the DSL state, only return `:ok`, `{:error, term}`, or `{:warn, warning}`. Because verifiers run post-compilation, they can safely reference other modules without creating compile-time dependencies between them.
+
+```elixir
+defmodule MyApp.Verifiers.ValidateConfig do
+  use Spark.Dsl.Verifier
+
+  def verify(dsl_state) do
+    name = Spark.Dsl.Verifier.get_option(dsl_state, [:my_section], :name)
+
+    if name do
+      :ok
+    else
+      {:error,
+       Spark.Error.DslError.exception(
+         message: "name is required",
+         path: [:my_section, :name],
+         module: Spark.Dsl.Verifier.get_persisted(dsl_state, :module)
+       )}
+    end
+  end
+end
+```
+
+Prefer verifiers over transformers when you only need to validate — they run later, see the final state, and their post-compilation timing avoids circular compile-time dependencies when referencing other Spark-based modules.
+
+See `Spark.Dsl.Verifier` for the full list of helper functions and return values.
 
 ## Introspection
 
