@@ -23,7 +23,7 @@ The overall execution order is:
 
 1. **Transformers** — run during compilation, in dependency order. Can read and modify any part of the DSL state.
 2. **Persisters** — run during compilation, after all Transformers have completed. Should only write to the persisted data map.
-3. **Verifiers** — run after the module is compiled. Read-only. Do not create compile-time dependencies between modules.
+3. **Verifiers** — run after the module is compiled. Read-only. Does not create compile-time dependencies between modules.
 
 All three are declared as options to `use Spark.Dsl.Extension`:
 
