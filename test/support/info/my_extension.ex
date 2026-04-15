@@ -20,6 +20,10 @@ defmodule MyExtension do
       handler: [
         type: {:or, [:string, {:function, args: [:map], returns: :string}]},
         required: false
+      ],
+      guard: [
+        type: {:list, {:tuple, [:atom, :atom, :atom]}},
+        required: false
       ]
     ],
     entities: []
