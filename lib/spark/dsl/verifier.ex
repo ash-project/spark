@@ -35,6 +35,18 @@ defmodule Spark.Dsl.Verifier do
 
   This module delegates read-only functions from `Spark.Dsl.Transformer`:
   `get_entities/2`, `get_option/3`, `fetch_option/3`, `get_persisted/2`.
+
+  ## Testing
+
+  See `Spark.Test` for ExUnit helpers that turn verifier errors and
+  warnings into structured data instead of stderr output, so tests can
+  pattern-match on them:
+
+  - `Spark.Test.dsl_errors/1`, `Spark.Test.assert_dsl_error/2`,
+    `Spark.Test.refute_dsl_errors/1` for `{:error, _}` returns and raised
+    `Spark.Error.DslError` values.
+  - `Spark.Test.dsl_warnings/1`, `Spark.Test.assert_dsl_warning/2`,
+    `Spark.Test.refute_dsl_warnings/1` for `{:warn, _}` returns.
   """
 
   @type warning() :: String.t() | {String.t(), :erl_anno.anno()}
