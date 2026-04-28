@@ -7,6 +7,7 @@ defmodule Spark.DslTest do
 
   import ExUnit.CaptureIO
   import Spark.CodeHelpers
+  import Spark.Test
 
   setup do
     debug_info? = Code.get_compiler_option(:debug_info)
@@ -294,25 +295,55 @@ defmodule Spark.DslTest do
     end
 
     test "verifiers are run" do
-      import ExUnit.CaptureIO
-
-      base_line = __ENV__.line
-
-      message =
-        capture_io(:stderr, fn ->
-          defmodule Gandalf do
+      err =
+        assert_dsl_error %Spark.Error.DslError{path: [:personal_details, :first_name]} do
+          defmodule Elixir.Gandalf do
             @moduledoc false
             use Spark.Test.Contact
 
             personal_details do
-              # Line offset: +10
               first_name("Gandalf")
+            end
+          end
+        end
+
+      assert err.message =~ "Cannot be gandalf"
+      assert err.location != nil
+    end
+
+    test "verifier warnings are emitted" do
+      {message, _location} =
+        assert_dsl_warning {_, _} do
+          defmodule Elixir.VerifierWarningEmitter do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:bare)
+            end
+          end
+        end
+
+      assert message =~ "fixture warning"
+    end
+
+    test "verifier warnings without a test collector go to stderr" do
+      Process.delete({Spark.Dsl, :test_collector})
+
+      stderr =
+        capture_io(:stderr, fn ->
+          defmodule Elixir.VerifierWarningStderr do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:bare)
             end
           end
         end)
 
-      assert message =~ "Cannot be gandalf"
-      assert message =~ "~~~"
+      assert stderr =~ "fixture warning"
+      refute_received {Spark.Dsl, :verifier_warnings, _, _}
     end
 
     test "extensions can add entities to other entities extensions" do
@@ -335,18 +366,21 @@ defmodule Spark.DslTest do
     end
 
     test "identifiers are honored" do
-      import ExUnit.CaptureIO
+      err =
+        assert_dsl_error %Spark.Error.DslError{path: [:presets, :foo]} do
+          defmodule Elixir.Squidward do
+            @moduledoc false
+            use Spark.Test.Contact
 
-      assert capture_io(:stderr, fn ->
-               defmodule Squidward do
-                 use Spark.Test.Contact
+            presets do
+              preset(:foo)
+              preset(:foo)
+            end
+          end
+        end
 
-                 presets do
-                   preset(:foo)
-                   preset(:foo)
-                 end
-               end
-             end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+      assert err.message =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+      assert err.location != nil
     end
 
     test "singleton entities are validated" do
@@ -395,23 +429,25 @@ defmodule Spark.DslTest do
     end
 
     test "section singleton_entity_keys rejects multiple entities" do
-      import ExUnit.CaptureIO
+      err =
+        assert_dsl_error %Spark.Error.DslError{path: [:singleton_section]} do
+          defmodule Elixir.SectionSingletonMultiple do
+            @moduledoc false
+            use Spark.Test.Contact
 
-      assert capture_io(:stderr, fn ->
-               defmodule SectionSingletonMultiple do
-                 @moduledoc false
-                 use Spark.Test.Contact
+            singleton_section do
+              singleton(:first)
+              singleton(:second)
+            end
 
-                 singleton_section do
-                   singleton(:first)
-                   singleton(:second)
-                 end
+            personal_details do
+              first_name("Zach")
+            end
+          end
+        end
 
-                 personal_details do
-                   first_name("Zach")
-                 end
-               end
-             end) =~ "Expected at most one singleton"
+      assert err.message =~ "Expected at most one singleton"
+      assert err.location != nil
     end
   end
 
@@ -810,20 +846,22 @@ defmodule Spark.DslTest do
     end
 
     test "extensions honor identifiers when adding entities to other entities extensions" do
-      import ExUnit.CaptureIO
+      err =
+        assert_dsl_error %Spark.Error.DslError{path: [:presets, :foo]} do
+          defmodule Elixir.Doc do
+            @moduledoc false
+            use Spark.Test.Contact,
+              extensions: [Spark.Test.ContactPatcher]
 
-      assert capture_io(:stderr, fn ->
-               defmodule Doc do
-                 @moduledoc false
-                 use Spark.Test.Contact,
-                   extensions: [Spark.Test.ContactPatcher]
+            presets do
+              preset(:foo)
+              special_preset(:foo)
+            end
+          end
+        end
 
-                 presets do
-                   preset(:foo)
-                   special_preset(:foo)
-                 end
-               end
-             end) =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+      assert err.message =~ "Got duplicate Spark.Test.Contact.Dsl.Preset: foo"
+      assert err.location != nil
     end
   end
 
@@ -969,27 +1007,26 @@ defmodule Spark.DslTest do
 
   describe "error location tracking" do
     test "duplicate entity errors include location information" do
-      import ExUnit.CaptureIO
+      err =
+        assert_dsl_error %Spark.Error.DslError{path: [:presets, :duplicate_test]} do
+          defmodule Elixir.LocationTestDuplicate do
+            @moduledoc false
+            use Spark.Test.Contact
 
-      error_output =
-        capture_io(:stderr, fn ->
-          try do
-            defmodule LocationTestDuplicate do
-              use Spark.Test.Contact
-
-              presets do
-                preset(:duplicate_test)
-                preset(:duplicate_test)
-              end
+            presets do
+              preset(:duplicate_test)
+              preset(:duplicate_test)
             end
-          rescue
-            _ -> :ok
           end
-        end)
+        end
 
-      # Should include the file and line information
-      assert error_output =~ "dsl_test.exs"
-      assert error_output =~ "Got duplicate"
+      assert err.message =~ "Got duplicate"
+      assert err.location != nil
+
+      assert err.location
+             |> :erl_anno.file()
+             |> to_string()
+             |> Path.basename() == "dsl_test.exs"
     end
 
     test "schema validation errors include location information" do
