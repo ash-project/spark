@@ -483,15 +483,26 @@ defmodule Spark.Dsl do
                     []
 
                   {:warn, warnings} ->
-                    warnings
-                    |> List.wrap()
-                    |> Enum.each(fn
-                      {warning, location} ->
-                        Spark.Warning.warn(warning, location, Macro.Env.stacktrace(__ENV__))
+                    collector = Process.get({Spark.Dsl, :test_collector})
 
-                      warning ->
-                        Spark.Warning.warn(warning, nil, Macro.Env.stacktrace(__ENV__))
-                    end)
+                    normalized =
+                      warnings
+                      |> List.wrap()
+                      |> Enum.map(fn
+                        {msg, loc} -> {msg, loc}
+                        msg -> {msg, nil}
+                      end)
+
+                    if is_pid(collector) do
+                      send(
+                        collector,
+                        {Spark.Dsl, :verifier_warnings, __MODULE__, normalized}
+                      )
+                    else
+                      Enum.each(normalized, fn {msg, loc} ->
+                        Spark.Warning.warn(msg, loc, Macro.Env.stacktrace(__ENV__))
+                      end)
+                    end
 
                     []
 
@@ -504,38 +515,46 @@ defmodule Spark.Dsl do
               end
             end)
 
-          case Enum.uniq(errors) do
-            [] ->
+          final_errors = Enum.uniq(errors)
+          collector = Process.get({Spark.Dsl, :test_collector})
+
+          cond do
+            final_errors == [] ->
+              __MODULE__
+              |> Spark.Dsl.Extension.run_transformers(
+                transformers_to_run,
+                @spark_dsl_config,
+                __ENV__
+              )
+
+            is_pid(collector) ->
+              send(collector, {Spark.Dsl, :verifier_errors, __MODULE__, final_errors})
               :ok
 
-            [%Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error] ->
-              reraise error, stacktrace
+            true ->
+              case final_errors do
+                [%Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error] ->
+                  reraise error, stacktrace
 
-            [error] ->
-              raise error
+                [error] ->
+                  raise error
 
-            errors ->
-              raise Spark.Error.DslError,
-                message:
-                  "Multiple Errors Occurred\n\n" <>
-                    Enum.map_join(errors, "\n---\n", fn
-                      %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error ->
-                        Exception.format(:error, error, stacktrace)
+                errors ->
+                  raise Spark.Error.DslError,
+                    message:
+                      "Multiple Errors Occurred\n\n" <>
+                        Enum.map_join(errors, "\n---\n", fn
+                          %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error ->
+                            Exception.format(:error, error, stacktrace)
 
-                      error ->
-                        {:current_stacktrace, stacktrace} =
-                          Process.info(self(), :current_stacktrace)
+                          error ->
+                            {:current_stacktrace, stacktrace} =
+                              Process.info(self(), :current_stacktrace)
 
-                        Exception.format(:error, error, stacktrace)
-                    end)
+                            Exception.format(:error, error, stacktrace)
+                        end)
+              end
           end
-
-          __MODULE__
-          |> Spark.Dsl.Extension.run_transformers(
-            transformers_to_run,
-            @spark_dsl_config,
-            __ENV__
-          )
         catch
           kind, %Spark.Error.DslError{location: location} = reason ->
             Spark.Warning.warn(
