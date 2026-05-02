@@ -17,13 +17,6 @@ defmodule Spark.Test.RefuteDslWarningsTest do
 
   import Spark.Test
 
-  setup do
-    debug_info? = Code.get_compiler_option(:debug_info)
-    Code.put_compiler_option(:debug_info, true)
-    on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
-    :ok
-  end
-
   describe "refute_dsl_warnings/1" do
     test "passes when block defines no DSL modules" do
       assert refute_dsl_warnings(do: :ok) == :ok
@@ -87,6 +80,22 @@ defmodule Spark.Test.RefuteDslWarningsTest do
 
       assert failure.message =~ "RefuteWarnMultiOne"
       assert failure.message =~ "RefuteWarnMultiTwo"
+    end
+
+    test "passes when a verifier returns an empty warning list" do
+      result =
+        refute_dsl_warnings do
+          defmodule Elixir.RefuteWarnEmpty do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:empty)
+            end
+          end
+        end
+
+      assert result == :ok
     end
   end
 end

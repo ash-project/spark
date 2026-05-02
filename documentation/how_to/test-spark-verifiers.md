@@ -147,7 +147,9 @@ The same three helpers exist (`dsl_warnings/1`, `assert_dsl_warning/2,/1`,
 **Warnings are normalized to `{message, location | nil}` tuples**, not
 `Spark.Error.DslError` structs. A bare-string warning `{:warn, "msg"}`
 becomes `{"msg", nil}`; a tuple-form warning `{:warn, {"msg", anno}}`
-preserves the location.
+preserves the location. Source annotations require `debug_info` to be
+enabled for tests — see [Asserting on source
+annotations](#asserting-on-source-annotations) below.
 
 ```elixir
 test "deprecated option emits a warning" do
@@ -188,6 +190,19 @@ errors counterparts, just with the warning payload shape.
 - **Transformer warnings** — `{:warn, dsl_state, warnings}` returns from
   `Spark.Dsl.Transformer.transform/1` flow through a separate code path
   and are not collected.
+
+## Asserting on source annotations
+
+Spark only captures `:erl_anno.anno()` when `debug_info` is enabled. To
+enable it for runtime modules compiled inside the helpers, add the
+following to your `mix.exs`:
+
+```elixir
+test_elixirc_options: [debug_info: true]
+```
+
+Without it, `location` in `{message, location}` payloads is `nil` even when
+the verifier passes the anno correctly.
 
 ## Async safety
 

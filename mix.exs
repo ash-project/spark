@@ -22,6 +22,7 @@ defmodule Spark.MixProject do
           parser_columns: true
         ]
       ],
+      test_elixirc_options: [debug_info: true],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),

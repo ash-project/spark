@@ -18,13 +18,6 @@ defmodule Spark.Test.AssertDslWarningTest do
 
   import Spark.Test
 
-  setup do
-    debug_info? = Code.get_compiler_option(:debug_info)
-    Code.put_compiler_option(:debug_info, true)
-    on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
-    :ok
-  end
-
   describe "assert_dsl_warning/2" do
     test "passes when a matching warning exists and returns the matched payload" do
       payload =

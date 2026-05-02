@@ -349,6 +349,9 @@ defmodule Spark.Test do
   @doc false
   def __drain_warnings__(acc) do
     receive do
+      {Spark.Dsl, :verifier_warnings, _mod, []} ->
+        __drain_warnings__(acc)
+
       {Spark.Dsl, :verifier_warnings, mod, payloads} ->
         __drain_warnings__([{mod, payloads} | acc])
     after
