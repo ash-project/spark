@@ -32,13 +32,6 @@ defmodule Spark.Dsl.TestCollectorTest do
 
   import ExUnit.CaptureIO
 
-  setup do
-    debug_info? = Code.get_compiler_option(:debug_info)
-    Code.put_compiler_option(:debug_info, true)
-    on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
-    :ok
-  end
-
   describe "default path (no collector flag)" do
     test "single verifier error is rendered as a stderr warning" do
       # Defensive: ensure no flag leaked into this process.

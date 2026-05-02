@@ -340,7 +340,6 @@ defmodule Spark.Test do
   @doc false
   def __drain_errors__(acc) do
     receive do
-      {Spark.Dsl, :verifier_errors, _mod, []} -> __drain_errors__(acc)
       {Spark.Dsl, :verifier_errors, mod, errs} -> __drain_errors__([{mod, errs} | acc])
     after
       0 -> Enum.reverse(acc)

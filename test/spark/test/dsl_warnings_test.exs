@@ -18,13 +18,6 @@ defmodule Spark.Test.DslWarningsTest do
 
   import Spark.Test
 
-  setup do
-    debug_info? = Code.get_compiler_option(:debug_info)
-    Code.put_compiler_option(:debug_info, true)
-    on_exit(fn -> Code.put_compiler_option(:debug_info, debug_info?) end)
-    :ok
-  end
-
   describe "dsl_warnings/1" do
     test "empty block returns empty list" do
       assert dsl_warnings(do: :ok) == []
@@ -207,6 +200,47 @@ defmodule Spark.Test.DslWarningsTest do
 
       assert [{DslWarningsCrossDrain, [{"fixture warning", nil}]}] = result
       refute_received {Spark.Dsl, :verifier_errors, _, _}
+    end
+
+    test "modules whose verifiers return an empty warning list produce no entry" do
+      result =
+        dsl_warnings do
+          defmodule Elixir.DslWarningsEmpty do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:empty)
+            end
+          end
+        end
+
+      assert result == []
+    end
+
+    test "modules with empty warnings are filtered out of mixed results" do
+      result =
+        dsl_warnings do
+          defmodule Elixir.DslWarningsMixedEmpty do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:empty)
+            end
+          end
+
+          defmodule Elixir.DslWarningsMixedActual do
+            @moduledoc false
+            use Spark.Test.CollectorFixture
+
+            fixture do
+              trigger_warning(:bare)
+            end
+          end
+        end
+
+      assert [{DslWarningsMixedActual, [{"fixture warning", nil}]}] = result
     end
   end
 end

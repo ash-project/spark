@@ -24,7 +24,7 @@ defmodule Spark.Test.CollectorFixture do
       schema: [
         trigger_error: [type: :boolean, default: false],
         trigger_warning: [
-          type: {:in, [false, :bare, :tuple, :multi]},
+          type: {:in, [false, :empty, :bare, :tuple, :multi]},
           default: false
         ]
       ]
@@ -56,6 +56,9 @@ defmodule Spark.Test.CollectorFixture do
         case Spark.Dsl.Verifier.get_option(dsl, [:fixture], :trigger_warning) do
           false ->
             :ok
+
+          :empty ->
+            {:warn, []}
 
           :bare ->
             {:warn, "fixture warning"}
