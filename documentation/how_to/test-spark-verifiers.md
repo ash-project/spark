@@ -189,6 +189,19 @@ errors counterparts, just with the warning payload shape.
   `Spark.Dsl.Transformer.transform/1` flow through a separate code path
   and are not collected.
 
+## Asserting on source annotations
+
+Spark only captures `:erl_anno.anno()` when `debug_info` is on. Modules
+compiled at runtime inside the helpers don't inherit Mix's project options,
+so add this to your `mix.exs`:
+
+```elixir
+test_elixirc_options: [debug_info: true]
+```
+
+Without it, `location` in `{message, location}` payloads is `nil` even when
+the verifier passes the anno correctly.
+
 ## Async safety
 
 The helpers are safe in `async: true` ExUnit tests. The collection
