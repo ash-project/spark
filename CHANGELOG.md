@@ -12,6 +12,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.0](https://github.com/ash-project/spark/compare/v2.6.1...v2.7.0) (2026-05-04)
+
+
+
+
+### Features:
+
+* add Spark.Test for testing verifier errors and warnings as data (#272) by alfieV
+
+### Bug Fixes:
+
+* shuffle optional args to the end properly by Zach Daniel
+
+* Spark.Test now ignores empty warnings  (#277) by alfieV
+
+* fixed info generator to handle tuples of more than 2 elements (#270) by Matt Beanland
+
 ## [v2.6.1](https://github.com/ash-project/spark/compare/v2.6.0...v2.6.1) (2026-03-25)
 
 
