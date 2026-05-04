@@ -1925,8 +1925,20 @@ defmodule Spark.Dsl.Extension do
 
         keyword =
           if has_optional_args_before? && replaced_required_arg? do
+            first_optional_index =
+              Enum.find_index(entity_args, fn
+                {:optional, _} -> true
+                {:optional, _, _} -> true
+                _ -> false
+              end) || 0
+
             shifting =
-              Enum.take(entity_arg_names, shift_right_until_index + 1)
+              entity_arg_names
+              |> Enum.with_index()
+              |> Enum.filter(fn {_, idx} ->
+                idx >= first_optional_index and idx <= shift_right_until_index
+              end)
+              |> Enum.map(&elem(&1, 0))
 
             case shifting do
               [] ->
