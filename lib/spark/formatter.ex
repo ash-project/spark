@@ -554,8 +554,6 @@ else
     """
     @behaviour Mix.Tasks.Format
 
-    require Logger
-
     def features(_opts) do
       [extensions: [".ex", ".exs"]]
     end

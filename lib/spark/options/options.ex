@@ -1823,10 +1823,6 @@ defmodule Spark.Options do
     {:ok, {:mfa_or_fun, integer}}
   end
 
-  def validate_type(:struct) do
-    {:ok, :struct}
-  end
-
   def validate_type({:struct, module}) when is_atom(module) do
     {:ok, {:struct, module}}
   end
@@ -1967,14 +1963,6 @@ defmodule Spark.Options do
     {:ok, {:map, valid_key_type, valid_values_type}}
   catch
     {:error, reason} -> {:error, reason}
-  end
-
-  def validate_type({:struct, struct_name}) when is_atom(struct_name) do
-    {:ok, {:struct, struct_name}}
-  end
-
-  def validate_type({:struct, struct_name}) do
-    {:error, "invalid struct_name for :struct, expected atom, got #{inspect(struct_name)}"}
   end
 
   def validate_type(value) do
