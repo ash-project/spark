@@ -534,9 +534,6 @@ defmodule Spark.Options.Docs do
       {:mfa_or_fun, arity} ->
         quote do: unquote(type_to_spec(:mfa)) | unquote(type_to_spec({:fun, arity}))
 
-      {:struct, module} ->
-        quote do: unquote(module).t()
-
       {:wrap_list, type} ->
         quote do: unquote(type_to_spec(type)) | [unquote(type_to_spec(type))]
 

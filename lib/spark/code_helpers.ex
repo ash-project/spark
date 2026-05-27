@@ -187,31 +187,6 @@ defmodule Spark.CodeHelpers do
     end
   end
 
-  def lift_functions(value, key, caller) when is_list(value) do
-    if Keyword.keyword?(value) do
-      Enum.reduce(value, {[], nil}, fn {k, v}, {keyword, funs} ->
-        {v, functions} = lift_functions(v, key, caller)
-
-        funs =
-          if functions do
-            quote do
-              unquote(funs)
-              unquote(functions)
-            end
-          else
-            funs
-          end
-
-        {[{k, v} | keyword], funs}
-      end)
-      |> then(fn {keyword, funs} ->
-        {Enum.reverse(keyword), funs}
-      end)
-    else
-      {value, nil}
-    end
-  end
-
   def lift_functions({:&, _, [{:/, _, [{{:., _, _}, _, _}, _]}]} = value, _key, _caller),
     do: {value, nil}
 
