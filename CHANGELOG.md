@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.1](https://github.com/ash-project/spark/compare/v2.7.0...v2.7.1) (2026-06-05)
+
+
+
+
+### Bug Fixes:
+
+* fix elixir 1.20 warning by Zach Daniel
+
+* resolve Elixir 1.20 compilation warnings (#278) by Gilbert
+
 ## [v2.7.0](https://github.com/ash-project/spark/compare/v2.6.1...v2.7.0) (2026-05-04)
 
 
