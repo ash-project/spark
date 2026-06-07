@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.2](https://github.com/ash-project/spark/compare/v2.7.1...v2.7.2) (2026-06-07)
+
+
+
+
+### Bug Fixes:
+
+* revert pmap introduction (#282) by nxy7
+
 ## [v2.7.1](https://github.com/ash-project/spark/compare/v2.7.0...v2.7.1) (2026-06-05)
 
 
