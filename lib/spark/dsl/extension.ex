@@ -2078,7 +2078,7 @@ defmodule Spark.Dsl.Extension do
         Task.async(fun)
 
       _ ->
-        Kernel.ParallelCompiler.pmap([nil], fn _ -> fun.() end)
+        Kernel.ParallelCompiler.async(fun)
     end
   end
 
