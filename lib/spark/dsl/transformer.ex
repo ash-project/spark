@@ -90,16 +90,14 @@ defmodule Spark.Dsl.Transformer do
   end
 
   @doc """
-  Runs the function in an async compiler.
+  Queues the function to run in an async compiler.
 
   Use this for compiling new modules and having them compiled
   efficiently asynchronously.
   """
   def async_compile(dsl, fun) do
-    task = Spark.Dsl.Extension.do_async_compile(fun)
-
-    tasks = get_persisted(dsl, :spark_compile_tasks, [])
-    persist(dsl, :spark_compile_tasks, [task | tasks])
+    funs = get_persisted(dsl, :spark_compile_funs, [])
+    persist(dsl, :spark_compile_funs, [fun | funs])
   end
 
   @doc """

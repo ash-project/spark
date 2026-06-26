@@ -13,7 +13,7 @@ defmodule Spark.MixProject do
     [
       app: :spark,
       version: @version,
-      elixir: "~> 1.15",
+      elixir: "~> 1.16",
       elixirc_options: [
         warnings_as_errors: true,
         ignore_module_conflict: Mix.env() == :test,
