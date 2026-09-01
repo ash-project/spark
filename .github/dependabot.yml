@@ -5,6 +5,10 @@
 ---
 updates:
   - directory: /
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
     package-ecosystem: mix
     schedule:
       interval: monthly
