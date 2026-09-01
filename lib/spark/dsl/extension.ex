@@ -709,7 +709,7 @@ defmodule Spark.Dsl.Extension do
             spark_dsl_config,
             __ENV__
           )
-          |> Spark.Dsl.Extension.await_tasks()
+          |> Spark.Dsl.Extension.await_persisted_compile_funs()
         rescue
           e in Spark.Error.DslError ->
             if e.location do
@@ -739,9 +739,9 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def await_tasks(dsl) do
-    Task.await_many(dsl[:persist][:spark_compile_tasks] || [], :infinity)
-    %{dsl | persist: Map.delete(dsl.persist, :spark_compile_tasks)}
+  def await_persisted_compile_funs(dsl) do
+    await_compile_funs(dsl[:persist][:spark_compile_funs] || [])
+    %{dsl | persist: Map.delete(dsl.persist, :spark_compile_funs)}
   end
 
   def run_transformers(mod, transformers, spark_dsl_config, env) do
@@ -918,7 +918,7 @@ defmodule Spark.Dsl.Extension do
           end)
       end)
 
-      Spark.Dsl.Extension.await_all_tasks(agent)
+      Spark.Dsl.Extension.await_all_compile_funs(agent)
 
       Agent.stop(agent)
     end
@@ -2012,7 +2012,7 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def await_all_tasks(agent) do
+  def await_all_compile_funs(agent) do
     Agent.get_and_update(
       agent,
       fn state ->
@@ -2021,7 +2021,7 @@ defmodule Spark.Dsl.Extension do
             {:stop, []}
 
           funs ->
-            {{:tasks, funs}, []}
+            {{:compile_funs, funs}, []}
         end
       end,
       :infinity
@@ -2030,27 +2030,25 @@ defmodule Spark.Dsl.Extension do
       :stop ->
         :ok
 
-      {:tasks, funs} ->
-        funs
-        |> Enum.map(&do_async_compile/1)
-        |> Task.await_many(:infinity)
+      {:compile_funs, funs} ->
+        await_compile_funs(funs)
 
-        await_all_tasks(agent)
+        await_all_compile_funs(agent)
     end
   end
 
   @doc false
-  def async_compile({agent, _pid}, func) do
+  def async_compile({agent, _pid}, fun) do
     if @parallel_compile do
       Agent.update(
         agent,
         fn funs ->
-          [func | funs]
+          [fun | funs]
         end,
         :infinity
       )
     else
-      func.()
+      fun.()
     end
   end
 
@@ -2072,13 +2070,17 @@ defmodule Spark.Dsl.Extension do
   end
 
   @doc false
-  def do_async_compile(fun) do
+  def await_compile_funs([]), do: []
+
+  def await_compile_funs(funs) do
     case :erlang.get(:elixir_compiler_info) do
       :undefined ->
-        Task.async(fun)
+        funs
+        |> Enum.map(&Task.async/1)
+        |> Task.await_many(:infinity)
 
       _ ->
-        Kernel.ParallelCompiler.async(fun)
+        Kernel.ParallelCompiler.pmap(funs, fn compile_fun -> compile_fun.() end)
     end
   end
 
