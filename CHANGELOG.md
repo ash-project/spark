@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.3](https://github.com/ash-project/spark/compare/v2.7.2...v2.7.3) (2026-09-15)
+
+
+
+
+### Bug Fixes:
+
+* properly apply `:quoted` to all keyword lists by Zach Daniel
+
+* use pmap for parallel compilation (#291) by Jechol Lee
+
 ## [v2.7.2](https://github.com/ash-project/spark/compare/v2.7.1...v2.7.2) (2026-06-07)
 
 
