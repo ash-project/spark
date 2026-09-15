@@ -1455,6 +1455,8 @@ defmodule Spark.Dsl.Extension do
                     "Expected an options list in #{entity.name} got #{Macro.to_string(opts)}"
             end
 
+            opts = Spark.Dsl.Extension.escape_quoted(opts, entity_schema, __CALLER__)
+
             {opts, opt_funs} =
               Enum.reduce(opts, {[], []}, fn {key, value}, {keyword, opt_funs} ->
                 {value, function} = Spark.CodeHelpers.lift_functions(value, key, __CALLER__)

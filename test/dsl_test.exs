@@ -294,6 +294,33 @@ defmodule Spark.DslTest do
                )
     end
 
+    test "quoted values supplied as entity keyword options are stored" do
+      defmodule RonWeasley do
+        @moduledoc false
+        use Spark.Test.Contact
+
+        presets do
+          preset_with_quoted(name <> "fred", default_message: unknown_call(:value))
+        end
+      end
+
+      assert [preset] = Spark.Test.Contact.Info.presets(RonWeasley)
+
+      assert strip_meta(preset.name) ==
+               strip_meta(
+                 quote do
+                   name <> "fred"
+                 end
+               )
+
+      assert strip_meta(preset.default_message) ==
+               strip_meta(
+                 quote do
+                   unknown_call(:value)
+                 end
+               )
+    end
+
     test "verifiers are run" do
       err =
         assert_dsl_error %Spark.Error.DslError{path: [:personal_details, :first_name]} do
