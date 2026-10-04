@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.5](https://github.com/ash-project/spark/compare/v2.7.4...v2.7.5) (2026-10-04)
+
+
+
+
+### Improvements:
+
+* don't incur compile dependencies for &Mod.fun/arity values by Zach Daniel
+
 ## [v2.7.4](https://github.com/ash-project/spark/compare/v2.7.3...v2.7.4) (2026-10-04)
 
 
