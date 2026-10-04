@@ -245,7 +245,6 @@ defmodule Spark.ElixirSense.PluginTest do
                args_list: [],
                summary: "",
                snippet: nil,
-               def_arity: 0,
                visibility: :public,
                needed_import: nil,
                needed_require: nil
