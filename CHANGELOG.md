@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.6](https://github.com/ash-project/spark/compare/v2.7.5...v2.7.6) (2026-10-04)
+
+
+
+
+### Improvements:
+
+* add :depend_on_only_behaviour_modules by Zach Daniel
+
 ## [v2.7.5](https://github.com/ash-project/spark/compare/v2.7.4...v2.7.5) (2026-10-04)
 
 
