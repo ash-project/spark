@@ -120,9 +120,16 @@ defmodule Spark.Options.Validator do
           @schema
         end
 
+        # Generating docs is expensive and callers (e.g. code interfaces) may ask for
+        # them for every function they define, so the default docs are built once.
+        @default_docs Spark.Options.docs(@schema |> Keyword.take(@valid_options), [])
+
         @spec docs(Keyword.t()) :: String.t()
         @spec docs() :: String.t()
-        def docs(opts \\ []) do
+        def docs(opts \\ [])
+        def docs([]), do: @default_docs
+
+        def docs(opts) do
           Spark.Options.docs(@schema |> Keyword.take(@valid_options), opts)
         end
 

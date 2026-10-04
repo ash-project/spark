@@ -253,6 +253,12 @@ if Code.ensure_loaded?(Igniter) do
     def has_extension(igniter, module, type, key, extension) do
       case Igniter.Project.Module.find_module(igniter, module) do
         {:ok, {igniter, _source, zipper}} ->
+          zipper =
+            case Igniter.Code.Common.move_to_do_block(zipper) do
+              {:ok, zipper} -> zipper
+              _ -> zipper
+            end
+
           with {:ok, zipper} <- Igniter.Code.Module.move_to_use(zipper, type),
                {:ok, zipper} <- Igniter.Code.Function.move_to_nth_argument(zipper, 1),
                {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key) do

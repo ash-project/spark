@@ -465,113 +465,13 @@ defmodule Spark.Dsl do
 
         @doc false
         def __verify_spark_dsl__(module) do
-          unquote(parent).verify(module, @opts)
-
-          transformers_to_run =
-            @extensions
-            |> Enum.flat_map(& &1.transformers())
-            |> Spark.Dsl.Transformer.sort()
-            |> Enum.filter(& &1.after_compile?())
-
-          errors =
-            @extensions
-            |> Enum.flat_map(& &1.verifiers())
-            |> Enum.flat_map(fn verifier ->
-              try do
-                case verifier.verify(@spark_dsl_config) do
-                  :ok ->
-                    []
-
-                  {:warn, warnings} ->
-                    collector = Process.get({Spark.Dsl, :test_collector})
-
-                    normalized =
-                      warnings
-                      |> List.wrap()
-                      |> Enum.map(fn
-                        {msg, loc} -> {msg, loc}
-                        msg -> {msg, nil}
-                      end)
-
-                    if is_pid(collector) do
-                      send(
-                        collector,
-                        {Spark.Dsl, :verifier_warnings, __MODULE__, normalized}
-                      )
-                    else
-                      Enum.each(normalized, fn {msg, loc} ->
-                        Spark.Warning.warn(msg, loc, Macro.Env.stacktrace(__ENV__))
-                      end)
-                    end
-
-                    []
-
-                  {:error, error} ->
-                    List.wrap(error)
-                end
-              rescue
-                e ->
-                  [e]
-              end
-            end)
-
-          final_errors = Enum.uniq(errors)
-          collector = Process.get({Spark.Dsl, :test_collector})
-
-          cond do
-            final_errors == [] ->
-              __MODULE__
-              |> Spark.Dsl.Extension.run_transformers(
-                transformers_to_run,
-                @spark_dsl_config,
-                __ENV__
-              )
-
-            is_pid(collector) ->
-              send(collector, {Spark.Dsl, :verifier_errors, __MODULE__, final_errors})
-              :ok
-
-            true ->
-              case final_errors do
-                [%Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error] ->
-                  reraise error, stacktrace
-
-                [error] ->
-                  raise error
-
-                errors ->
-                  raise Spark.Error.DslError,
-                    message:
-                      "Multiple Errors Occurred\n\n" <>
-                        Enum.map_join(errors, "\n---\n", fn
-                          %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error ->
-                            Exception.format(:error, error, stacktrace)
-
-                          error ->
-                            {:current_stacktrace, stacktrace} =
-                              Process.info(self(), :current_stacktrace)
-
-                            Exception.format(:error, error, stacktrace)
-                        end)
-              end
-          end
-        catch
-          kind, %Spark.Error.DslError{location: location} = reason ->
-            Spark.Warning.warn(
-              Exception.format(kind, reason, __STACKTRACE__),
-              location,
-              __STACKTRACE__
-            )
-
-          kind, reason ->
-            Spark.Warning.warn(
-              """
-              Exception while verifying `#{inspect(__MODULE__)}:`
-              #{Exception.format(kind, reason, __STACKTRACE__)}
-              """,
-              nil,
-              __STACKTRACE__
-            )
+          Spark.Dsl.__verify_spark_dsl__(
+            unquote(parent),
+            module,
+            @opts,
+            @extensions,
+            __ENV__
+          )
         end
       end
 
@@ -627,7 +527,8 @@ defmodule Spark.Dsl do
 
         @doc false
         for {path, %{entities: entities}} <- @spark_dsl_config do
-          def entities(unquote(path)), do: unquote(Macro.escape(entities || []))
+          def entities(unquote(path)),
+            do: Spark.Dsl.opaque(unquote(Macro.escape(entities || [])))
         end
 
         def entities(_), do: []
@@ -735,7 +636,7 @@ defmodule Spark.Dsl do
 
         @doc false
         def persisted do
-          @persisted
+          Spark.Dsl.opaque(@persisted)
         end
 
         cond do
@@ -755,6 +656,126 @@ defmodule Spark.Dsl do
       end
 
     [code, parent_code, verify_code]
+  end
+
+  @doc false
+  # Identity function used to wrap the large DSL literals returned by generated
+  # accessors. The type checker infers its return as `dynamic()`, so the literal's
+  # full type isn't stored in the signature of the accessor (or of every function
+  # that returns its result), which would otherwise bloat compiled modules.
+  def opaque(value), do: value
+
+  @doc false
+  def __verify_spark_dsl__(parent, module, opts, extensions, env) do
+    parent.verify(module, opts)
+
+    transformers_to_run =
+      extensions
+      |> Enum.flat_map(& &1.transformers())
+      |> Spark.Dsl.Transformer.sort()
+      |> Enum.filter(& &1.after_compile?())
+
+    dsl_config = module.spark_dsl_config()
+
+    errors =
+      extensions
+      |> Enum.flat_map(& &1.verifiers())
+      |> Enum.flat_map(fn verifier ->
+        try do
+          case verifier.verify(dsl_config) do
+            :ok ->
+              []
+
+            {:warn, warnings} ->
+              collector = Process.get({Spark.Dsl, :test_collector})
+
+              normalized =
+                warnings
+                |> List.wrap()
+                |> Enum.map(fn
+                  {msg, loc} -> {msg, loc}
+                  msg -> {msg, nil}
+                end)
+
+              if is_pid(collector) do
+                send(
+                  collector,
+                  {Spark.Dsl, :verifier_warnings, module, normalized}
+                )
+              else
+                Enum.each(normalized, fn {msg, loc} ->
+                  Spark.Warning.warn(msg, loc, Macro.Env.stacktrace(env))
+                end)
+              end
+
+              []
+
+            {:error, error} ->
+              List.wrap(error)
+          end
+        rescue
+          e ->
+            [e]
+        end
+      end)
+
+    final_errors = Enum.uniq(errors)
+    collector = Process.get({Spark.Dsl, :test_collector})
+
+    cond do
+      final_errors == [] ->
+        module
+        |> Spark.Dsl.Extension.run_transformers(
+          transformers_to_run,
+          dsl_config,
+          env
+        )
+
+      is_pid(collector) ->
+        send(collector, {Spark.Dsl, :verifier_errors, module, final_errors})
+        :ok
+
+      true ->
+        case final_errors do
+          [%Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error] ->
+            reraise error, stacktrace
+
+          [error] ->
+            raise error
+
+          errors ->
+            raise Spark.Error.DslError,
+              message:
+                "Multiple Errors Occurred\n\n" <>
+                  Enum.map_join(errors, "\n---\n", fn
+                    %Spark.Error.DslError{stacktrace: %{stacktrace: stacktrace}} = error ->
+                      Exception.format(:error, error, stacktrace)
+
+                    error ->
+                      {:current_stacktrace, stacktrace} =
+                        Process.info(self(), :current_stacktrace)
+
+                      Exception.format(:error, error, stacktrace)
+                  end)
+        end
+    end
+  catch
+    kind, %Spark.Error.DslError{location: location} = reason ->
+      Spark.Warning.warn(
+        Exception.format(kind, reason, __STACKTRACE__),
+        location,
+        __STACKTRACE__
+      )
+
+    kind, reason ->
+      Spark.Warning.warn(
+        """
+        Exception while verifying `#{inspect(module)}:`
+        #{Exception.format(kind, reason, __STACKTRACE__)}
+        """,
+        nil,
+        __STACKTRACE__
+      )
   end
 
   def is?(module, type) when is_atom(module) do

@@ -40,4 +40,56 @@ defmodule Spark.IgniterTest do
              """)
              |> Spark.Igniter.get_option(TedDansen, [:address, :street])
   end
+
+  describe "has_extension/5" do
+    test "is true when the module uses the extension" do
+      assert {_igniter, true} =
+               test_project()
+               |> Igniter.Project.Module.create_module(TedDansen, """
+                 use Spark.Test.Contact, extensions: [Spark.Test.Extension]
+
+                 contact do
+                   module(Bar.Baz)
+                 end
+               """)
+               |> Spark.Igniter.has_extension(
+                 TedDansen,
+                 Spark.Test.Contact,
+                 :extensions,
+                 Spark.Test.Extension
+               )
+    end
+
+    test "is true when the use is all there is in the module" do
+      assert {_igniter, true} =
+               test_project()
+               |> Igniter.Project.Module.create_module(TedDansen, """
+                 use Spark.Test.Contact, extensions: [Spark.Test.Extension]
+               """)
+               |> Spark.Igniter.has_extension(
+                 TedDansen,
+                 Spark.Test.Contact,
+                 :extensions,
+                 Spark.Test.Extension
+               )
+    end
+
+    test "is false when the module doesn't use the extension" do
+      assert {_igniter, false} =
+               test_project()
+               |> Igniter.Project.Module.create_module(TedDansen, """
+                 use Spark.Test.Contact, extensions: [Spark.Test.Other]
+
+                 contact do
+                   module(Bar.Baz)
+                 end
+               """)
+               |> Spark.Igniter.has_extension(
+                 TedDansen,
+                 Spark.Test.Contact,
+                 :extensions,
+                 Spark.Test.Extension
+               )
+    end
+  end
 end

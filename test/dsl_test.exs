@@ -501,13 +501,13 @@ defmodule Spark.DslTest do
       presets_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:presets])
       assert presets_anno != nil
       assert :erl_anno.location(presets_anno) == base_line + 6
-      assert :erl_anno.file(presets_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(presets_anno) == __ENV__.file
 
       # Check section annotation for :contact
       contact_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:contact])
       assert contact_anno != nil
       assert :erl_anno.location(contact_anno) == base_line + 10
-      assert :erl_anno.file(contact_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(contact_anno) == __ENV__.file
 
       # Check end_location if available (OTP 28+)
       if function_exported?(:erl_anno, :end_location, 1) do
@@ -550,14 +550,14 @@ defmodule Spark.DslTest do
 
       assert first_name_anno != nil
       assert :erl_anno.location(first_name_anno) == base_line + 7
-      assert :erl_anno.file(first_name_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(first_name_anno) == __ENV__.file
 
       last_name_anno =
         Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :last_name)
 
       assert last_name_anno != nil
       assert :erl_anno.location(last_name_anno) == base_line + 8
-      assert :erl_anno.file(last_name_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(last_name_anno) == __ENV__.file
 
       nicknames_anno =
         Spark.Dsl.Extension.get_opt_anno(dsl_state, [:personal_details], :nicknames)
@@ -604,8 +604,8 @@ defmodule Spark.DslTest do
       assert :erl_anno.location(first_anno) == base_line + 8
       assert :erl_anno.location(second_anno) == base_line + 13
 
-      assert :erl_anno.file(first_anno) == String.to_charlist(__ENV__.file)
-      assert :erl_anno.file(second_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(first_anno) == __ENV__.file
+      assert :erl_anno.file(second_anno) == __ENV__.file
     end
 
     test "nested entities capture annotations" do
@@ -629,11 +629,11 @@ defmodule Spark.DslTest do
 
       entity_anno = Spark.Dsl.Entity.anno(entity)
       assert :erl_anno.location(entity_anno) == base_line + 8
-      assert :erl_anno.file(entity_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(entity_anno) == __ENV__.file
 
       singleton_anno = Spark.Dsl.Entity.anno(entity.singleton)
       assert :erl_anno.location(singleton_anno) == base_line + 10
-      assert :erl_anno.file(singleton_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(singleton_anno) == __ENV__.file
     end
 
     test "annotations include end_location when available (OTP 28+)" do
@@ -754,8 +754,8 @@ defmodule Spark.DslTest do
       fragment_anno = Spark.Dsl.Entity.anno(fragment_entity)
       main_anno = Spark.Dsl.Entity.anno(main_entity)
 
-      assert String.to_charlist(__ENV__.file) == :erl_anno.file(fragment_anno)
-      assert String.to_charlist(__ENV__.file) == :erl_anno.file(main_anno)
+      assert __ENV__.file == :erl_anno.file(fragment_anno)
+      assert __ENV__.file == :erl_anno.file(main_anno)
     end
 
     test "introspection functions can extract annotations" do
@@ -782,7 +782,7 @@ defmodule Spark.DslTest do
       # Test get_section_anno function
       personal_details_anno = Spark.Dsl.Extension.get_section_anno(dsl_state, [:personal_details])
       assert :erl_anno.location(personal_details_anno) == base_line + 6
-      assert :erl_anno.file(personal_details_anno) == String.to_charlist(__ENV__.file)
+      assert :erl_anno.file(personal_details_anno) == __ENV__.file
 
       # Test get_opt_anno function
       first_name_anno =
