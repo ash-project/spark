@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.4](https://github.com/ash-project/spark/compare/v2.7.3...v2.7.4) (2026-10-04)
+
+
+
+
+### Improvements:
+
+* reduce module sizes and compile times by Zach Daniel
+
 ## [v2.7.3](https://github.com/ash-project/spark/compare/v2.7.2...v2.7.3) (2026-09-15)
 
 
