@@ -117,73 +117,42 @@ defmodule Spark.CodeHelpers do
   of above.
   """
   @spec lift_functions(Macro.t(), atom, Macro.Env.t()) :: Macro.t()
-  # (Don't) lift functions of the `&Module.function/arity` format
-  # This is a temporary hack to support keyword lists needed by Ash
   def lift_functions(value, key, caller) when is_list(value) do
-    if Keyword.keyword?(value) do
-      Enum.reduce(value, {[], nil}, fn {k, v}, {keyword, funs} ->
-        {v, functions} = lift_functions(v, key, caller)
+    lift_all(value, key, caller)
+  end
 
-        funs =
-          if functions do
-            quote do
-              unquote(funs)
-              unquote(functions)
-            end
-          else
-            funs
-          end
+  def lift_functions({left, right}, key, caller) do
+    {[left, right], funs} = lift_all([left, right], key, caller)
+    {{left, right}, funs}
+  end
 
-        {[{k, v} | keyword], funs}
-      end)
-      |> then(fn {keyword, funs} ->
-        {Enum.reverse(keyword), funs}
-      end)
-    else
-      {value, nil}
-    end
+  def lift_functions({:%{}, meta, pairs}, key, caller) when is_list(pairs) do
+    {pairs, funs} = lift_all(pairs, key, caller)
+    {{:%{}, meta, pairs}, funs}
   end
 
   # This is a temporary hack to support function calls needed by Ash
   def lift_functions({function, meta, args}, key, caller) when is_atom(meta) and is_list(args) do
-    if Keyword.keyword?(args) do
-      Enum.reduce(args, {[], nil}, fn {k, v}, {keyword, funs} ->
-        {v, functions} = lift_functions(v, key, caller)
+    {args, funs} = lift_all(args, key, caller)
+    {{function, meta, args}, funs}
+  end
 
-        funs =
-          if functions do
-            quote do
-              unquote(funs)
-              unquote(functions)
-            end
-          else
-            funs
-          end
+  # Functions of the `&Module.function/arity` format are not lifted, so that they
+  # remain comparable to the same capture elsewhere. Evaluating `&Module.function/arity`
+  # in the module body creates a compile time dependency on `Module`, so we
+  # build the (identical) capture with `Function.capture/3` instead.
+  def lift_functions(
+        {:&, _, [{:/, _, [{{:., _, [module, name]}, _, []}, arity]}]} = value,
+        _key,
+        caller
+      )
+      when is_atom(name) and is_integer(arity) do
+    case Spark.Dsl.Extension.expand_alias_no_require(module, caller) do
+      module when is_atom(module) ->
+        {quote(do: Function.capture(unquote(module), unquote(name), unquote(arity))), nil}
 
-        {[{k, v} | keyword], funs}
-      end)
-      |> then(fn {keyword, funs} ->
-        {{function, meta, Enum.reverse(keyword)}, funs}
-      end)
-    else
-      Enum.reduce(args, {[], nil}, fn v, {list, funs} ->
-        {v, functions} = lift_functions(v, key, caller)
-
-        funs =
-          if functions do
-            quote do
-              unquote(funs)
-              unquote(functions)
-            end
-          else
-            funs
-          end
-
-        {[v | list], funs}
-      end)
-      |> then(fn {list, funs} ->
-        {{function, meta, Enum.reverse(list)}, funs}
-      end)
+      _ ->
+        {value, nil}
     end
   end
 
@@ -327,6 +296,24 @@ defmodule Spark.CodeHelpers do
 
   # Ignore all other values.
   def lift_functions(value, _key, _caller), do: {value, nil}
+
+  defp lift_all(values, key, caller) do
+    Enum.map_reduce(values, nil, fn value, funs ->
+      {value, functions} = lift_functions(value, key, caller)
+
+      funs =
+        if functions do
+          quote do
+            unquote(funs)
+            unquote(functions)
+          end
+        else
+          funs
+        end
+
+      {value, funs}
+    end)
+  end
 
   # sobelow_skip ["DOS.BinToAtom"]
   defp generate_unique_function_name(value, key) do

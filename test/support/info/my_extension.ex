@@ -24,6 +24,10 @@ defmodule MyExtension do
       guard: [
         type: {:list, {:tuple, [:atom, :atom, :atom]}},
         required: false
+      ],
+      any_option: [
+        type: :any,
+        required: false
       ]
     ],
     entities: []
