@@ -5,7 +5,15 @@
 defmodule Spark.Dsl.Extension.EntityOption do
   @moduledoc false
 
-  def value_and_function(value, field, type, caller, modules, no_depend_modules) do
+  def value_and_function(
+        value,
+        field,
+        type,
+        caller,
+        modules,
+        no_depend_modules,
+        depend_on_only_behaviour_modules \\ []
+      ) do
     value =
       case type do
         :quoted ->
@@ -22,6 +30,9 @@ defmodule Spark.Dsl.Extension.EntityOption do
 
         field in no_depend_modules ->
           Spark.Dsl.Extension.expand_alias_no_require(value, caller)
+
+        field in depend_on_only_behaviour_modules ->
+          Spark.Dsl.Extension.expand_alias_behaviour_only(value, caller)
 
         true ->
           value

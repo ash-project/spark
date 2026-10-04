@@ -63,6 +63,8 @@ defmodule Spark.Builder.Entity do
     - `:imports` - Modules to import in the entity's DSL scope
     - `:modules` - Schema fields containing module references
     - `:no_depend_modules` - Module fields that should not create dependencies
+    - `:depend_on_only_behaviour_modules` - Fields holding a `Module` or `{Module, opts}` behaviour
+      reference, where only `Module` becomes a compile-time dependency
     - `:hide` - Fields to hide from documentation
   """
   @moduledoc since: "2.5.0"
@@ -92,6 +94,7 @@ defmodule Spark.Builder.Entity do
           imports: [module()],
           modules: [atom()],
           no_depend_modules: [atom()],
+          depend_on_only_behaviour_modules: [atom()],
           hide: [atom()],
           links: keyword([String.t()]) | nil,
           deprecations: keyword(String.t()),
@@ -116,7 +119,8 @@ defmodule Spark.Builder.Entity do
     docs: [type: :string, default: ""],
     imports: [type: {:list, :atom}, default: []],
     modules: [type: {:list, :atom}, default: []],
-    no_depend_modules: [type: {:list, :atom}, default: []]
+    no_depend_modules: [type: {:list, :atom}, default: []],
+    depend_on_only_behaviour_modules: [type: {:list, :atom}, default: []]
   ]
 
   @doc false

@@ -85,6 +85,7 @@ defmodule Spark.Dsl.Entity do
     modules: [],
     imports: [],
     no_depend_modules: [],
+    depend_on_only_behaviour_modules: [],
     schema: [],
     auto_set_fields: [],
     docs: ""
@@ -198,6 +199,8 @@ defmodule Spark.Dsl.Entity do
 
   @type no_depend_modules :: [atom]
 
+  @type depend_on_only_behaviour_modules :: [atom]
+
   @type recursive_as :: atom | nil
 
   @type singleton_entity_keys :: [atom]
@@ -219,6 +222,7 @@ defmodule Spark.Dsl.Entity do
           modules: modules(),
           name: name(),
           no_depend_modules: no_depend_modules(),
+          depend_on_only_behaviour_modules: depend_on_only_behaviour_modules(),
           recursive_as: recursive_as(),
           schema: Spark.Options.schema(),
           singleton_entity_keys: singleton_entity_keys(),

@@ -1487,6 +1487,9 @@ defmodule Spark.Dsl.Extension do
                     key in entity.no_depend_modules ->
                       Spark.Dsl.Extension.expand_alias_no_require(arg_value, __CALLER__)
 
+                    key in Map.get(entity, :depend_on_only_behaviour_modules, []) ->
+                      Spark.Dsl.Extension.expand_alias_behaviour_only(arg_value, __CALLER__)
+
                     true ->
                       arg_value
                   end
@@ -1551,6 +1554,9 @@ defmodule Spark.Dsl.Extension do
 
                   key in entity.no_depend_modules ->
                     {key, Spark.Dsl.Extension.expand_alias_no_require(value, __CALLER__)}
+
+                  key in Map.get(entity, :depend_on_only_behaviour_modules, []) ->
+                    {key, Spark.Dsl.Extension.expand_alias_behaviour_only(value, __CALLER__)}
 
                   true ->
                     {key, value}
@@ -1655,7 +1661,8 @@ defmodule Spark.Dsl.Extension do
                 unquote(Macro.escape(config[:type])),
                 __CALLER__,
                 unquote(entity.modules),
-                unquote(entity.no_depend_modules)
+                unquote(entity.no_depend_modules),
+                unquote(Map.get(entity, :depend_on_only_behaviour_modules, []))
               )
 
             key = unquote(key)
@@ -1771,6 +1778,30 @@ defmodule Spark.Dsl.Extension do
         other
     end)
   end
+
+  @doc """
+  Expands aliases like `expand_alias_no_require/2`, then adds a compile-time dependency on the
+  behaviour module of a `Module` or `{Module, opts}` value (or of each element of a list of them).
+  """
+  def expand_alias_behaviour_only(ast, env) do
+    expanded = expand_alias_no_require(ast, env)
+
+    if env.lexical_tracker do
+      expanded
+      |> behaviour_modules()
+      |> Enum.each(&Kernel.LexicalTracker.remote_dispatch(env.lexical_tracker, &1, :compile))
+    end
+
+    expanded
+  end
+
+  defp behaviour_modules(list) when is_list(list), do: Enum.flat_map(list, &behaviour_modules/1)
+  defp behaviour_modules({module, _opts}), do: behaviour_modules(module)
+
+  defp behaviour_modules(module) when is_atom(module) and module not in [nil, true, false],
+    do: [module]
+
+  defp behaviour_modules(_), do: []
 
   @doc false
   def do_expand(ast, env) do
