@@ -746,6 +746,7 @@ defmodule Spark.Dsl.Extension do
 
   def run_transformers(mod, transformers, spark_dsl_config, env) do
     spark_dsl_config = Map.update!(spark_dsl_config, :persist, &Map.put(&1, :env, env))
+    Spark.Dsl.Entity.put_module(mod)
 
     Enum.reduce_while(transformers, spark_dsl_config, fn transformer, dsl ->
       result =

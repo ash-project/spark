@@ -396,7 +396,7 @@ defmodule Spark.Dsl.Entity do
 
   def maybe_apply_identifier(struct, {:auto, :unique_integer})
       when is_map_key(struct, :__identifier__),
-      do: {:ok, %{struct | __identifier__: System.unique_integer()}}
+      do: {:ok, %{struct | __identifier__: auto_identifier()}}
 
   def maybe_apply_identifier(struct, {:auto, :unique_integer}),
     do: raise("#{inspect(struct.__struct__)} must have the `__identifier__` field!")
@@ -410,6 +410,30 @@ defmodule Spark.Dsl.Entity do
 
   def maybe_apply_identifier(struct, _name),
     do: raise("#{inspect(struct.__struct__)} must have the `__identifier__` field!")
+
+  @doc false
+  # Records the module whose DSL is being processed by this process, so that
+  # the entities built for it get identifiers another compilation of the same
+  # module agrees on.
+  def put_module(module), do: Process.put({__MODULE__, :module}, module)
+
+  # Entities built while a module compiles are numbered in the order they are
+  # built for that module, which is the same in every compilation, so the beam
+  # is reproducible. A `System.unique_integer/0` would differ from build to
+  # build, as would its position in any map keyed by it. Outside a module's
+  # compilation there is no such order, and the integer stays unique.
+  defp auto_identifier do
+    case Process.get({__MODULE__, :module}) do
+      nil ->
+        System.unique_integer()
+
+      module ->
+        key = {__MODULE__, :identifier, module}
+        number = Process.get(key, 0)
+        Process.put(key, number + 1)
+        {module, number}
+    end
+  end
 
   @doc false
   def transform(nil, built), do: {:ok, built}

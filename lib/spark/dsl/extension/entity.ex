@@ -99,6 +99,7 @@ defmodule Spark.Dsl.Extension.Entity do
         end)
       end)
 
+    Spark.Dsl.Entity.put_module(module)
     built = entity_builder.__build__(module, opts, nested_entities, anno, opts_anno)
 
     new_config = %{current_config | entities: current_config.entities ++ [built]}
