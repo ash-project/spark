@@ -5,14 +5,12 @@
 defmodule Spark.Dsl.Extension.SectionOption do
   @moduledoc false
 
-  def expand(config, value, caller) do
-    %{section_path: section_path, field: field, extension: extension} = config
+  def expand(%Spark.Dsl.Extension.OptionMacro.Config{} = config, value, caller) do
+    %{name: field, path: section_path, extension: extension} = config
 
     Spark.Dsl.Extension.OptionMacro.expand(
-      field,
-      value,
       config,
-      section_path,
+      value,
       caller,
       fn value, anno ->
         quote generated: true do
