@@ -453,7 +453,7 @@ defmodule Spark.Dsl.Extension do
       @after_verify Spark.Dsl.Extension
 
       @doc false
-      def sections, do: @_sections
+      def sections, do: Spark.Dsl.opaque(@_sections)
       @doc false
       def verifiers,
         do: [
@@ -470,7 +470,7 @@ defmodule Spark.Dsl.Extension do
       @doc false
       def transformers, do: @_transformers
       @doc false
-      def dsl_patches, do: @_dsl_patches
+      def dsl_patches, do: Spark.Dsl.opaque(@_dsl_patches)
       @doc false
       def add_extensions, do: @_add_extensions
     end
