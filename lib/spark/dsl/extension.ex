@@ -1747,13 +1747,9 @@ defmodule Spark.Dsl.Extension do
 
       {:__aliases__, _, parts} = node ->
         try do
-          # Dear Jose, I know you would hate this if you saw it 😢.
-          # I will propose a utility for doing this with a public
-          # API soon, but this had to do for the short term.
-
           Enum.flat_map(env.aliases, fn {alias_value, _destination} ->
-            if List.last(Module.split(alias_value)) ==
-                 to_string(List.first(parts)) do
+            if is_atom(List.first(parts)) and
+                 List.last(Module.split(alias_value)) == to_string(List.first(parts)) do
               [alias_value]
             else
               []
