@@ -5,6 +5,233 @@
 defmodule Spark.Dsl.Extension.Entity do
   @moduledoc false
 
+  @doc false
+  def build!(entity, section_path, module, opts, nested_entities, anno, opts_anno) do
+    case Spark.Dsl.Entity.build(entity, opts, nested_entities, anno, opts_anno) do
+      {:ok, built} ->
+        built
+
+      {:error, error} ->
+        additional_path =
+          if opts[:name] do
+            [entity.name, opts[:name]]
+          else
+            [entity.name]
+          end
+
+        message =
+          cond do
+            is_exception(error) ->
+              Exception.message(error)
+
+            is_binary(error) ->
+              error
+
+            true ->
+              inspect(error)
+          end
+
+        raise Spark.Error.DslError,
+          module: module,
+          message: message,
+          path: section_path ++ additional_path,
+          location: anno
+    end
+  end
+
+  @doc false
+  # The generated macro passes `entity` as its own argument, not inside `config`, so
+  # the compiler stores it as the same literal that `__build__/5` already holds.
+  def expand(entity, config, arg_values, opts, caller) do
+    %{
+      section_path: section_path,
+      entity_args: entity_args,
+      options_mod_name: options_mod_name,
+      extension: extension,
+      nested_entity_mods: nested_entity_mods,
+      nested_entity_path: nested_entity_path,
+      deprecations: deprecations,
+      nested_key: nested_key,
+      builder: builder
+    } = config
+
+    entity_schema = entity.schema
+    entity_deprecations = entity.deprecations
+
+    anno = Spark.Dsl.Extension.macro_env_anno(caller, opts[:do])
+
+    Spark.Dsl.Extension.maybe_deprecated(
+      entity.name,
+      deprecations,
+      section_path ++ nested_entity_path,
+      caller
+    )
+
+    {args_without_opts, opts} =
+      entity_args
+      |> Enum.zip(arg_values)
+      |> Spark.Dsl.Extension.escape_quoted(entity_schema, caller)
+      |> Spark.Dsl.Extension.shuffle_opts_to_end(
+        entity.args,
+        entity_schema,
+        entity.entities,
+        opts
+      )
+
+    if not Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "Expected an options list in #{entity.name} got #{Macro.to_string(opts)}"
+    end
+
+    opts = Spark.Dsl.Extension.escape_quoted(opts, entity_schema, caller)
+
+    {opts, opt_funs} =
+      Enum.reduce(opts, {[], []}, fn {key, value}, {keyword, opt_funs} ->
+        {value, function} = Spark.CodeHelpers.lift_functions(value, key, caller)
+        keyword = [{key, value} | keyword]
+
+        if function do
+          {keyword, [function | opt_funs]}
+        else
+          {keyword, opt_funs}
+        end
+      end)
+
+    {arg_values, funs} =
+      args_without_opts
+      |> Enum.reduce({[], []}, fn {key, arg_value}, {args, funs} ->
+        Spark.Dsl.Extension.maybe_deprecated(
+          key,
+          entity_deprecations,
+          nested_entity_path,
+          caller
+        )
+
+        arg_value = expand_module_value(entity, key, arg_value, caller)
+
+        {arg_value, new_function} =
+          Spark.CodeHelpers.lift_functions(arg_value, key, caller)
+
+        if is_nil(arg_value) &&
+             Enum.any?(
+               entity.args,
+               &(is_tuple(&1) && elem(&1, 0) == :optional && elem(&1, 1) == key)
+             ) do
+          {args, funs}
+        else
+          {[{key, arg_value} | args], [new_function | funs]}
+        end
+      end)
+
+    other_extension_modules =
+      Spark.Dsl.Extension.get_attribute(caller.module, :extensions)
+      |> Enum.reject(&(&1 == extension))
+      |> Enum.flat_map(fn extension ->
+        extension.dsl_patches()
+        |> Enum.filter(fn
+          %Spark.Dsl.Patch.AddEntity{section_path: ^section_path} ->
+            true
+
+          _ ->
+            false
+        end)
+        |> Enum.map(& &1.entity)
+        |> Enum.concat(
+          Spark.Dsl.Extension.get_recursive_entities_for_path(
+            extension.sections(),
+            section_path
+          )
+        )
+        |> Enum.uniq_by(& &1.name)
+        |> Enum.map(&{extension, &1})
+      end)
+      |> Enum.map(fn {extension, entity} ->
+        Spark.Dsl.Extension.entity_mod_name(
+          extension.module_prefix(),
+          [],
+          section_path,
+          entity
+        )
+      end)
+
+    opts =
+      Enum.map(opts, fn {key, value} ->
+        Spark.Dsl.Extension.maybe_deprecated(
+          key,
+          entity_deprecations,
+          nested_entity_path,
+          caller
+        )
+
+        {key, expand_module_value(entity, key, value, caller)}
+      end)
+
+    entity_keys =
+      entity.entities
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+
+    import_statements =
+      Enum.concat([
+        other_extension_modules,
+        entity.imports,
+        List.wrap(options_mod_name),
+        nested_entity_mods
+      ])
+      |> Spark.Dsl.Extension.Imports.import_solving_conflicts(caller)
+
+    code =
+      import_statements ++
+        funs ++
+        opt_funs ++
+        [
+          quote generated: true do
+            handle_data =
+              Spark.Dsl.Extension.Entity.setup(
+                __MODULE__,
+                unquote(entity.recursive_as),
+                unquote(nested_key),
+                unquote(Keyword.delete(opts, :do)),
+                unquote(arg_values),
+                unquote(Macro.escape(anno))
+              )
+
+            unquote(opts[:do])
+
+            Spark.Dsl.Extension.Entity.handle(
+              __MODULE__,
+              unquote(section_path),
+              unquote(entity_keys),
+              unquote(builder),
+              unquote(extension),
+              handle_data
+            )
+          end
+        ]
+
+    quote generated: true do
+      with do
+        unquote(code)
+      end
+    end
+  end
+
+  defp expand_module_value(entity, key, value, caller) do
+    cond do
+      key in entity.modules ->
+        Spark.Dsl.Extension.expand_alias(value, caller)
+
+      key in entity.no_depend_modules ->
+        Spark.Dsl.Extension.expand_alias_no_require(value, caller)
+
+      key in Map.get(entity, :depend_on_only_behaviour_modules, []) ->
+        Spark.Dsl.Extension.expand_alias_behaviour_only(value, caller)
+
+      true ->
+        value
+    end
+  end
+
   def setup(module, recursive_as, nested_key, opts, arg_values, anno) do
     parent_recursive_as = Process.get(:parent_recursive_as)
     original_nested_entity_path = Process.get(:recursive_builder_path)
