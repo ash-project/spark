@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.8](https://github.com/ash-project/spark/compare/v2.7.7...v2.7.8) (2026-10-16)
+
+
+
+
+### Performance Improvements:
+
+* don't generate error messages we'll never display by Zach Daniel
+
 ## [v2.7.7](https://github.com/ash-project/spark/compare/v2.7.6...v2.7.7) (2026-10-16)
 
 
