@@ -12,6 +12,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.7](https://github.com/ash-project/spark/compare/v2.7.6...v2.7.7) (2026-10-16)
+
+
+
+
+### Improvements:
+
+* give auto identifiers a value the next compilation agrees on by Thomas Anagrius
+
+### Bug Fixes:
+
+* don't call to_string on a tuple, improving compile times by Zach Daniel
+
 ## [v2.7.6](https://github.com/ash-project/spark/compare/v2.7.5...v2.7.6) (2026-10-04)
 
 
