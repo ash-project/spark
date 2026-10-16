@@ -426,6 +426,19 @@ defmodule Spark.DslTest do
       end
     end
 
+    test "a non-keyword options argument raises a descriptive error" do
+      assert_raise ArgumentError, ~r/Expected an options list in preset/, fn ->
+        defmodule PresetWithVariableOpts do
+          @moduledoc false
+          use Spark.Test.Contact
+
+          presets do
+            preset(:foo, some_opts)
+          end
+        end
+      end
+    end
+
     test "section singleton_entity_keys allows zero entities" do
       defmodule SectionSingletonZero do
         @moduledoc false
