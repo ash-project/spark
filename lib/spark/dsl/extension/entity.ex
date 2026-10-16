@@ -218,19 +218,14 @@ defmodule Spark.Dsl.Extension.Entity do
   end
 
   defp expand_module_value(entity, key, value, caller) do
-    cond do
-      key in entity.modules ->
-        Spark.Dsl.Extension.expand_alias(value, caller)
-
-      key in entity.no_depend_modules ->
-        Spark.Dsl.Extension.expand_alias_no_require(value, caller)
-
-      key in Map.get(entity, :depend_on_only_behaviour_modules, []) ->
-        Spark.Dsl.Extension.expand_alias_behaviour_only(value, caller)
-
-      true ->
-        value
-    end
+    Spark.Dsl.Extension.expand_module_option(
+      key,
+      value,
+      entity.modules,
+      entity.no_depend_modules,
+      Map.get(entity, :depend_on_only_behaviour_modules, []),
+      caller
+    )
   end
 
   def setup(module, recursive_as, nested_key, opts, arg_values, anno) do

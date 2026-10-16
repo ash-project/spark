@@ -57,19 +57,14 @@ defmodule Spark.Dsl.Extension.EntityOption do
       end
 
     value =
-      cond do
-        field in modules ->
-          Spark.Dsl.Extension.expand_alias(value, caller)
-
-        field in no_depend_modules ->
-          Spark.Dsl.Extension.expand_alias_no_require(value, caller)
-
-        field in depend_on_only_behaviour_modules ->
-          Spark.Dsl.Extension.expand_alias_behaviour_only(value, caller)
-
-        true ->
-          value
-      end
+      Spark.Dsl.Extension.expand_module_option(
+        field,
+        value,
+        modules,
+        no_depend_modules,
+        depend_on_only_behaviour_modules,
+        caller
+      )
 
     Spark.CodeHelpers.lift_functions(value, field, caller)
   end
