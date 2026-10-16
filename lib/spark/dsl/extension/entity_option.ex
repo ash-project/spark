@@ -8,65 +8,23 @@ defmodule Spark.Dsl.Extension.EntityOption do
   def expand(config, value, caller) do
     %{key: key} = config
 
-    Spark.Dsl.Extension.maybe_deprecated(
+    Spark.Dsl.Extension.OptionMacro.expand(
       key,
-      config.deprecations,
+      value,
+      config,
       config.nested_entity_path,
-      caller
-    )
-
-    {value, function} =
-      value_and_function(
-        value,
-        key,
-        config.type,
-        caller,
-        config.modules,
-        config.no_depend_modules,
-        config.depend_on_only_behaviour_modules
-      )
-
-    quote generated: true do
-      unquote(function)
-
-      Spark.Dsl.Extension.EntityOption.set_entity_option(
-        __MODULE__,
-        unquote(key),
-        unquote(value),
-        unquote(Spark.Dsl.Extension.macro_env_anno(caller, nil))
-      )
-    end
-  end
-
-  def value_and_function(
-        value,
-        field,
-        type,
-        caller,
-        modules,
-        no_depend_modules,
-        depend_on_only_behaviour_modules \\ []
-      ) do
-    value =
-      case type do
-        :quoted ->
-          Macro.escape(value)
-
-        _ ->
-          value
+      caller,
+      fn value, anno ->
+        quote generated: true do
+          Spark.Dsl.Extension.EntityOption.set_entity_option(
+            __MODULE__,
+            unquote(key),
+            unquote(value),
+            unquote(anno)
+          )
+        end
       end
-
-    value =
-      Spark.Dsl.Extension.expand_module_option(
-        field,
-        value,
-        modules,
-        no_depend_modules,
-        depend_on_only_behaviour_modules,
-        caller
-      )
-
-    Spark.CodeHelpers.lift_functions(value, field, caller)
+    )
   end
 
   def set_entity_option(module, key, value, anno \\ nil) do
