@@ -5,6 +5,42 @@
 defmodule Spark.Dsl.Extension.Entity do
   @moduledoc false
 
+  defmodule Config do
+    @moduledoc false
+
+    # Built once per entity when Spark generates the entity module, then escaped into
+    # its entity macro. `builder` is the generated entity module, whose `__build__/5`
+    # builds the entity struct.
+    @enforce_keys [
+      :section_path,
+      :entity_args,
+      :options_mod_name,
+      :extension,
+      :nested_entity_mods,
+      :nested_entity_path,
+      :deprecations,
+      :nested_key,
+      :builder,
+      :entity_keys,
+      :depend_on_only_behaviour_modules
+    ]
+    defstruct @enforce_keys
+
+    @type t :: %__MODULE__{
+            section_path: [atom],
+            entity_args: [atom],
+            options_mod_name: module,
+            extension: module,
+            nested_entity_mods: [module],
+            nested_entity_path: [atom],
+            deprecations: Keyword.t(),
+            nested_key: atom | nil,
+            builder: module,
+            entity_keys: [atom],
+            depend_on_only_behaviour_modules: [atom]
+          }
+  end
+
   @doc false
   def build!(entity, section_path, module, opts, nested_entities, anno, opts_anno) do
     case Spark.Dsl.Entity.build(entity, opts, nested_entities, anno, opts_anno) do
@@ -42,8 +78,8 @@ defmodule Spark.Dsl.Extension.Entity do
   @doc false
   # The generated macro passes `entity` as its own argument, not inside `config`, so
   # the compiler stores it as the same literal that `__build__/5` already holds.
-  def expand(entity, config, arg_asts, opts, caller) do
-    %{
+  def expand(entity, %Config{} = config, arg_asts, opts, caller) do
+    %Config{
       section_path: section_path,
       entity_args: entity_args,
       options_mod_name: options_mod_name,

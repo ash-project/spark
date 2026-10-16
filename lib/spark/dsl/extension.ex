@@ -1035,7 +1035,7 @@ defmodule Spark.Dsl.Extension do
         defmacro unquote(section.name)(body) do
           Spark.Dsl.Extension.Section.expand(
             unquote(
-              Macro.escape(%{
+              Macro.escape(%Spark.Dsl.Extension.Section.Config{
                 opts_module: opts_module,
                 section_path: path ++ [section.name],
                 extension: extension,
@@ -1154,29 +1154,27 @@ defmodule Spark.Dsl.Extension do
       end)
 
     if opts_mod_name do
+      option_configs =
+        for {field, config} <- section.schema do
+          %Spark.Dsl.Extension.OptionMacro.Config{
+            name: field,
+            type: config[:type],
+            path: path ++ [section.name],
+            deprecations: section.deprecations,
+            modules: section.modules,
+            no_depend_modules: section.no_depend_modules,
+            extension: extension
+          }
+        end
+
       Module.create(
         opts_mod_name,
-        quote generated: true,
-              bind_quoted: [
-                section: Macro.escape(section),
-                section_path: path ++ [section.name],
-                extension: extension
-              ] do
+        quote generated: true, bind_quoted: [option_configs: Macro.escape(option_configs)] do
           @moduledoc false
-          for {field, config} <- section.schema do
-            defmacro unquote(field)(value) do
+          for option_config <- option_configs do
+            defmacro unquote(option_config.name)(value) do
               Spark.Dsl.Extension.SectionOption.expand(
-                unquote(
-                  Macro.escape(%{
-                    section_path: section_path,
-                    field: field,
-                    extension: extension,
-                    type: config[:type],
-                    deprecations: section.deprecations,
-                    modules: section.modules,
-                    no_depend_modules: section.no_depend_modules
-                  })
-                ),
+                unquote(Macro.escape(option_config)),
                 value,
                 __CALLER__
               )
@@ -1256,23 +1254,31 @@ defmodule Spark.Dsl.Extension do
     entity_args = Spark.Dsl.Entity.arg_names(entity)
     arg_vars = Enum.map(entity_args, &Macro.var(&1, Elixir))
 
+    config = %Spark.Dsl.Extension.Entity.Config{
+      section_path: section_path,
+      entity_args: entity_args,
+      options_mod_name: options_mod_name,
+      extension: extension,
+      nested_entity_mods: nested_entity_mods,
+      nested_entity_path: nested_entity_path,
+      deprecations: deprecations,
+      nested_key: nested_key,
+      builder: mod_name,
+      entity_keys: entity.entities |> Enum.map(&elem(&1, 0)) |> Enum.uniq(),
+      depend_on_only_behaviour_modules: Map.get(entity, :depend_on_only_behaviour_modules, [])
+    }
+
     async_compile(agent, fn ->
       Module.create(
         mod_name,
         quote generated: true,
               location: :keep,
               bind_quoted: [
-                extension: extension,
                 entity: Macro.escape(entity),
+                config: Macro.escape(config),
                 args: Macro.escape(args),
                 arg_vars: Macro.escape(arg_vars),
-                section_path: Macro.escape(section_path),
-                entity_args: Macro.escape(entity_args),
-                options_mod_name: Macro.escape(options_mod_name),
-                nested_entity_mods: Macro.escape(nested_entity_mods),
-                nested_entity_path: Macro.escape(nested_entity_path),
-                deprecations: deprecations,
-                nested_key: nested_key
+                section_path: Macro.escape(section_path)
               ] do
           def __build__(module, opts, nested_entities, anno, opts_anno) do
             Spark.Dsl.Extension.Entity.build!(
@@ -1290,22 +1296,7 @@ defmodule Spark.Dsl.Extension do
           defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
             Spark.Dsl.Extension.Entity.expand(
               unquote(Macro.escape(entity)),
-              unquote(
-                Macro.escape(%{
-                  section_path: section_path,
-                  entity_args: entity_args,
-                  options_mod_name: options_mod_name,
-                  extension: extension,
-                  nested_entity_mods: nested_entity_mods,
-                  nested_entity_path: nested_entity_path,
-                  deprecations: deprecations,
-                  nested_key: nested_key,
-                  builder: __MODULE__,
-                  entity_keys: entity.entities |> Enum.map(&elem(&1, 0)) |> Enum.uniq(),
-                  depend_on_only_behaviour_modules:
-                    Map.get(entity, :depend_on_only_behaviour_modules, [])
-                })
-              ),
+              unquote(Macro.escape(config)),
               [unquote_splicing(arg_vars)],
               opts,
               __CALLER__
@@ -1325,40 +1316,29 @@ defmodule Spark.Dsl.Extension do
         entity,
         nested_entity_path
       ) do
-    entity =
-      case entity.recursive_as do
-        nil ->
-          entity
-
-        recursive_as ->
-          %{entity | entities: Keyword.put_new(entity.entities || [], recursive_as, [])}
+    option_configs =
+      for {key, config} <- entity.schema,
+          !Spark.Dsl.Extension.required_arg?(key, entity.args) do
+        %Spark.Dsl.Extension.OptionMacro.Config{
+          name: key,
+          type: config[:type],
+          path: nested_entity_path,
+          deprecations: entity.deprecations,
+          modules: entity.modules,
+          no_depend_modules: entity.no_depend_modules,
+          depend_on_only_behaviour_modules: Map.get(entity, :depend_on_only_behaviour_modules, [])
+        }
       end
 
     Module.create(
       module_name,
-      quote generated: true,
-            bind_quoted: [
-              entity: Macro.escape(entity),
-              nested_entity_path: nested_entity_path
-            ] do
+      quote generated: true, bind_quoted: [option_configs: Macro.escape(option_configs)] do
         @moduledoc false
 
-        for {key, config} <- entity.schema,
-            !Spark.Dsl.Extension.required_arg?(key, entity.args) do
-          defmacro unquote(key)(value) do
+        for option_config <- option_configs do
+          defmacro unquote(option_config.name)(value) do
             Spark.Dsl.Extension.EntityOption.expand(
-              unquote(
-                Macro.escape(%{
-                  key: key,
-                  type: config[:type],
-                  deprecations: entity.deprecations,
-                  nested_entity_path: nested_entity_path,
-                  modules: entity.modules,
-                  no_depend_modules: entity.no_depend_modules,
-                  depend_on_only_behaviour_modules:
-                    Map.get(entity, :depend_on_only_behaviour_modules, [])
-                })
-              ),
+              unquote(Macro.escape(option_config)),
               value,
               __CALLER__
             )

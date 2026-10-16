@@ -5,9 +5,39 @@
 defmodule Spark.Dsl.Extension.Section do
   @moduledoc false
 
+  defmodule Config do
+    @moduledoc false
+
+    # Built once per section macro while the defining module compiles, then escaped
+    # into that macro. `module` is the module holding the section's
+    # `__set_and_validate_options__/4`.
+    @enforce_keys [
+      :opts_module,
+      :section_path,
+      :extension,
+      :entity_modules,
+      :section_modules,
+      :imports,
+      :after_define,
+      :module
+    ]
+    defstruct @enforce_keys
+
+    @type t :: %__MODULE__{
+            opts_module: module | nil,
+            section_path: [atom],
+            extension: module,
+            entity_modules: [module],
+            section_modules: [module],
+            imports: [module],
+            after_define: {module, atom} | nil,
+            module: module
+          }
+  end
+
   @doc false
-  def expand(config, body, caller) do
-    %{
+  def expand(%Config{} = config, body, caller) do
+    %Config{
       opts_module: opts_module,
       section_path: section_path,
       extension: extension,

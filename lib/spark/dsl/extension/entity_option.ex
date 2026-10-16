@@ -5,14 +5,10 @@
 defmodule Spark.Dsl.Extension.EntityOption do
   @moduledoc false
 
-  def expand(config, value, caller) do
-    %{key: key} = config
-
+  def expand(%Spark.Dsl.Extension.OptionMacro.Config{name: key} = config, value, caller) do
     Spark.Dsl.Extension.OptionMacro.expand(
-      key,
-      value,
       config,
-      config.nested_entity_path,
+      value,
       caller,
       fn value, anno ->
         quote generated: true do
