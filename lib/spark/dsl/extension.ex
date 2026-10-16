@@ -1360,7 +1360,10 @@ defmodule Spark.Dsl.Extension do
                   nested_entity_path: nested_entity_path,
                   deprecations: deprecations,
                   nested_key: nested_key,
-                  builder: __MODULE__
+                  builder: __MODULE__,
+                  entity_keys: entity.entities |> Enum.map(&elem(&1, 0)) |> Enum.uniq(),
+                  depend_on_only_behaviour_modules:
+                    Map.get(entity, :depend_on_only_behaviour_modules, [])
                 })
               ),
               [unquote_splicing(arg_vars)],

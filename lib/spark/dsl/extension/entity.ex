@@ -52,7 +52,9 @@ defmodule Spark.Dsl.Extension.Entity do
       nested_entity_path: nested_entity_path,
       deprecations: deprecations,
       nested_key: nested_key,
-      builder: builder
+      builder: builder,
+      entity_keys: entity_keys,
+      depend_on_only_behaviour_modules: depend_on_only_behaviour_modules
     } = config
 
     entity_schema = entity.schema
@@ -108,7 +110,8 @@ defmodule Spark.Dsl.Extension.Entity do
           caller
         )
 
-        arg_value = expand_module_value(entity, key, arg_value, caller)
+        arg_value =
+          expand_module_value(entity, depend_on_only_behaviour_modules, key, arg_value, caller)
 
         {arg_value, new_function} =
           Spark.CodeHelpers.lift_functions(arg_value, key, caller)
@@ -164,13 +167,8 @@ defmodule Spark.Dsl.Extension.Entity do
           caller
         )
 
-        {key, expand_module_value(entity, key, value, caller)}
+        {key, expand_module_value(entity, depend_on_only_behaviour_modules, key, value, caller)}
       end)
-
-    entity_keys =
-      entity.entities
-      |> Enum.map(&elem(&1, 0))
-      |> Enum.uniq()
 
     import_statements =
       Enum.concat([
@@ -217,13 +215,13 @@ defmodule Spark.Dsl.Extension.Entity do
     end
   end
 
-  defp expand_module_value(entity, key, value, caller) do
+  defp expand_module_value(entity, depend_on_only_behaviour_modules, key, value, caller) do
     Spark.Dsl.Extension.expand_module_option(
       key,
       value,
       entity.modules,
       entity.no_depend_modules,
-      Map.get(entity, :depend_on_only_behaviour_modules, []),
+      depend_on_only_behaviour_modules,
       caller
     )
   end
