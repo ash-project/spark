@@ -58,7 +58,8 @@ defmodule Spark.Dsl.Extension.Entity do
     entity_schema = entity.schema
     entity_deprecations = entity.deprecations
 
-    anno = Spark.Dsl.Extension.macro_env_anno(caller, opts[:do])
+    do_block = if Keyword.keyword?(opts), do: opts[:do]
+    anno = Spark.Dsl.Extension.macro_env_anno(caller, do_block)
 
     Spark.Dsl.Extension.maybe_deprecated(
       entity.name,
