@@ -68,16 +68,14 @@ defmodule Spark.Dsl.Extension.SectionOption do
       end
 
     value =
-      cond do
-        field in section_modules ->
-          Spark.Dsl.Extension.expand_alias(value, caller)
-
-        field in section_no_depend_modules ->
-          Spark.Dsl.Extension.expand_alias_no_require(value, caller)
-
-        true ->
-          value
-      end
+      Spark.Dsl.Extension.expand_module_option(
+        field,
+        value,
+        section_modules,
+        section_no_depend_modules,
+        [],
+        caller
+      )
 
     Spark.CodeHelpers.lift_functions(value, field, caller)
   end

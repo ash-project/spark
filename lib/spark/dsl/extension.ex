@@ -1464,6 +1464,30 @@ defmodule Spark.Dsl.Extension do
     end
   end
 
+  @doc false
+  def expand_module_option(
+        field,
+        value,
+        modules,
+        no_depend_modules,
+        depend_on_only_behaviour_modules,
+        env
+      ) do
+    cond do
+      field in modules ->
+        expand_alias(value, env)
+
+      field in no_depend_modules ->
+        expand_alias_no_require(value, env)
+
+      field in depend_on_only_behaviour_modules ->
+        expand_alias_behaviour_only(value, env)
+
+      true ->
+        value
+    end
+  end
+
   def expand_alias(ast, %Macro.Env{} = env) do
     Macro.prewalk(ast, fn
       {:%, meta, [left, right]} ->
