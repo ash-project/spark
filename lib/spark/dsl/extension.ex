@@ -1033,82 +1033,22 @@ defmodule Spark.Dsl.Extension do
 
       unless section.top_level? && path == [] do
         defmacro unquote(section.name)(body) do
-          opts_module = unquote(opts_module)
-          section_path = unquote(path ++ [section.name])
-          extension = unquote(extension)
-
-          section_anno = Spark.Dsl.Extension.macro_env_anno(__CALLER__, body[:do])
-
-          entity_modules = unquote(entity_modules)
-
-          patch_modules =
-            Spark.Dsl.Extension.get_attribute(__CALLER__.module, :extensions)
-            |> Spark.Dsl.Extension.get_entity_dsl_patches(section_path)
-            |> Enum.reject(&(&1 in entity_modules))
-
-          section_imports =
-            for module <- unquote(section_modules) do
-              quote generated: true do
-                import unquote(module), only: :macros
-              end
-            end
-
-          import_statements =
-            Enum.concat([
-              unquote(section.imports),
-              unquote(entity_modules),
-              patch_modules,
-              unquote(section_modules),
-              unquote(List.wrap(opts_module))
-            ])
-            |> Spark.Dsl.Extension.Imports.import_solving_conflicts(__CALLER__)
-
-          all_the_code =
-            import_statements ++
-              [
-                quote generated: true do
-                  unquote(body[:do])
-
-                  current_sections = Process.get({__MODULE__, :spark_sections}, [])
-
-                  unless {unquote(extension), unquote(section_path)} in current_sections do
-                    Process.put({__MODULE__, :spark_sections}, [
-                      {unquote(extension), unquote(section_path)} | current_sections
-                    ])
-                  end
-
-                  # Store section annotation
-                  current_config =
-                    Process.get(
-                      {__MODULE__, :spark, unquote(section_path)},
-                      Spark.Dsl.Extension.default_section_config()
-                    )
-
-                  Process.put(
-                    {__MODULE__, :spark, unquote(section_path)},
-                    %{current_config | section_anno: unquote(Macro.escape(section_anno))}
-                  )
-
-                  @validate_sections {unquote(section_path), unquote(__MODULE__),
-                                      unquote(extension)}
-                end
-              ]
-
-          after_define = unquote(section.after_define)
-
-          quote do
-            with do
-              unquote(all_the_code)
-
-              case unquote(after_define) do
-                nil ->
-                  :ok
-
-                {m, f} ->
-                  Code.eval_quoted(apply(m, f, []), [], __ENV__)
-              end
-            end
-          end
+          Spark.Dsl.Extension.Section.expand(
+            unquote(
+              Macro.escape(%{
+                opts_module: opts_module,
+                section_path: path ++ [section.name],
+                extension: extension,
+                entity_modules: entity_modules,
+                section_modules: section_modules,
+                imports: section.imports,
+                after_define: section.after_define,
+                module: __MODULE__
+              })
+            ),
+            body,
+            __CALLER__
+          )
         end
       end
     end
