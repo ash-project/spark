@@ -42,7 +42,7 @@ defmodule Spark.Dsl.Extension.Entity do
   @doc false
   # The generated macro passes `entity` as its own argument, not inside `config`, so
   # the compiler stores it as the same literal that `__build__/5` already holds.
-  def expand(entity, config, arg_values, opts, caller) do
+  def expand(entity, config, arg_asts, opts, caller) do
     %{
       section_path: section_path,
       entity_args: entity_args,
@@ -72,7 +72,7 @@ defmodule Spark.Dsl.Extension.Entity do
 
     {args_without_opts, opts} =
       entity_args
-      |> Enum.zip(arg_values)
+      |> Enum.zip(arg_asts)
       |> Spark.Dsl.Extension.escape_quoted(entity_schema, caller)
       |> Spark.Dsl.Extension.shuffle_opts_to_end(
         entity.args,
