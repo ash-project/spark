@@ -511,6 +511,27 @@ defmodule Spark.Options do
   """
   @type t() :: %__MODULE__{schema: schema()}
 
+  defmacrop error_tuple(key, value, message) do
+    quote do
+      {:error,
+       %ValidationError{
+         key: unquote(key),
+         message: fn -> unquote(message) end,
+         value: unquote(value)
+       }}
+    end
+  end
+
+  defp resolve_message({:error, %ValidationError{} = error}),
+    do: {:error, %ValidationError{error | message: message_text(error)}}
+
+  defp resolve_message(result), do: result
+
+  defp message_text(%ValidationError{message: message}) when is_function(message, 0),
+    do: message.()
+
+  defp message_text(%ValidationError{message: message}), do: message
+
   @doc """
   Validates the given `options` with the given `schema`.
 
@@ -565,7 +586,9 @@ defmodule Spark.Options do
           {:ok, validated_options :: keyword()} | {:error, ValidationError.t()}
 
   def validate(options, %Spark.Options{schema: schema}) do
-    validate_options_with_schema(options, schema)
+    options
+    |> validate_options_with_schema(schema)
+    |> resolve_message()
   end
 
   def validate(options, schema) when is_list(options) and is_list(schema) do
@@ -917,7 +940,9 @@ defmodule Spark.Options do
 
   @doc false
   def validate_single_value(type, key, value) do
-    validate_type(type, key, value)
+    type
+    |> validate_type(key, value)
+    |> resolve_message()
   end
 
   defp validate_type(:integer, key, value) when not is_integer(value) do
@@ -1060,7 +1085,7 @@ defmodule Spark.Options do
         {:ok, Map.new(pairs)}
 
       %ValidationError{} = error ->
-        error_tuple(key, map, "invalid map in #{render_key(key)}: #{error.message}")
+        error_tuple(key, map, "invalid map in #{render_key(key)}: #{message_text(error)}")
     end
   end
 
@@ -1306,12 +1331,13 @@ defmodule Spark.Options do
         {:ok, value}
 
       {_value, errors} ->
-        message =
+        error_tuple(
+          key,
+          value,
           "expected #{render_key(key)} to match all given types, but didn't match " <>
             "all of them. Here are the reasons why it didn't match each of the types:\n\n" <>
             Enum.map_join(errors, "\n", &("  * " <> Exception.message(&1)))
-
-        error_tuple(key, value, message)
+        )
     end
   end
 
@@ -1347,12 +1373,13 @@ defmodule Spark.Options do
         {:ok, value}
 
       errors when is_list(errors) ->
-        message =
+        error_tuple(
+          key,
+          value,
           "expected #{render_key(key)} to match at least one given type, but didn't match " <>
             "any. Here are the reasons why it didn't match each of the allowed types:\n\n" <>
             Enum.map_join(errors, "\n", &("  * " <> Exception.message(&1)))
-
-        error_tuple(key, value, message)
+        )
     end
   end
 
@@ -1386,13 +1413,13 @@ defmodule Spark.Options do
     {:ok, updated_elements}
   catch
     {:error, %ValidationError{} = error} ->
-      error_tuple(key, value, "invalid list in #{render_key(key)}: #{error.message}")
+      error_tuple(key, value, "invalid list in #{render_key(key)}: #{message_text(error)}")
 
     {:error, index, %ValidationError{} = error} ->
       error_tuple(
         key,
         value,
-        "invalid list element at position #{index} in #{render_key(key)}: #{error.message}"
+        "invalid list element at position #{index} in #{render_key(key)}: #{message_text(error)}"
       )
   end
 
@@ -1678,7 +1705,7 @@ defmodule Spark.Options do
         {:ok, acc |> Enum.reverse() |> List.to_tuple()}
 
       %ValidationError{} = error ->
-        error_tuple(key, value, "invalid tuple in #{render_key(key)}: #{error.message}")
+        error_tuple(key, value, "invalid tuple in #{render_key(key)}: #{message_text(error)}")
     end
   end
 
@@ -2004,10 +2031,6 @@ defmodule Spark.Options do
       {:ok, _} -> {:ok, returns}
       {:error, error} -> {:error, "invalid return type given to :fun type: #{error}"}
     end
-  end
-
-  defp error_tuple(key, value, message) do
-    {:error, %ValidationError{key: key, message: message, value: value}}
   end
 
   @doc false

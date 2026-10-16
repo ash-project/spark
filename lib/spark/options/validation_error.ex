@@ -35,6 +35,10 @@ defmodule Spark.Options.ValidationError do
   defexception [:message, :key, :value, keys_path: []]
 
   @impl true
+  def message(%__MODULE__{message: message} = error) when is_function(message, 0) do
+    message(%{error | message: message.()})
+  end
+
   def message(%__MODULE__{message: message, keys_path: keys_path}) do
     suffix =
       case keys_path do
