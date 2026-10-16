@@ -5,6 +5,39 @@
 defmodule Spark.Dsl.Extension.EntityOption do
   @moduledoc false
 
+  def expand(config, value, caller) do
+    %{key: key} = config
+
+    Spark.Dsl.Extension.maybe_deprecated(
+      key,
+      config.deprecations,
+      config.nested_entity_path,
+      caller
+    )
+
+    {value, function} =
+      value_and_function(
+        value,
+        key,
+        config.type,
+        caller,
+        config.modules,
+        config.no_depend_modules,
+        config.depend_on_only_behaviour_modules
+      )
+
+    quote generated: true do
+      unquote(function)
+
+      Spark.Dsl.Extension.EntityOption.set_entity_option(
+        __MODULE__,
+        unquote(key),
+        unquote(value),
+        unquote(Spark.Dsl.Extension.macro_env_anno(caller, nil))
+      )
+    end
+  end
+
   def value_and_function(
         value,
         field,
