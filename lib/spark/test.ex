@@ -46,8 +46,8 @@ defmodule Spark.Test do
   ## Async safety
 
   All helpers in this module are safe to use from `async: true` ExUnit tests.
-  The collection mechanism uses per-process state (`Process.put/2` and
-  point-to-point `send/2`) and does not cross process boundaries.
+  A module's output reaches only the collector registered where that module
+  was defined, so concurrent tests cannot receive each other's errors.
   """
 
   @doc """
