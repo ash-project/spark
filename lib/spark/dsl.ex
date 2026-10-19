@@ -459,6 +459,15 @@ defmodule Spark.Dsl do
     opts = Module.get_attribute(env.module, :opts)
     parent_code = parent.handle_before_compile(opts)
 
+    # `@after_verify` can run in a checker process that cannot see this
+    # process's dictionary, so capture the collector now. Charlist because
+    # Elixir warns on a pid literal.
+    captured_collector =
+      case Process.get({Spark.Dsl, :test_collector}) do
+        pid when is_pid(pid) -> :erlang.pid_to_list(pid)
+        _ -> nil
+      end
+
     verify_code =
       quote generated: true do
         @after_verify {__MODULE__, :__verify_spark_dsl__}
@@ -470,7 +479,8 @@ defmodule Spark.Dsl do
             module,
             @opts,
             @extensions,
-            __ENV__
+            __ENV__,
+            unquote(captured_collector)
           )
         end
       end
@@ -666,8 +676,9 @@ defmodule Spark.Dsl do
   def opaque(value), do: value
 
   @doc false
-  def __verify_spark_dsl__(parent, module, opts, extensions, env) do
+  def __verify_spark_dsl__(parent, module, opts, extensions, env, captured_collector \\ nil) do
     parent.verify(module, opts)
+    collector = captured_collector && :erlang.list_to_pid(captured_collector)
 
     transformers_to_run =
       extensions
@@ -687,8 +698,6 @@ defmodule Spark.Dsl do
               []
 
             {:warn, warnings} ->
-              collector = Process.get({Spark.Dsl, :test_collector})
-
               normalized =
                 warnings
                 |> List.wrap()
@@ -720,7 +729,6 @@ defmodule Spark.Dsl do
       end)
 
     final_errors = Enum.uniq(errors)
-    collector = Process.get({Spark.Dsl, :test_collector})
 
     cond do
       final_errors == [] ->
