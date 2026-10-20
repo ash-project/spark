@@ -63,13 +63,7 @@ defmodule Spark.ElixirSense.Plugin do
   def suggestions(hint, _, _chain, opts) do
     case suggestions(hint, opts) do
       :ignore ->
-        case func_call_chain(opts.cursor_context.text_before, opts.env) do
-          [%{candidate: {module, function_call}, npar: arg_index} = info | _] ->
-            autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info}, opts)
-
-          _ ->
-            :ignore
-        end
+        autocomplete_from_call_chain(hint, opts)
 
       suggestions ->
         suggestions
@@ -133,17 +127,21 @@ defmodule Spark.ElixirSense.Plugin do
           :ignore
       end
     else
-      case func_call_chain(opts.cursor_context.text_before, opts.env) do
-        [%{candidate: {module, function_call}, npar: arg_index} = info | _] ->
-          autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info}, opts)
-
-        _ ->
-          :ignore
-      end
+      autocomplete_from_call_chain(hint, opts)
     end
   rescue
     _e ->
       :ignore
+  end
+
+  defp autocomplete_from_call_chain(hint, opts) do
+    case func_call_chain(opts.cursor_context.text_before, opts.env) do
+      [%{candidate: {module, function_call}, npar: arg_index} = info | _] ->
+        autocomplete_spark_options(hint, opts, {module, function_call, arg_index, info}, opts)
+
+      _ ->
+        :ignore
+    end
   end
 
   defp autocomplete_schema(
