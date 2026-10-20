@@ -1861,19 +1861,8 @@ defmodule Spark.Dsl.Extension do
     |> get_recursive_entities_for_path(rest)
   end
 
-  @spec default_section_config() :: %{
-          section_anno: :erl_anno.anno() | nil,
-          entities: list(),
-          opts: Keyword.t(),
-          opts_anno: Keyword.t(:erl_anno.anno() | nil)
-        }
-  def default_section_config,
-    do: %{
-      section_anno: nil,
-      entities: [],
-      opts: [],
-      opts_anno: []
-    }
+  @spec default_section_config() :: Spark.Dsl.SectionConfig.t()
+  def default_section_config, do: %Spark.Dsl.SectionConfig{}
 
   @spec get_config_entry_with_fallback(
           module(),

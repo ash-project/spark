@@ -517,7 +517,7 @@ defmodule Spark.Dsl do
 
               Process.put(
                 {__MODULE__, :spark, [section.name]},
-                %{current_config | entities: current_config.entities, opts: opts}
+                %{current_config | opts: opts}
               )
             end
           end
@@ -627,7 +627,7 @@ defmodule Spark.Dsl do
           for {path, _} <- @spark_dsl_config, is_list(path) do
             {Macro.escape(path),
              quote do
-               %{
+               %Spark.Dsl.SectionConfig{
                  section_anno: section_anno(unquote(path)),
                  entities: entities(unquote(path)),
                  opts: section_opts(unquote(path)),
@@ -801,19 +801,20 @@ defmodule Spark.Dsl do
       config = Map.delete(fragment.spark_dsl_config(), :persist)
 
       Map.merge(acc, config, fn
-        key, left_config, right_config ->
-          %{
-            entities: (left_config[:entities] || []) ++ (right_config[:entities] || []),
+        key,
+        %Spark.Dsl.SectionConfig{} = left_config,
+        %Spark.Dsl.SectionConfig{} = right_config ->
+          %Spark.Dsl.SectionConfig{
+            entities: left_config.entities ++ right_config.entities,
             opts:
               merge_with_warning(
-                left_config[:opts] || [],
-                right_config[:opts] || [],
+                left_config.opts,
+                right_config.opts,
                 key,
                 "fragment: #{fragment}"
               ),
-            opts_anno:
-              Keyword.merge(left_config[:opts_anno] || [], right_config[:opts_anno] || []),
-            section_anno: right_config[:section_anno] || left_config[:section_anno]
+            opts_anno: Keyword.merge(left_config.opts_anno, right_config.opts_anno),
+            section_anno: right_config.section_anno || left_config.section_anno
           }
       end)
     end)

@@ -32,7 +32,7 @@ defmodule Spark.Dsl.Extension.SectionOption do
     |> Map.put_new(section_path, Spark.Dsl.Extension.default_section_config())
     |> Map.update!(section_path, fn config ->
       validated_opts =
-        case Spark.Options.validate(Keyword.new(config[:opts] || []), schema) do
+        case Spark.Options.validate(Keyword.new(config.opts), schema) do
           {:ok, opts} ->
             opts
 
@@ -41,7 +41,7 @@ defmodule Spark.Dsl.Extension.SectionOption do
               module: module,
               message: error,
               path: section_path,
-              location: config[:section_anno]
+              location: config.section_anno
         end
 
       %{config | opts: validated_opts}
@@ -65,9 +65,9 @@ defmodule Spark.Dsl.Extension.SectionOption do
 
     opts_anno =
       if anno do
-        Keyword.put(current_config[:opts_anno] || [], field, anno)
+        Keyword.put(current_config.opts_anno, field, anno)
       else
-        current_config[:opts_anno] || []
+        current_config.opts_anno
       end
 
     Process.put(

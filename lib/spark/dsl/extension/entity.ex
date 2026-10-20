@@ -344,10 +344,8 @@ defmodule Spark.Dsl.Extension.Entity do
       |> Enum.reduce(%{}, fn key, acc ->
         nested_path = section_path ++ nested_entity_path ++ [key]
 
-        entities =
-          {module, :spark, nested_path}
-          |> Process.get(%{entities: []})
-          |> Map.get(:entities, [])
+        %Spark.Dsl.SectionConfig{entities: entities} =
+          Process.get({module, :spark, nested_path}, %Spark.Dsl.SectionConfig{})
 
         Process.delete({module, :spark, nested_path})
 

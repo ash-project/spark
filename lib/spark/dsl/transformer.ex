@@ -271,7 +271,7 @@ defmodule Spark.Dsl.Transformer do
   By default, entities are prepended. Pass `type: :append` to append instead.
   """
   def add_entity(dsl_state, path, entity, opts \\ []) do
-    Map.update(dsl_state, path, %{entities: [entity], opts: []}, fn config ->
+    Map.update(dsl_state, path, %Spark.Dsl.SectionConfig{entities: [entity]}, fn config ->
       Map.update(config, :entities, [entity], fn entities ->
         if (opts[:type] || :prepend) == :prepend do
           [entity | entities]
@@ -288,7 +288,7 @@ defmodule Spark.Dsl.Transformer do
   The function receives each entity and should return `true` for entities to remove.
   """
   def remove_entity(dsl_state, path, func) do
-    Map.update(dsl_state, path, %{entities: [], opts: []}, fn config ->
+    Map.update(dsl_state, path, %Spark.Dsl.SectionConfig{}, fn config ->
       Map.update(config, :entities, [], fn entities ->
         Enum.reject(entities, func)
       end)
@@ -300,7 +300,7 @@ defmodule Spark.Dsl.Transformer do
   """
   def get_entities(dsl_state, path) do
     dsl_state
-    |> Map.get(path, %{entities: []})
+    |> Map.get(path, %Spark.Dsl.SectionConfig{})
     |> Map.get(:entities, [])
   end
 
