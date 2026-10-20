@@ -1808,7 +1808,7 @@ defmodule Spark.Dsl.Extension do
     section =
       extensions
       |> Enum.flat_map(& &1.sections())
-      |> get_section_at_path(section_path, %{patchable?: false, entities: []})
+      |> get_section_at_path(section_path, %Spark.Dsl.Section{})
 
     for extension <- extensions,
         %AddEntity{section_path: ^section_path, entity: entity} <- extension.dsl_patches(),
