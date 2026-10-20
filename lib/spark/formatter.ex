@@ -282,16 +282,17 @@ if Code.ensure_loaded?(Sourceror) do
     defp de_paren_at_level(node, _, _, _, _, _), do: node
 
     defp section_entities_at_path(section, extensions, path) do
-      patched =
-        extensions
-        |> Enum.flat_map(& &1.dsl_patches())
-        |> Enum.filter(fn
-          %Spark.Dsl.Patch.AddEntity{section_path: ^path} -> true
-          _ -> false
-        end)
-        |> Enum.map(& &1.entity)
+      section.entities ++ patched_entities(extensions, path)
+    end
 
-      section.entities ++ patched
+    defp patched_entities(extensions, section_path) do
+      extensions
+      |> Enum.flat_map(& &1.dsl_patches())
+      |> Enum.filter(fn
+        %Spark.Dsl.Patch.AddEntity{section_path: ^section_path} -> true
+        _ -> false
+      end)
+      |> Enum.map(& &1.entity)
     end
 
     defp section_level_builders(section, entities) do
@@ -461,38 +462,13 @@ if Code.ensure_loaded?(Sourceror) do
     end
 
     defp all_patch_entity_builders(extensions, section, path) do
-      match_path = path ++ [section.name]
-
       extensions
-      |> Enum.flat_map(& &1.dsl_patches())
-      |> tap(fn patches ->
-        Enum.map(patches, & &1.section_path)
-      end)
-      |> Enum.filter(fn
-        %Spark.Dsl.Patch.AddEntity{section_path: ^match_path} ->
-          true
-
-        _ ->
-          false
-      end)
-      |> Enum.map(& &1.entity)
+      |> patched_entities(path ++ [section.name])
       |> Enum.flat_map(&entity_option_builders/1)
     end
 
     defp section_entity_builders(section, extensions, path) do
-      match_path = path ++ [section.name]
-
-      mixed_in_entities =
-        extensions
-        |> Enum.flat_map(& &1.dsl_patches())
-        |> Enum.filter(fn
-          %Spark.Dsl.Patch.AddEntity{section_path: ^match_path} ->
-            true
-
-          _ ->
-            false
-        end)
-        |> Enum.map(& &1.entity)
+      mixed_in_entities = patched_entities(extensions, path ++ [section.name])
 
       Enum.flat_map(section.entities ++ mixed_in_entities, fn entity ->
         entity_builders(entity)
