@@ -259,9 +259,6 @@ defmodule Spark.Dsl.Transformer do
         other ->
           other
       end
-    else
-      {:error, error} ->
-        {:error, error}
     end
   end
 
