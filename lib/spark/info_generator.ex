@@ -16,6 +16,24 @@ defmodule Spark.InfoGenerator do
   ```
   """
 
+  defmodule Option do
+    @moduledoc false
+
+    # `type` holds the quoted typespec, not the option type.
+    @enforce_keys [:name, :path, :type, :pred?, :function_name]
+    defstruct @enforce_keys ++ [doc: false, default: nil]
+
+    @type t :: %__MODULE__{
+            name: atom,
+            path: [atom],
+            type: Macro.t(),
+            pred?: boolean,
+            function_name: atom,
+            doc: String.t() | false,
+            default: term
+          }
+  end
+
   @type options :: [{:extension, module} | {:sections, [atom]}]
 
   @doc false
@@ -69,7 +87,7 @@ defmodule Spark.InfoGenerator do
           |> Stream.map(fn option ->
             value =
               dsl_or_extended
-              |> get_opt(option.path, option.name, Map.get(option, :default))
+              |> get_opt(option.path, option.name, option.default)
 
             {option.name, value}
           end)
@@ -149,21 +167,20 @@ defmodule Spark.InfoGenerator do
       schema =
         section.schema
         |> Enum.map(fn {name, opts} ->
-          opts
-          |> Map.new()
-          |> Map.take(~w[type doc default]a)
-          |> Map.update!(:type, &spec_for_type(&1, opts))
-          |> Map.put(:pred?, name |> to_string() |> String.ends_with?("?"))
-          |> Map.put(:name, name)
-          |> Map.put(:path, path)
-          |> Map.put(
-            :function_name,
-            path
-            |> Enum.concat([name])
-            |> Enum.join("_")
-            |> String.trim_trailing("?")
-            |> String.to_atom()
-          )
+          %Option{
+            name: name,
+            path: path,
+            type: opts |> Keyword.fetch!(:type) |> spec_for_type(opts),
+            pred?: name |> to_string() |> String.ends_with?("?"),
+            function_name:
+              path
+              |> Enum.concat([name])
+              |> Enum.join("_")
+              |> String.trim_trailing("?")
+              |> String.to_atom(),
+            doc: Keyword.get(opts, :doc, false),
+            default: Keyword.get(opts, :default)
+          }
         end)
 
       {path, schema}
@@ -172,11 +189,11 @@ defmodule Spark.InfoGenerator do
   end
 
   # sobelow_skip ["DOS.BinToAtom"]
-  defp generate_config_function(%{pred?: true} = option) do
+  defp generate_config_function(%Option{pred?: true} = option) do
     function_name = :"#{option.function_name}?"
 
     quote location: :keep do
-      @doc unquote(Map.get(option, :doc, false))
+      @doc unquote(option.doc)
       @spec unquote(function_name)(dsl_or_extended :: module | map) ::
               unquote(option.type)
       def unquote(function_name)(dsl_or_extended) do
@@ -186,7 +203,7 @@ defmodule Spark.InfoGenerator do
           dsl_or_extended,
           unquote(option.path),
           unquote(option.name),
-          unquote(Macro.escape(Map.get(option, :default)))
+          unquote(Macro.escape(option.default))
         )
       end
 
@@ -195,11 +212,9 @@ defmodule Spark.InfoGenerator do
   end
 
   # sobelow_skip ["DOS.BinToAtom"]
-  defp generate_config_function(option) do
-    option = Map.put_new(option, :default, nil)
-
+  defp generate_config_function(%Option{} = option) do
     quote location: :keep do
-      @doc unquote(Map.get(option, :doc, false))
+      @doc unquote(option.doc)
       @spec unquote(option.function_name)(dsl_or_extended :: module | map) ::
               {:ok, unquote(option.type)} | :error
 
@@ -231,7 +246,7 @@ defmodule Spark.InfoGenerator do
         end
       end
 
-      @doc unquote(Map.get(option, :doc, false))
+      @doc unquote(option.doc)
       @spec unquote(:"#{option.function_name}!")(dsl_or_extended :: module | map) ::
               unquote(option.type) | no_return
       if unquote(is_nil(option.default)) do
