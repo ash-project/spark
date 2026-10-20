@@ -16,12 +16,17 @@ defmodule Spark.Dsl.Builder do
   @type result :: {:ok, Spark.Dsl.t()} | {:error, term()}
   @type input :: {:ok, Spark.Dsl.t()} | {:error, term()} | Spark.Dsl.t()
 
-  defmacro defbuilder({func, _, [dsl_state | rest_args]}, do: body) do
-    def_head? = Enum.any?(rest_args, &match?({:\\, _, _}, &1))
-    rest_args_with_defaults = rest_args
+  defmacro defbuilder(call, do: body) do
+    define_builder(:def, call, body)
+  end
 
+  defmacro defbuilderp(call, do: body) do
+    define_builder(:defp, call, body)
+  end
+
+  defp define_builder(kind, {func, _, [dsl_state | rest_args_with_defaults]}, body) do
     rest_args =
-      Enum.map(rest_args, fn
+      Enum.map(rest_args_with_defaults, fn
         {:\\, _, [expr, _default]} ->
           expr
 
@@ -29,121 +34,45 @@ defmodule Spark.Dsl.Builder do
           other
       end)
 
-    quote generated: true,
-          location: :keep,
-          bind_quoted: [
-            def_head?: def_head?,
-            rest_args: Macro.escape(rest_args),
-            rest_args_with_defaults: Macro.escape(rest_args_with_defaults),
-            dsl_state: Macro.escape(dsl_state),
-            func: Macro.escape(func),
-            body: Macro.escape(body)
-          ] do
-      if def_head? do
-        def unquote(func)(unquote(dsl_state), unquote_splicing(rest_args_with_defaults))
-      end
+    ignored_args = Enum.map(rest_args, fn _ -> {:_, [], Elixir} end)
 
-      def unquote(func)({:ok, unquote(dsl_state)}, unquote_splicing(rest_args)) do
-        case unquote(body) do
-          {:ok, result} ->
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-
-          body ->
-            {:ok, body}
+    head =
+      if Enum.any?(rest_args_with_defaults, &match?({:\\, _, _}, &1)) do
+        quote do
+          unquote(kind)(
+            unquote(func)(unquote(dsl_state), unquote_splicing(rest_args_with_defaults))
+          )
         end
       end
 
-      def unquote(func)(
-            {:error, error},
-            unquote_splicing(
-              Enum.map(rest_args, fn _ ->
-                {:_, [], Elixir}
-              end)
-            )
-          ) do
+    quote generated: true, location: :keep do
+      unquote(head)
+
+      unquote(kind)(unquote(func)({:ok, unquote(dsl_state)}, unquote_splicing(rest_args))) do
+        unquote(wrap_builder_result(body))
+      end
+
+      unquote(kind)(unquote(func)({:error, error}, unquote_splicing(ignored_args))) do
         {:error, error}
       end
 
-      def unquote(func)(unquote(dsl_state), unquote_splicing(rest_args)) do
-        case unquote(body) do
-          {:ok, result} ->
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-
-          body ->
-            {:ok, body}
-        end
+      unquote(kind)(unquote(func)(unquote(dsl_state), unquote_splicing(rest_args))) do
+        unquote(wrap_builder_result(body))
       end
     end
   end
 
-  defmacro defbuilderp({func, _, [dsl_state | rest_args]}, do: body) do
-    def_head? = Enum.any?(rest_args, &match?({:\\, _, _}, &1))
-    rest_args_with_defaults = rest_args
+  defp wrap_builder_result(body) do
+    quote generated: true do
+      case unquote(body) do
+        {:ok, result} ->
+          {:ok, result}
 
-    rest_args =
-      Enum.map(rest_args, fn
-        {:\\, _, [expr, _default]} ->
-          expr
+        {:error, error} ->
+          {:error, error}
 
-        other ->
-          other
-      end)
-
-    quote generated: true,
-          location: :keep,
-          bind_quoted: [
-            def_head?: def_head?,
-            rest_args: Macro.escape(rest_args),
-            rest_args_with_defaults: Macro.escape(rest_args_with_defaults),
-            dsl_state: Macro.escape(dsl_state),
-            func: Macro.escape(func),
-            body: Macro.escape(body)
-          ] do
-      if def_head? do
-        defp unquote(func)(unquote(dsl_state), unquote_splicing(rest_args_with_defaults))
-      end
-
-      defp unquote(func)({:ok, unquote(dsl_state)}, unquote_splicing(rest_args)) do
-        case unquote(body) do
-          {:ok, result} ->
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-
-          body ->
-            {:ok, body}
-        end
-      end
-
-      defp unquote(func)(
-             {:error, error},
-             unquote_splicing(
-               Enum.map(rest_args, fn _ ->
-                 {:_, [], Elixir}
-               end)
-             )
-           ) do
-        {:error, error}
-      end
-
-      defp unquote(func)(unquote(dsl_state), unquote_splicing(rest_args)) do
-        case unquote(body) do
-          {:ok, result} ->
-            {:ok, result}
-
-          {:error, error} ->
-            {:error, error}
-
-          body ->
-            {:ok, body}
-        end
+        body ->
+          {:ok, body}
       end
     end
   end
