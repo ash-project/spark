@@ -102,7 +102,7 @@ defmodule Spark.Builder.Entity do
         }
 
   @options_schema [
-    schema: [type: {:custom, __MODULE__, :cast_schema, []}, default: []],
+    schema: [type: {:custom, Field, :cast_schema, []}, default: []],
     args: [type: {:custom, __MODULE__, :cast_args, []}, default: []],
     entities: [type: {:custom, __MODULE__, :cast_entities, []}, default: []],
     singleton_entity_keys: [type: {:list, :atom}, default: []],
@@ -122,16 +122,6 @@ defmodule Spark.Builder.Entity do
     no_depend_modules: [type: {:list, :atom}, default: []],
     depend_on_only_behaviour_modules: [type: {:list, :atom}, default: []]
   ]
-
-  @doc false
-  def cast_schema(value) when is_list(value) do
-    {:ok, Field.to_schema(value)}
-  rescue
-    e in ArgumentError -> {:error, Exception.message(e)}
-  end
-
-  def cast_schema(value),
-    do: {:error, "expected a keyword list for :schema, got: #{inspect(value)}"}
 
   @doc false
   def cast_args(value) when is_list(value) do
