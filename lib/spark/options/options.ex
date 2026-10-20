@@ -1777,22 +1777,11 @@ defmodule Spark.Options do
   end
 
   def validate_type({:fun, list}) when is_list(list) do
-    validate_fun_arg_types(list)
+    validate_subtypes(list, list, :fun)
   end
 
   def validate_type({:fun, list, returns}) when is_list(list) do
-    Enum.reduce_while(list, {:ok, list}, fn
-      {type, _keys}, acc
-      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
-        {:cont, acc}
-
-      subtype, acc ->
-        case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
-        end
-    end)
-    |> case do
+    case validate_subtypes(list, list, :fun) do
       {:ok, value} ->
         case validate_type(returns) do
           {:ok, returns} ->
@@ -1829,7 +1818,7 @@ defmodule Spark.Options do
         {:error, "expected :args length (#{length(args)}) to match :arity (#{arity})"}
 
       true ->
-        with {:ok, _} <- validate_fun_args(args || []),
+        with {:ok, _} <- validate_subtypes(args || [], args, :fun),
              {:ok, _} <- validate_fun_returns(returns) do
           {:ok, {:function, opts}}
         end
@@ -1913,31 +1902,11 @@ defmodule Spark.Options do
   end
 
   def validate_type({:or, subtypes} = value) when is_list(subtypes) do
-    Enum.reduce_while(subtypes, {:ok, value}, fn
-      {type, _keys}, acc
-      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
-        {:cont, acc}
-
-      subtype, acc ->
-        case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :or type: #{reason}"}}
-        end
-    end)
+    validate_subtypes(subtypes, value, :or)
   end
 
   def validate_type({:and, subtypes} = value) when is_list(subtypes) do
-    Enum.reduce_while(subtypes, {:ok, value}, fn
-      {type, _keys}, acc
-      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
-        {:cont, acc}
-
-      subtype, acc ->
-        case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :and type: #{reason}"}}
-        end
-    end)
+    validate_subtypes(subtypes, value, :and)
   end
 
   # This is to support the special-cased "{:list, {:keyword_list, my_key: [type: ...]}}",
@@ -1996,30 +1965,20 @@ defmodule Spark.Options do
     {:error, "unknown type #{inspect(value)}.\n\nAvailable types: #{available_types()}"}
   end
 
-  defp validate_fun_arg_types(list) do
-    Enum.reduce_while(list, {:ok, list}, fn
+  # Keyword list and map subtypes carry nested schemas, so they pass through unvalidated.
+  defp validate_subtypes(subtypes, result, container) do
+    Enum.reduce_while(subtypes, {:ok, result}, fn
       {type, _keys}, acc
       when type in [:keyword_list, :non_empty_keyword_list, :map] ->
         {:cont, acc}
 
       subtype, acc ->
         case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
-        end
-    end)
-  end
+          {:ok, _value} ->
+            {:cont, acc}
 
-  defp validate_fun_args(args) do
-    Enum.reduce_while(args, {:ok, args}, fn
-      {type, _keys}, acc
-      when type in [:keyword_list, :non_empty_keyword_list, :map] ->
-        {:cont, acc}
-
-      subtype, acc ->
-        case validate_type(subtype) do
-          {:ok, _value} -> {:cont, acc}
-          {:error, reason} -> {:halt, {:error, "invalid type given to :fun type: #{reason}"}}
+          {:error, reason} ->
+            {:halt, {:error, "invalid type given to #{inspect(container)} type: #{reason}"}}
         end
     end)
   end
