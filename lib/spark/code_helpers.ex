@@ -168,15 +168,7 @@ defmodule Spark.CodeHelpers do
 
     value = Spark.Dsl.Extension.expand_alias_no_require(value, caller)
 
-    {function,
-     quote generated: true do
-       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
-         @doc false
-         def unquote(fn_name)(unquote_splicing(fn_args)) do
-           unquote(value).(unquote_splicing(fn_args))
-         end
-       end
-     end}
+    {function, captured_function_def(fn_name, fn_args, value)}
   end
 
   def lift_functions({:&, _, [{name, _, fn_args}]} = value, key, caller)
@@ -187,15 +179,7 @@ defmodule Spark.CodeHelpers do
 
     value = Spark.Dsl.Extension.expand_alias_no_require(value, caller)
 
-    {function,
-     quote generated: true do
-       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
-         @doc false
-         def unquote(fn_name)(unquote_splicing(fn_args)) do
-           unquote(value).(unquote_splicing(fn_args))
-         end
-       end
-     end}
+    {function, captured_function_def(fn_name, fn_args, value)}
   end
 
   # Lift functions of the `&Module.function(&1, args)` variety
@@ -211,15 +195,7 @@ defmodule Spark.CodeHelpers do
 
     value = Spark.Dsl.Extension.expand_alias_no_require(value, caller)
 
-    {function,
-     quote generated: true do
-       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
-         @doc false
-         def unquote(fn_name)(unquote_splicing(fn_args)) do
-           unquote(value).(unquote_splicing(fn_args))
-         end
-       end
-     end}
+    {function, captured_function_def(fn_name, fn_args, value)}
   end
 
   # Lift functions of the `&(&1 + &2)` variety
@@ -229,15 +205,7 @@ defmodule Spark.CodeHelpers do
     function = generate_captured_function_caller(fn_name, fn_args, caller)
     value = Spark.Dsl.Extension.expand_alias_no_require(value, caller)
 
-    {function,
-     quote generated: true do
-       unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
-         @doc false
-         def unquote(fn_name)(unquote_splicing(fn_args)) do
-           unquote(value).(unquote_splicing(fn_args))
-         end
-       end
-     end}
+    {function, captured_function_def(fn_name, fn_args, value)}
   end
 
   # Lift anonymous functions with one or more clauses.
@@ -370,4 +338,15 @@ defmodule Spark.CodeHelpers do
         context1,
         context2
       )
+
+  defp captured_function_def(fn_name, fn_args, value) do
+    quote generated: true do
+      unless Module.defines?(__MODULE__, {unquote(fn_name), unquote(Enum.count(fn_args))}, :def) do
+        @doc false
+        def unquote(fn_name)(unquote_splicing(fn_args)) do
+          unquote(value).(unquote_splicing(fn_args))
+        end
+      end
+    end
+  end
 end
