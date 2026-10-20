@@ -403,14 +403,9 @@ if Code.ensure_loaded?(Sourceror) do
             []
         end
         |> List.wrap()
-        |> Enum.filter(&is_atom/1)
-        |> Enum.flat_map(fn extension ->
-          if Code.ensure_loaded?(extension) and
-               Spark.implements_behaviour?(extension, Spark.Dsl.Extension) do
-            [extension]
-          else
-            []
-          end
+        |> Enum.filter(fn extension ->
+          is_atom(extension) and Code.ensure_loaded?(extension) and
+            Spark.implements_behaviour?(extension, Spark.Dsl.Extension)
         end)
       end)
       |> Enum.concat(config[:extensions] || [])
