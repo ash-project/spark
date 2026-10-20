@@ -207,14 +207,7 @@ defmodule Spark.InfoGenerator do
         def unquote(option.function_name)(dsl_or_extended) do
           import Spark.Dsl.Extension, only: [fetch_opt: 3]
 
-          case fetch_opt(
-                 dsl_or_extended,
-                 unquote(option.path),
-                 unquote(option.name)
-               ) do
-            :error -> :error
-            {:ok, value} -> {:ok, value}
-          end
+          fetch_opt(dsl_or_extended, unquote(option.path), unquote(option.name))
         end
       else
         def unquote(option.function_name)(dsl_or_extended) do
