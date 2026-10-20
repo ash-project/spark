@@ -89,7 +89,7 @@ defmodule Spark.Builder.Section do
         }
 
   @options_schema [
-    schema: [type: {:custom, __MODULE__, :cast_schema, []}, default: []],
+    schema: [type: {:custom, Field, :cast_schema, []}, default: []],
     entities: [type: {:custom, __MODULE__, :cast_entities, []}, default: []],
     sections: [type: {:custom, __MODULE__, :cast_sections, []}, default: []],
     top_level?: [type: :boolean, default: false],
@@ -107,16 +107,6 @@ defmodule Spark.Builder.Section do
     deprecations: [type: :keyword_list, default: []],
     docs: [type: :string, default: ""]
   ]
-
-  @doc false
-  def cast_schema(value) when is_list(value) do
-    {:ok, Field.to_schema(value)}
-  rescue
-    e in ArgumentError -> {:error, Exception.message(e)}
-  end
-
-  def cast_schema(value),
-    do: {:error, "expected a keyword list for :schema, got: #{inspect(value)}"}
 
   @doc false
   def cast_entities(value) when is_list(value) do

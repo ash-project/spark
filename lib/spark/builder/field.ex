@@ -105,6 +105,16 @@ defmodule Spark.Builder.Field do
   ]
 
   @doc false
+  def cast_schema(value) when is_list(value) do
+    {:ok, to_schema(value)}
+  rescue
+    e in ArgumentError -> {:error, Exception.message(e)}
+  end
+
+  def cast_schema(value),
+    do: {:error, "expected a keyword list for :schema, got: #{inspect(value)}"}
+
+  @doc false
   def cast_keys(value) when is_list(value) do
     {:ok, to_schema(value)}
   rescue
