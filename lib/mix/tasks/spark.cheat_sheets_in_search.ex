@@ -52,40 +52,25 @@ if Code.ensure_loaded?(Jason) do
       end
     end
 
-    defp search_data_file do
-      "doc/dist/search_data-*.js"
+    defp search_data_file, do: read_doc_js_file("search_data", "searchData=")
+
+    defp sidebar_items_file, do: read_doc_js_file("sidebar_items", "sidebarNodes=")
+
+    defp read_doc_js_file(name, prefix) do
+      "doc/dist/#{name}-*.js"
       |> Path.wildcard()
       |> Enum.at(0)
       |> case do
         nil ->
-          {:error, "No search_data file found"}
+          {:error, "No #{name} file found"}
 
         file ->
           case File.read!(file) do
-            "searchData=" <> contents ->
+            ^prefix <> contents ->
               {:ok, file, Jason.decode!(contents)}
 
             _ ->
-              {:error, "search data js file was malformed"}
-          end
-      end
-    end
-
-    defp sidebar_items_file do
-      "doc/dist/sidebar_items-*.js"
-      |> Path.wildcard()
-      |> Enum.at(0)
-      |> case do
-        nil ->
-          {:error, "No sidebar_items file found"}
-
-        file ->
-          case File.read!(file) do
-            "sidebarNodes=" <> contents ->
-              {:ok, file, Jason.decode!(contents)}
-
-            _ ->
-              {:error, "sidebar items js file was malformed"}
+              {:error, "#{String.replace(name, "_", " ")} js file was malformed"}
           end
       end
     end
