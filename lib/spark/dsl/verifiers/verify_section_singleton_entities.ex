@@ -40,22 +40,17 @@ defmodule Spark.Dsl.Verifiers.VerifySectionSingletonEntities do
           entity_def = Enum.find(section.entities, &(&1.name == key))
 
           if entity_def do
-            matching =
-              Enum.filter(entities, &(&1.__struct__ == entity_def.target))
+            case Enum.filter(entities, &(&1.__struct__ == entity_def.target)) do
+              [_, second | _] = matching ->
+                raise Spark.Error.DslError,
+                  module: module,
+                  path: section_path,
+                  message:
+                    "Expected at most one #{key} in #{inspect(section_path)}, got #{length(matching)}",
+                  location: Spark.Dsl.Entity.anno(second)
 
-            if length(matching) > 1 do
-              location =
-                case matching do
-                  [_, second | _] -> Spark.Dsl.Entity.anno(second)
-                  _ -> nil
-                end
-
-              raise Spark.Error.DslError,
-                module: module,
-                path: section_path,
-                message:
-                  "Expected at most one #{key} in #{inspect(section_path)}, got #{length(matching)}",
-                location: location
+              _ ->
+                :ok
             end
           end
         end)
