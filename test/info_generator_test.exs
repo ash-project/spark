@@ -164,4 +164,35 @@ defmodule Spark.InfoGeneratorTest do
                Spark.Options.Docs.dsl_docs_type({:function, returns: :string})
     end
   end
+
+  describe "predicate options without :doc or :default" do
+    test "generate a predicate info function" do
+      defmodule UndocumentedPredicateExtension do
+        @moduledoc false
+        @section %Spark.Dsl.Section{name: :settings, schema: [enabled?: [type: :boolean]]}
+        use Spark.Dsl.Extension, sections: [@section]
+      end
+
+      defmodule UndocumentedPredicateInfo do
+        @moduledoc false
+        use Spark.InfoGenerator, extension: UndocumentedPredicateExtension, sections: [:settings]
+      end
+
+      defmodule UndocumentedPredicateDsl do
+        @moduledoc false
+        use Spark.Dsl, default_extensions: [extensions: [UndocumentedPredicateExtension]]
+      end
+
+      defmodule UndocumentedPredicateResource do
+        @moduledoc false
+        use UndocumentedPredicateDsl
+
+        settings do
+          enabled?(true)
+        end
+      end
+
+      assert UndocumentedPredicateInfo.settings_enabled?(UndocumentedPredicateResource)
+    end
+  end
 end

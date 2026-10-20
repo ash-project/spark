@@ -176,7 +176,7 @@ defmodule Spark.InfoGenerator do
     function_name = :"#{option.function_name}?"
 
     quote location: :keep do
-      @doc unquote(option.doc)
+      @doc unquote(Map.get(option, :doc, false))
       @spec unquote(function_name)(dsl_or_extended :: module | map) ::
               unquote(option.type)
       def unquote(function_name)(dsl_or_extended) do
@@ -186,7 +186,7 @@ defmodule Spark.InfoGenerator do
           dsl_or_extended,
           unquote(option.path),
           unquote(option.name),
-          unquote(Macro.escape(option.default))
+          unquote(Macro.escape(Map.get(option, :default)))
         )
       end
 
