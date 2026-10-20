@@ -654,14 +654,13 @@ defmodule Spark.Dsl.Extension do
       spark_dsl_config =
         {__MODULE__, :spark_sections}
         |> Process.get([])
-        |> Enum.map(fn {_extension, section_path} ->
+        |> Map.new(fn {_extension, section_path} ->
           {section_path,
            Process.get(
              {__MODULE__, :spark, section_path},
              Spark.Dsl.Extension.default_section_config()
            )}
         end)
-        |> Enum.into(%{})
         |> Map.update(
           :persist,
           persist,
