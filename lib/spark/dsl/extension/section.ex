@@ -36,6 +36,7 @@ defmodule Spark.Dsl.Extension.Section do
   end
 
   @doc false
+  # sobelow_skip ["RCE.CodeModule"]
   def expand(%Config{} = config, body, caller) do
     %Config{
       opts_module: opts_module,
