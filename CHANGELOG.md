@@ -12,6 +12,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.9](https://github.com/ash-project/spark/compare/v2.7.8...v2.7.9) (2026-10-25)
+
+
+
+
+### Bug Fixes:
+
+* collect verifier output from compiler-built DSL modules by Emad Shaaban
+
+* raise the options-list error for non-keyword entity opts by Leon Qadirie
+
+### Performance Improvements:
+
+* delegate the generated section macro body to a shared function by Leon Qadirie
+
+* precompute entity keys once per entity module by Leon Qadirie
+
+* wrap extension sections and dsl patches in opaque by Leon Qadirie
+
+* delegate generated DSL macro bodies to shared functions by Leon Qadirie
+
 ## [v2.7.8](https://github.com/ash-project/spark/compare/v2.7.7...v2.7.8) (2026-10-16)
 
 
