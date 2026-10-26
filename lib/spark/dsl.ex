@@ -364,7 +364,7 @@ defmodule Spark.Dsl do
 
             @their_opt_schema their_opt_schema
 
-            @opts opts
+            @_spark_dsl_opts opts
             @before_compile Spark.Dsl
 
             Module.register_attribute(__MODULE__, :spark_is, persist: true)
@@ -456,7 +456,7 @@ defmodule Spark.Dsl do
 
   defmacro __before_compile__(env) do
     parent = Module.get_attribute(env.module, :spark_parent)
-    opts = Module.get_attribute(env.module, :opts)
+    opts = Module.get_attribute(env.module, :_spark_dsl_opts)
     parent_code = parent.handle_before_compile(opts)
 
     # `@after_verify` can run in a checker process that cannot see this
@@ -477,7 +477,7 @@ defmodule Spark.Dsl do
           Spark.Dsl.__verify_spark_dsl__(
             unquote(parent),
             module,
-            @opts,
+            @_spark_dsl_opts,
             @extensions,
             __ENV__,
             unquote(captured_collector)
@@ -657,11 +657,16 @@ defmodule Spark.Dsl do
             @moduledoc """
             #{@moduledoc}
 
-            #{Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)}
+            #{Spark.Dsl.Extension.explain(parent, @_spark_dsl_opts, @extensions, @spark_dsl_config)}
             """
 
           true ->
-            @moduledoc Spark.Dsl.Extension.explain(parent, @opts, @extensions, @spark_dsl_config)
+            @moduledoc Spark.Dsl.Extension.explain(
+                         parent,
+                         @_spark_dsl_opts,
+                         @extensions,
+                         @spark_dsl_config
+                       )
         end
       end
 
