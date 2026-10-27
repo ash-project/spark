@@ -28,4 +28,14 @@ defmodule Spark.DslOptsAttributeTest do
     assert Elixir.SparkBeforeGeneric.generic_dsl_options() == [owner: :generic_dsl]
     assert Elixir.SparkBeforeGeneric.configured_otp_app() == :spark_before_generic
   end
+
+  test "exposes Spark options as @opts to code injected before compile" do
+    defmodule Elixir.SparkOptsReader do
+      @moduledoc false
+
+      use Spark.Test.OptsReader, otp_app: :spark_opts_reader
+    end
+
+    assert Elixir.SparkOptsReader.opts_attribute()[:otp_app] == :spark_opts_reader
+  end
 end
