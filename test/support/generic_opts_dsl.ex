@@ -34,3 +34,15 @@ defmodule Spark.Test.OptionAware do
     end
   end
 end
+
+defmodule Spark.Test.OptsReader do
+  @moduledoc false
+
+  use Spark.Dsl
+
+  def handle_before_compile(_opts) do
+    quote do
+      def opts_attribute, do: @opts
+    end
+  end
+end

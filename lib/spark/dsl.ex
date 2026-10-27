@@ -365,6 +365,13 @@ defmodule Spark.Dsl do
             @their_opt_schema their_opt_schema
 
             @_spark_dsl_opts opts
+
+            # TODO: stop setting `@opts` in the next major release. Downstream DSLs read it from
+            # injected code. An `@opts` that another library set first stays intact.
+            unless Module.has_attribute?(__MODULE__, :opts) do
+              Module.put_attribute(__MODULE__, :opts, opts)
+            end
+
             @before_compile Spark.Dsl
 
             Module.register_attribute(__MODULE__, :spark_is, persist: true)
