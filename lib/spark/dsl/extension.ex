@@ -1267,43 +1267,35 @@ defmodule Spark.Dsl.Extension do
       depend_on_only_behaviour_modules: Map.get(entity, :depend_on_only_behaviour_modules, [])
     }
 
-    async_compile(agent, fn ->
-      Module.create(
-        mod_name,
-        quote generated: true,
-              location: :keep,
-              bind_quoted: [
-                entity: Macro.escape(entity),
-                config: Macro.escape(config),
-                args: Macro.escape(args),
-                arg_vars: Macro.escape(arg_vars),
-                section_path: Macro.escape(section_path)
-              ] do
-          def __build__(module, opts, nested_entities, anno, opts_anno) do
-            Spark.Dsl.Extension.Entity.build!(
-              unquote(Macro.escape(entity)),
-              unquote(section_path),
-              module,
-              opts,
-              nested_entities,
-              anno,
-              opts_anno
-            )
-          end
+    body =
+      quote generated: true, location: :keep do
+        @moduledoc false
 
-          @moduledoc false
-          defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
-            Spark.Dsl.Extension.Entity.expand(
-              unquote(Macro.escape(entity)),
-              unquote(Macro.escape(config)),
-              [unquote_splicing(arg_vars)],
-              opts,
-              __CALLER__
-            )
-          end
-        end,
-        Macro.Env.location(__ENV__)
-      )
+        def __build__(module, opts, nested_entities, anno, opts_anno) do
+          Spark.Dsl.Extension.Entity.build!(
+            unquote(Macro.escape(entity)),
+            unquote(section_path),
+            module,
+            opts,
+            nested_entities,
+            anno,
+            opts_anno
+          )
+        end
+
+        defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
+          Spark.Dsl.Extension.Entity.expand(
+            unquote(Macro.escape(entity)),
+            unquote(Macro.escape(config)),
+            [unquote_splicing(arg_vars)],
+            opts,
+            __CALLER__
+          )
+        end
+      end
+
+    async_compile(agent, fn ->
+      Module.create(mod_name, body, Macro.Env.location(__ENV__))
     end)
 
     mod_name
@@ -1329,12 +1321,9 @@ defmodule Spark.Dsl.Extension do
         }
       end
 
-    Module.create(
-      module_name,
-      quote generated: true, bind_quoted: [option_configs: Macro.escape(option_configs)] do
-        @moduledoc false
-
-        for option_config <- option_configs do
+    macros =
+      for option_config <- option_configs do
+        quote generated: true do
           defmacro unquote(option_config.name)(value) do
             Spark.Dsl.Extension.EntityOption.expand(
               unquote(Macro.escape(option_config)),
@@ -1343,7 +1332,11 @@ defmodule Spark.Dsl.Extension do
             )
           end
         end
-      end,
+      end
+
+    Module.create(
+      module_name,
+      {:__block__, [], [quote(do: @moduledoc(false)) | macros]},
       file: __ENV__.file
     )
 
