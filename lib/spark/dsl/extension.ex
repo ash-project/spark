@@ -1166,11 +1166,9 @@ defmodule Spark.Dsl.Extension do
           }
         end
 
-      Module.create(
-        opts_mod_name,
-        quote generated: true, bind_quoted: [option_configs: Macro.escape(option_configs)] do
-          @moduledoc false
-          for option_config <- option_configs do
+      macros =
+        for option_config <- option_configs do
+          quote generated: true do
             defmacro unquote(option_config.name)(value) do
               Spark.Dsl.Extension.SectionOption.expand(
                 unquote(Macro.escape(option_config)),
@@ -1179,6 +1177,13 @@ defmodule Spark.Dsl.Extension do
               )
             end
           end
+        end
+
+      Module.create(
+        opts_mod_name,
+        quote do
+          @moduledoc false
+          unquote_splicing(macros)
         end,
         Macro.Env.location(__ENV__)
       )
@@ -1267,13 +1272,15 @@ defmodule Spark.Dsl.Extension do
       depend_on_only_behaviour_modules: Map.get(entity, :depend_on_only_behaviour_modules, [])
     }
 
+    escaped_entity = Macro.escape(entity)
+
     body =
       quote generated: true, location: :keep do
         @moduledoc false
 
         def __build__(module, opts, nested_entities, anno, opts_anno) do
           Spark.Dsl.Extension.Entity.build!(
-            unquote(Macro.escape(entity)),
+            unquote(escaped_entity),
             unquote(section_path),
             module,
             opts,
@@ -1285,7 +1292,7 @@ defmodule Spark.Dsl.Extension do
 
         defmacro unquote(entity.name)(unquote_splicing(args), opts \\ nil) do
           Spark.Dsl.Extension.Entity.expand(
-            unquote(Macro.escape(entity)),
+            unquote(escaped_entity),
             unquote(Macro.escape(config)),
             [unquote_splicing(arg_vars)],
             opts,
@@ -1336,8 +1343,11 @@ defmodule Spark.Dsl.Extension do
 
     Module.create(
       module_name,
-      {:__block__, [], [quote(do: @moduledoc(false)) | macros]},
-      file: __ENV__.file
+      quote do
+        @moduledoc false
+        unquote_splicing(macros)
+      end,
+      Macro.Env.location(__ENV__)
     )
 
     module_name
