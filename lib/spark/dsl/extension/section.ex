@@ -8,9 +8,8 @@ defmodule Spark.Dsl.Extension.Section do
   defmodule Config do
     @moduledoc false
 
-    # Built once per section macro while the defining module compiles, then escaped
-    # into that macro. `module` is the module holding the section's
-    # `__set_and_validate_options__/4`.
+    # Spark builds the config once per section and escapes it into the section macro.
+    # `module` is the module that validates the section's options.
     @enforce_keys [
       :opts_module,
       :section_path,

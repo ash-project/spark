@@ -1083,6 +1083,51 @@ defmodule Spark.Dsl.Extension do
     )
   end
 
+  defp nested_section_body(agent, mod_name, module_prefix, extension, section, path) do
+    {section_modules, entity_modules, opts_module} =
+      do_build_section(agent, module_prefix, extension, section, path)
+
+    section_path = path ++ [section.name]
+
+    config = %Spark.Dsl.Extension.Section.Config{
+      opts_module: opts_module,
+      section_path: section_path,
+      extension: extension,
+      entity_modules: entity_modules,
+      section_modules: section_modules,
+      imports: section.imports,
+      after_define: section.after_define,
+      module: mod_name
+    }
+
+    quote generated: true do
+      @moduledoc false
+
+      @doc false
+      def __set_and_validate_options__(
+            dsl_config,
+            unquote(section_path) = section_path,
+            module,
+            extension
+          ) do
+        Spark.Dsl.Extension.SectionOption.set_and_validate_options(
+          dsl_config,
+          section_path,
+          module,
+          unquote(Macro.escape(Map.get(section, :schema, [])))
+        )
+      end
+
+      defmacro unquote(section.name)(body) do
+        Spark.Dsl.Extension.Section.expand(
+          unquote(Macro.escape(config)),
+          body,
+          __CALLER__
+        )
+      end
+    end
+  end
+
   @doc false
   def do_build_section(agent, mod, extension, section, path) do
     opts_mod_name =
@@ -1129,20 +1174,14 @@ defmodule Spark.Dsl.Extension do
           {:module, module, _, _} =
             Module.create(
               mod_name,
-              quote generated: true do
-                @moduledoc false
-                alias Spark.Dsl
-
-                require Dsl.Extension
-
-                Dsl.Extension.build_section(
-                  unquote(agent),
-                  unquote(extension),
-                  unquote(Macro.escape(nested_section)),
-                  unquote(path ++ [section.name]),
-                  unquote(mod)
-                )
-              end,
+              nested_section_body(
+                agent,
+                mod_name,
+                mod,
+                extension,
+                nested_section,
+                path ++ [section.name]
+              ),
               Macro.Env.location(__ENV__)
             )
 
