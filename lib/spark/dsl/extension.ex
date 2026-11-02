@@ -1166,27 +1166,7 @@ defmodule Spark.Dsl.Extension do
           }
         end
 
-      macros =
-        for option_config <- option_configs do
-          quote generated: true do
-            defmacro unquote(option_config.name)(value) do
-              Spark.Dsl.Extension.SectionOption.expand(
-                unquote(Macro.escape(option_config)),
-                value,
-                __CALLER__
-              )
-            end
-          end
-        end
-
-      Module.create(
-        opts_mod_name,
-        quote do
-          @moduledoc false
-          unquote_splicing(macros)
-        end,
-        Macro.Env.location(__ENV__)
-      )
+      build_option_module(opts_mod_name, option_configs, Spark.Dsl.Extension.SectionOption)
     end
 
     {section_modules, entity_modules, opts_mod_name}
@@ -1328,11 +1308,17 @@ defmodule Spark.Dsl.Extension do
         }
       end
 
+    build_option_module(module_name, option_configs, Spark.Dsl.Extension.EntityOption)
+
+    module_name
+  end
+
+  defp build_option_module(module_name, option_configs, expander) do
     macros =
       for option_config <- option_configs do
         quote generated: true do
           defmacro unquote(option_config.name)(value) do
-            Spark.Dsl.Extension.EntityOption.expand(
+            unquote(expander).expand(
               unquote(Macro.escape(option_config)),
               value,
               __CALLER__
@@ -1349,8 +1335,6 @@ defmodule Spark.Dsl.Extension do
       end,
       Macro.Env.location(__ENV__)
     )
-
-    module_name
   end
 
   @doc false
