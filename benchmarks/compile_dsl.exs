@@ -7,9 +7,11 @@
 #
 #     mix run benchmarks/compile_dsl.exs
 #
-# ENTITIES, OPTIONS and RUNS environment variables override the defaults.
+# ENTITIES, SECTIONS (nested sections), OPTIONS and RUNS environment variables override
+# the defaults.
 
 entities = String.to_integer(System.get_env("ENTITIES", "40"))
+sections = String.to_integer(System.get_env("SECTIONS", "10"))
 options = String.to_integer(System.get_env("OPTIONS", "15"))
 runs = String.to_integer(System.get_env("RUNS", "5"))
 
@@ -31,6 +33,20 @@ source = fn prefix ->
         schema: [name: [type: :atom, required: true], #{Enum.join(schema, ", ")}],
         entities: [children: [%Spark.Dsl.Entity{name: :child, target: #{prefix}.Target, args: [:name], schema: [name: [type: :atom], #{Enum.join(schema, ", ")}]}]]
       }
+      """
+    end
+
+  section_defs =
+    for s <- 1..sections//1 do
+      ~s|%Spark.Dsl.Section{name: :section_#{s}, schema: [#{Enum.join(schema, ", ")}]}|
+    end
+
+  section_usages =
+    for s <- 1..sections//1 do
+      """
+      section_#{s} do
+        opt_1 :a
+      end
       """
     end
 
@@ -60,7 +76,8 @@ source = fn prefix ->
         %Spark.Dsl.Section{
           name: :items,
           schema: [#{Enum.join(schema, ", ")}],
-          entities: [#{Enum.map_join(entity_defs, ",\n", &String.trim/1)}]
+          entities: [#{Enum.map_join(entity_defs, ",\n", &String.trim/1)}],
+          sections: [#{Enum.join(section_defs, ",\n")}]
         }
       ]
   end
@@ -75,6 +92,7 @@ source = fn prefix ->
     items do
       opt_1 :a
       #{Enum.join(usages, "\n")}
+      #{Enum.join(section_usages, "\n")}
     end
   end
   """
@@ -112,7 +130,7 @@ times = results |> Enum.map(&elem(&1, 0)) |> Enum.sort()
 {_, module_count, bytes} = hd(results)
 
 IO.puts("""
-#{entities} entities x #{options} options, #{runs} runs
+#{entities} entities, #{sections} nested sections x #{options} options, #{runs} runs
 compile time: median #{Float.round(Enum.at(times, div(runs, 2)), 0)} ms, min #{Float.round(hd(times), 0)} ms
 generated: #{module_count} modules, #{Float.round(bytes / 1024, 1)} KiB of BEAM
 """)
