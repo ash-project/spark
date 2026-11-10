@@ -739,9 +739,13 @@ defmodule Spark.Dsl.Extension do
 
   @doc false
   def await_persisted_compile_funs(dsl) do
-    await_compile_funs(dsl[:persist][:spark_compile_funs] || [])
-    %{dsl | persist: Map.delete(dsl.persist, :spark_compile_funs)}
+    funs = Process.delete(compile_funs_key(dsl[:persist][:module])) || []
+    await_compile_funs(funs)
+    dsl
   end
+
+  @doc false
+  def compile_funs_key(module), do: {:spark_compile_funs, module}
 
   def run_transformers(mod, transformers, spark_dsl_config, env) do
     spark_dsl_config = Map.update!(spark_dsl_config, :persist, &Map.put(&1, :env, env))

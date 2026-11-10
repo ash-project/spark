@@ -96,8 +96,12 @@ defmodule Spark.Dsl.Transformer do
   efficiently asynchronously.
   """
   def async_compile(dsl, fun) do
-    funs = get_persisted(dsl, :spark_compile_funs, [])
-    persist(dsl, :spark_compile_funs, [fun | funs])
+    # The funs are kept out of the dsl. A fun often closes over the dsl, and if the dsl
+    # held the funs queued before it, copying one into a task (which loses sharing)
+    # would double in size with each fun queued.
+    key = Spark.Dsl.Extension.compile_funs_key(get_persisted(dsl, :module))
+    Process.put(key, [fun | Process.get(key, [])])
+    dsl
   end
 
   @doc """
