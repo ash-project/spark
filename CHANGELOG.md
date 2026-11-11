@@ -12,6 +12,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v2.7.10](https://github.com/ash-project/spark/compare/v2.7.9...v2.7.10) (2026-11-11)
+
+
+
+
+### Bug Fixes:
+
+* keep async_compile funs out of the dsl so queued closures don't nest by Rebecca Le
+
+* keep setting @opts for downstream DSLs by Leon Qadirie
+
+* namespace temporary DSL options by Almir Sarajčić
+
+### Performance Improvements:
+
+* build nested section modules from precomputed bodies by Leon Qadirie
+
+* unroll generated section option module bodies by Leon Qadirie
+
+* unroll generated entity and option module bodies by Leon Qadirie
+
 ## [v2.7.9](https://github.com/ash-project/spark/compare/v2.7.8...v2.7.9) (2026-10-25)
 
 
